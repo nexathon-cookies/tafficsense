@@ -37,21 +37,35 @@
 @theme {
   --color-surface: var(--surface);
   --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
   --color-surface-container-lowest: var(--surface-container-lowest);
   --color-surface-container-low: var(--surface-container-low);
   --color-surface-container: var(--surface-container);
   --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
   --color-on-surface: var(--on-surface);
   --color-on-surface-variant: var(--on-surface-variant);
+  --color-surface-on: var(--on-surface);
+  --color-surface-on-variant: var(--on-surface-variant);
   --color-outline: var(--outline);
   --color-outline-variant: var(--outline-variant);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-container: var(--primary-container);
   --color-on-primary: var(--on-primary);
+  --color-primary-on: var(--on-primary);
   --color-secondary: var(--secondary);
   --color-secondary-container: var(--secondary-container);
+  --color-secondary-on: #ffffff;
   --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
   --color-error: var(--error);
+  --color-error-bg: var(--error-bg);
+  --color-error-container: var(--error-bg);
+  --color-error-on: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-success: #059669;
+  --color-warning-on-container: #78350f;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 }
@@ -208,6 +222,20 @@ nav a[aria-current="page"] {
   margin-inline: auto;
   flex: 1;
   padding-block: 2.5rem;
+}
+
+body:has([data-fullscreen="true"]) .site-main {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+body:has([data-fullscreen="true"]) .site-footer {
+  display: none;
 }
 
 .site-footer {

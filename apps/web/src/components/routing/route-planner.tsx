@@ -9,16 +9,9 @@ import type { LiveIncident } from "@/lib/incidents/server";
 import { createFallbackStyle } from "@/lib/traffic/mangaluru-basemap";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-export const MANGALURU_PRESETS = [
-  { name: "Hampankatta Junction", coords: [74.8426, 12.8698] as [number, number] },
-  { name: "KSRTC / Bejai Circle", coords: [74.8530, 12.8856] as [number, number] },
-  { name: "Ambedkar (Jyothi) Circle", coords: [74.8465, 12.8715] as [number, number] },
-  { name: "Ladyhill Circle", coords: [74.8385, 12.8890] as [number, number] },
-  { name: "Pumpwell (Mahaveera) Circle", coords: [74.8685, 12.8550] as [number, number] },
-  { name: "Mangaluru Central Railway", coords: [74.8390, 12.8640] as [number, number] },
-  { name: "Kadri Manjunatha Temple", coords: [74.8580, 12.8820] as [number, number] },
-  { name: "Mangalore International Airport", coords: [74.8900, 12.9610] as [number, number] },
-];
+import { MANGALURU_PRESETS } from "@/lib/routing/presets";
+export { MANGALURU_PRESETS };
+
 
 type TrafficSeveritySegment = {
   id: string;
@@ -60,6 +53,15 @@ export function RoutePlanner() {
   const [reportNote, setReportNote] = useState<string>("");
   const [reportFeedback, setReportFeedback] = useState<string | null>(null);
   const [isSubmittingReport, setIsSubmittingReport] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!showReportForm) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowReportForm(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showReportForm]);
 
   function initialRouteId(routeList: RouteOption[]): string | null {
     return routeList.find(route => route.incidents_on_route.length > 0)?.id ?? routeList[0]?.id ?? null;
@@ -347,16 +349,45 @@ export function RoutePlanner() {
     });
   };
 
-  // Initialize route & incidents on mount
+  // Initialize route & incidents on mount, reading ?from=...&to=... if present
   useEffect(() => {
     let cancelled = false;
     async function loadInitial() {
       try {
+        let currentStart = activeStart;
+        let currentDest = activeDest;
+
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          const fromParam = params.get("from");
+          const toParam = params.get("to");
+
+          if (fromParam) {
+            const idx = MANGALURU_PRESETS.findIndex((p) =>
+              p.name.toLowerCase().includes(fromParam.toLowerCase())
+            );
+            if (idx !== -1) {
+              setStartIndex(idx);
+              currentStart = MANGALURU_PRESETS[idx].coords;
+            }
+          }
+
+          if (toParam) {
+            const idx = MANGALURU_PRESETS.findIndex((p) =>
+              p.name.toLowerCase().includes(toParam.toLowerCase())
+            );
+            if (idx !== -1) {
+              setDestIndex(idx);
+              currentDest = MANGALURU_PRESETS[idx].coords;
+            }
+          }
+        }
+
         const [routeRes, incidentRes, trafficRes] = await Promise.all([
           fetch("/api/route", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ start: activeStart, destination: activeDest }),
+            body: JSON.stringify({ start: currentStart, destination: currentDest }),
           }),
           fetch("/api/incidents"),
           fetch("/api/traffic", { cache: "no-store" }),
@@ -469,21 +500,24 @@ export function RoutePlanner() {
   }).format(new Date(value));
 
   return (
-    <div className="space-y-4">
-      {/* Search / Selection Card */}
-      <div className="p-4 rounded-xl bg-surface-container-lowest border border-surface-container shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-surface-on">City Route Intelligence</h2>
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-surface-container text-surface-on-variant">
-            ESTIMATED · FREE-FLOW ONLY
-          </span>
-        </div>
+    <div className="relative w-full h-full overflow-hidden flex flex-col">
+      {/* Fullscreen Map Canvas */}
+      <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
 
-        <p className="text-xs text-surface-on-variant">
-          Select any origin and destination across Mangaluru to calculate real driving paths, compare alternatives, and automatically detour around verified incidents.
-        </p>
+      {/* Floating Directions Drawer (Top-Left) */}
+      <aside className="absolute top-4 left-4 z-20 w-80 sm:w-[420px] max-h-[calc(100vh-95px)] flex flex-col bg-surface/95 dark:bg-surface-dim/95 backdrop-blur-md rounded-2xl border border-surface-container shadow-2xl overflow-hidden pointer-events-auto">
+        <div className="p-3.5 pb-2.5 border-b border-surface-container bg-surface-container-low/60 space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-surface-on flex items-center gap-1.5 m-0">
+              <span>🗺️</span>
+              <span>City Route Intelligence</span>
+            </h2>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container text-surface-on-variant">
+              FREE-FLOW
+            </span>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
           {/* Origin selector */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
@@ -563,11 +597,11 @@ export function RoutePlanner() {
             </button>
             <button
               type="button"
-              className="text-xs px-3 py-2 rounded-lg border border-surface-container bg-surface-container-low text-surface-on hover:bg-surface-container transition flex items-center gap-1.5 font-medium"
-              onClick={() => setShowReportForm((prev) => !prev)}
+              className="button secondary text-xs px-3 py-2 font-medium flex items-center gap-1.5"
+              onClick={() => setShowReportForm(true)}
             >
               <span>📢</span>
-              <span>{showReportForm ? "Close Form" : "Report Incident"}</span>
+              <span>Report Incident</span>
             </button>
           </div>
           <span className="text-[11px] text-surface-on-variant">
@@ -576,127 +610,30 @@ export function RoutePlanner() {
         </div>
       </div>
 
-      {reportFeedback && (
-        <div className="p-3 rounded-lg bg-surface-container-low border border-surface-container text-xs text-surface-on">
-          {reportFeedback}
-        </div>
-      )}
-
-      {/* Expandable Incident Reporting Form (Plan 4 Module 3) */}
-      {showReportForm && (
-        <form
-          onSubmit={handleReportSubmit}
-          className="p-4 rounded-xl bg-surface-container-lowest border border-primary/30 shadow-sm space-y-3"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-surface-on flex items-center gap-2">
-              <span>📢</span> Report Road Incident at Your Location
-            </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container text-surface-on-variant">
-              L1–L3 SERVER VERIFICATION
-            </span>
-          </div>
-
-          <p className="text-xs text-surface-on-variant">
-            Sign in with a commuter account to submit. A recent device location is recorded as L2 location support; it does not prove the cause or congestion. When 3 distinct signed-in commuters report within 300m and 15 minutes, the server promotes the incident to L3 and can offer a route that avoids the reported area.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Category selection */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-surface-on" htmlFor="report-cat">
-                Incident Type (17 PDF categories)
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5" role="group" aria-label="Incident category">
-                {Object.entries(reportCategories).map(([key, label]) => (
-                  <button key={key} type="button" aria-pressed={reportCategory === key}
-                    className={`text-left text-[11px] px-2 py-1.5 rounded border ${reportCategory === key ? "border-primary bg-primary/10 font-bold" : "border-surface-container bg-surface-container-low"}`}
-                    onClick={() => setReportCategory(key as ReportCategory)}>
-                    {reportCategoryIcons[key as ReportCategory]} {label}
-                  </button>
-                ))}
-              </div>
+      {/* Scrollable Drawer Body */}
+      <div className="overflow-y-auto p-3.5 space-y-3 flex-1">
+        {reportFeedback && (
+          <div
+            className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 shadow-sm ${
+              reportFeedback.startsWith("❌")
+                ? "bg-rose-50 dark:bg-rose-950 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-100"
+                : "bg-emerald-50 dark:bg-emerald-950 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span>{reportFeedback.startsWith("❌") ? "⚠️" : "✓"}</span>
+              <span>{reportFeedback}</span>
             </div>
-
-            {/* Incident Location */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-surface-on" htmlFor="report-loc">
-                  Incident Location
-                </label>
-                <button
-                  type="button"
-                  onClick={() => handleRequestGps("report")}
-                  className="text-[11px] text-primary hover:underline font-medium"
-                >
-                  📍 Use device GPS
-                </button>
-              </div>
-              {useGpsReport && userLocation ? (
-                <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100">
-                  <span>GPS fix ({userLocation[1].toFixed(4)}, {userLocation[0].toFixed(4)})</span>
-                  <button
-                    type="button"
-                    onClick={() => setUseGpsReport(false)}
-                    className="text-[11px] font-semibold underline ml-2"
-                  >
-                    Reset
-                  </button>
-                </div>
-              ) : (
-                <select
-                  id="report-loc"
-                  className="w-full text-xs rounded-lg border border-surface-container bg-surface-container-low px-3 py-2 text-surface-on"
-                  value={reportLocationIndex}
-                  onChange={(e) => {
-                    setUseGpsReport(false);
-                    setReportLocationIndex(Number(e.target.value));
-                  }}
-                >
-                  {MANGALURU_PRESETS.map((p, idx) => (
-                    <option key={p.name} value={idx}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
-
-          {/* Note input */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-surface-on" htmlFor="report-note">
-              Optional Note
-            </label>
-            <input
-              id="report-note"
-              type="text"
-              placeholder="e.g. Near traffic signal, left lane blocked"
-              className="w-full text-xs rounded-lg border border-surface-container bg-surface-container-low px-3 py-2 text-surface-on"
-              value={reportNote}
-              onChange={(e) => setReportNote(e.target.value)}
-              maxLength={200}
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-1">
             <button
               type="button"
-              className="text-xs px-3 py-1.5 rounded-lg border border-surface-container text-surface-on-variant hover:bg-surface-container"
-              onClick={() => setShowReportForm(false)}
+              onClick={() => setReportFeedback(null)}
+              className="text-xs font-bold opacity-60 hover:opacity-100 px-1"
+              aria-label="Dismiss feedback"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="button text-xs px-5 py-1.5 font-semibold"
-              disabled={isSubmittingReport}
-            >
-              {isSubmittingReport ? "Submitting…" : "Submit Incident Report"}
+              ✕
             </button>
           </div>
-        </form>
-      )}
+        )}
 
       {statusMessage && (
         <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-100">
@@ -748,110 +685,328 @@ export function RoutePlanner() {
         </div>
       )}
 
-      {selectedIncident && (
-        <section className="p-4 rounded-xl bg-surface-container-lowest border border-primary/30 shadow-sm space-y-3" aria-labelledby="selected-incident-title">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-mono text-surface-on-variant">SELECTED MAP INCIDENT</p>
-              <h3 id="selected-incident-title" className="text-base font-bold text-surface-on">{reportCategoryIcons[selectedIncident.category]} {reportCategories[selectedIncident.category]}</h3>
+        {/* Route Cards */}
+        {routes.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-surface-on-variant uppercase tracking-wider">Calculated Routes</span>
+              <span className="text-[10px] text-surface-on-variant">{routes.length} options</span>
             </div>
-            <button type="button" className="text-xs text-primary hover:underline" onClick={() => setSelectedIncidentId(null)}>Close details</button>
-          </div>
-          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div><dt className="text-surface-on-variant">Verification</dt><dd className="font-semibold text-surface-on mt-0.5">{selectedIncident.level} · {selectedIncident.provenance}</dd></div>
-            <div><dt className="text-surface-on-variant">Reports</dt><dd className="font-semibold text-surface-on mt-0.5">{selectedIncident.report_count}</dd></div>
-            <div><dt className="text-surface-on-variant">First reported</dt><dd className="font-semibold text-surface-on mt-0.5">{formatIncidentTime(selectedIncident.first_reported_at)} IST</dd></div>
-            <div><dt className="text-surface-on-variant">Status</dt><dd className="font-semibold text-surface-on mt-0.5 capitalize">{selectedIncident.status}</dd></div>
-          </dl>
-          <p className="text-xs text-surface-on-variant">{selectedIncident.level_reason}</p>
-          <p className="text-[11px] text-surface-on-variant">This open incident expires if it receives no new confirmation by {formatIncidentTime(new Date(Date.parse(selectedIncident.last_confirmed_at) + 3 * 60 * 60 * 1000).toISOString())} IST.</p>
-        </section>
-      )}
-
-      {/* Map display */}
-      <div className="relative rounded-xl overflow-hidden border border-surface-container shadow-sm bg-surface-container-low">
-        <div ref={mapContainer} className="w-full h-80 sm:h-96" />
-        <div className="absolute top-2 left-2 bg-surface-container-lowest/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-surface-container text-[11px] space-y-0.5">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-1 bg-blue-600 rounded" />
-            <span className="font-semibold text-surface-on">Recommended route</span>
-          </div>
-          {routes.length > 1 && (
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-1 bg-slate-500 rounded border-dashed" />
-              <span className="text-surface-on-variant">Alternative path</span>
-            </div>
-          )}
-          <div className="pt-1 mt-1 border-t border-surface-container text-surface-on-variant">Current reports</div>
-          <div className="flex items-center gap-2"><span className="w-3 h-1 bg-emerald-600 rounded" /><span className="text-surface-on-variant">Clear</span></div>
-          <div className="flex items-center gap-2"><span className="w-3 h-1 bg-amber-500 rounded" /><span className="text-surface-on-variant">Reported / corroborated</span></div>
-          <div className="flex items-center gap-2"><span className="w-3 h-1 bg-orange-600 rounded" /><span className="text-surface-on-variant">L4 slowdown support</span></div>
-        </div>
-      </div>
-
-      {/* Route Cards */}
-      {routes.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {routes.map((r, index) => {
-            const isSelected = r.id === (selectedRouteId ?? routes[0]?.id);
-            return (
-              <div
-                key={r.id}
-                onClick={() => setSelectedRouteId(r.id)}
-                className={`p-4 rounded-xl border transition cursor-pointer space-y-2 ${
-                  isSelected
-                    ? "bg-primary/5 border-primary shadow-sm"
-                    : "bg-surface-container-lowest border-surface-container hover:bg-surface-container-low"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-surface-on flex items-center gap-1.5">
-                    {r.is_recommended && <span className="text-primary font-bold">★ Recommended</span>}
-                    {!r.is_recommended && <span className="text-surface-on-variant">Option {index + 1}</span>}
-                  </span>
-                  {r.avoids_incident && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-100">
-                      Detour
+            {routes.map((r, index) => {
+              const isSelected = r.id === (selectedRouteId ?? routes[0]?.id);
+              return (
+                <div
+                  key={r.id}
+                  onClick={() => setSelectedRouteId(r.id)}
+                  className={`p-3 rounded-xl border transition cursor-pointer space-y-1.5 ${
+                    isSelected
+                      ? "bg-primary/5 border-primary shadow-sm"
+                      : "bg-surface-container-lowest border-surface-container hover:bg-surface-container-low"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-surface-on flex items-center gap-1.5">
+                      {r.is_recommended && <span className="text-primary font-bold">★ Recommended</span>}
+                      {!r.is_recommended && <span className="text-surface-on-variant">Option {index + 1}</span>}
                     </span>
+                    {r.avoids_incident && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-100">
+                        Detour
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-xl font-bold text-surface-on">
+                      {formatRouteDuration(r.duration_s)}
+                    </span>
+                    <span className="text-xs font-medium text-surface-on-variant">
+                      {formatRouteDistance(r.distance_m)}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-surface-on-variant leading-tight m-0">
+                    {r.name} · free-flow estimate
+                  </p>
+
+                  {r.incidents_on_route.length > 0 && (
+                    <div className="pt-1 text-[11px] text-amber-700 dark:text-amber-300">
+                      ⚠️ Passes near {r.incidents_on_route.length} reported incident ({r.incidents_on_route[0].label})
+                    </div>
+                  )}
+
+                  {isSelected && (
+                    <div className="pt-2 border-t border-surface-container flex items-center justify-between">
+                      <span className="text-[11px] text-surface-on-variant">Ready to commute?</span>
+                      <Link
+                        href="/workspace"
+                        className="text-xs font-semibold px-3 py-1 rounded bg-primary text-primary-on hover:opacity-90 transition"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Track this journey →
+                      </Link>
+                    </div>
                   )}
                 </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </aside>
 
-                <div className="flex items-baseline gap-3">
-                  <span className="text-2xl font-bold text-surface-on">
-                    {formatRouteDuration(r.duration_s)}
-                  </span>
-                  <span className="text-sm font-medium text-surface-on-variant">
-                    {formatRouteDistance(r.distance_m)}
-                  </span>
-                </div>
-
-                <p className="text-xs text-surface-on-variant leading-tight">
-                  {r.name} · free-flow estimate
-                </p>
-
-                {r.incidents_on_route.length > 0 && (
-                  <div className="pt-1 text-[11px] text-amber-700 dark:text-amber-300">
-                    ⚠️ Passes near {r.incidents_on_route.length} reported incident ({r.incidents_on_route[0].label})
-                  </div>
-                )}
-
-                {isSelected && (
-                  <div className="pt-2 border-t border-surface-container flex items-center justify-between">
-                    <span className="text-[11px] text-surface-on-variant">Ready to commute?</span>
-                    <Link
-                      href="/workspace"
-                      className="text-xs font-semibold px-3 py-1 rounded bg-primary text-primary-on hover:opacity-90 transition"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Track this journey →
-                    </Link>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+    {/* Floating Selected Incident Card (Bottom-Right) */}
+    {selectedIncident && (
+      <section className="absolute bottom-6 right-4 sm:right-6 z-20 w-[calc(100vw-2rem)] sm:w-96 bg-surface/95 dark:bg-surface-dim/95 backdrop-blur-md rounded-2xl border border-surface-container shadow-2xl p-4 space-y-2.5 pointer-events-auto" aria-labelledby="selected-incident-title">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-mono text-surface-on-variant">SELECTED MAP INCIDENT</p>
+            <h3 id="selected-incident-title" className="text-base font-bold text-surface-on flex items-center gap-1.5 mt-0.5">
+              <span>{reportCategoryIcons[selectedIncident.category]}</span>
+              <span>{reportCategories[selectedIncident.category]}</span>
+            </h3>
+          </div>
+          <button type="button" className="text-xs text-surface-on-variant hover:text-surface-on p-1" onClick={() => setSelectedIncidentId(null)} aria-label="Close">✕</button>
         </div>
-      )}
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs m-0">
+          <div><dt className="text-surface-on-variant">Verification</dt><dd className="font-semibold text-surface-on mt-0.5">{selectedIncident.level} · {selectedIncident.provenance}</dd></div>
+          <div><dt className="text-surface-on-variant">Reports</dt><dd className="font-semibold text-surface-on mt-0.5">{selectedIncident.report_count}</dd></div>
+          <div><dt className="text-surface-on-variant">Reported</dt><dd className="font-semibold text-surface-on mt-0.5">{formatIncidentTime(selectedIncident.first_reported_at)} IST</dd></div>
+          <div><dt className="text-surface-on-variant">Status</dt><dd className="font-semibold text-surface-on mt-0.5 capitalize">{selectedIncident.status}</dd></div>
+        </dl>
+        <p className="text-xs text-surface-on-variant m-0">{selectedIncident.level_reason}</p>
+        <p className="text-[11px] text-surface-on-variant m-0">This open incident expires if it receives no new confirmation by {formatIncidentTime(new Date(Date.parse(selectedIncident.last_confirmed_at) + 3 * 60 * 60 * 1000).toISOString())} IST.</p>
+      </section>
+    )}
+
+    {/* Floating Bottom-Right Map Controls & Legend */}
+    <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2 pointer-events-auto">
+      <button
+        type="button"
+        onClick={() => {
+          const selected = routes.find((r) => r.id === (selectedRouteId ?? routes[0]?.id));
+          if (mapRef.current && selected && selected.geometry.coordinates.length > 0) {
+            import("maplibre-gl").then(({ LngLatBounds }) => {
+              const bounds = new LngLatBounds();
+              for (const coord of selected.geometry.coordinates) {
+                bounds.extend(coord as [number, number]);
+              }
+              mapRef.current?.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+            });
+          } else {
+            mapRef.current?.flyTo({ center: [74.856, 12.870], zoom: 13, duration: 800 });
+          }
+        }}
+        className="px-3 py-1.5 rounded-xl bg-surface/95 backdrop-blur border border-surface-container shadow-md text-xs font-semibold text-surface-on hover:bg-surface-container flex items-center gap-1.5"
+        title="Recenter route view"
+      >
+        <span>🎯</span>
+        <span>Recenter Route</span>
+      </button>
+      <div className="text-[11px] bg-surface/80 backdrop-blur px-2.5 py-1 rounded-lg border border-surface-container/60 shadow-xs flex items-center gap-2 text-surface-on-variant">
+        <span className="w-2.5 h-1 bg-blue-600 rounded" />
+        <span>Recommended</span>
+        <span className="w-2.5 h-1 bg-slate-500 rounded border-dashed" />
+        <span>Alternative</span>
+        <span>·</span>
+        <a href="/map-notices.txt" target="_blank" rel="noreferrer" className="hover:underline">Notices</a>
+      </div>
     </div>
-  );
+
+    {/* Incident Reporting Modal (Plan 4 Module 3) */}
+    {showReportForm && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="report-modal-title"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 pointer-events-auto"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setShowReportForm(false);
+        }}
+      >
+        <div className="w-full max-w-lg bg-surface-container-lowest rounded-2xl shadow-2xl border border-surface-container overflow-hidden flex flex-col max-h-[90vh]">
+          {/* Modal Header */}
+          <div className="p-4 sm:p-5 border-b border-surface-container flex items-center justify-between bg-surface-container-low/50">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">📢</span>
+              <div>
+                <h3 id="report-modal-title" className="text-sm sm:text-base font-bold text-surface-on m-0">
+                  Report Road Incident at Your Location
+                </h3>
+                <p className="text-[11px] text-surface-on-variant m-0 mt-0.5">
+                  Dispatched to server verification queue · OpenStreetMap
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container text-surface-on-variant hidden sm:inline-block">
+                L1–L3 SERVER VERIFICATION
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowReportForm(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-container text-surface-on-variant text-base font-bold transition"
+                aria-label="Close report modal"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Body Form */}
+          <form onSubmit={handleReportSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            {/* Verification explanation banner */}
+            <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container text-xs text-surface-on-variant space-y-1">
+              <p className="font-semibold text-surface-on">Commuter Verification Pipeline</p>
+              <p>
+                Sign in with a commuter account to submit. Initial reports record your device location as L2 support. When 3 distinct signed-in commuters report within 300m and 15 minutes, the server promotes the incident to <strong>L3 Corroborated</strong> and automatically offers alternative detours.
+              </p>
+            </div>
+
+            {/* Category selection */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-surface-on" htmlFor="report-cat-dropdown">
+                  1. Incident Type
+                </label>
+                <span className="text-[11px] text-surface-on-variant">17 PDF categories</span>
+              </div>
+
+              {/* Quick select buttons */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" role="group" aria-label="Incident category quick select">
+                {[
+                  { id: "accident", label: "Accident", icon: "💥" },
+                  { id: "road_closed", label: "Road Closure", icon: "⛔" },
+                  { id: "flood", label: "Flood / Waterlog", icon: "🌊" },
+                  { id: "road_repair", label: "Road Repair", icon: "🚧" },
+                  { id: "heavy_traffic", label: "Heavy Traffic", icon: "🚙" },
+                  { id: "fallen_tree", label: "Tree / Hazard", icon: "🌲" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-pressed={reportCategory === item.id}
+                    onClick={() => setReportCategory(item.id as ReportCategory)}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-medium transition ${
+                      reportCategory === item.id
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary"
+                        : "border-surface-container bg-surface-container-low text-surface-on hover:bg-surface-container"
+                    }`}
+                  >
+                    <span className="text-base leading-none">{item.icon}</span>
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* All 17 categories select dropdown */}
+              <div className="pt-1">
+                <label htmlFor="report-cat-dropdown" className="text-[11px] text-surface-on-variant block mb-1">
+                  Or pick from all 17 categories:
+                </label>
+                <select
+                  id="report-cat-dropdown"
+                  value={reportCategory}
+                  onChange={(e) => setReportCategory(e.target.value as ReportCategory)}
+                  className="w-full text-xs rounded-xl border border-surface-container bg-surface-container-low px-3 py-2 text-surface-on focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  {Object.entries(reportCategories).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {reportCategoryIcons[key as ReportCategory]} {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Incident Location */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-surface-on" htmlFor="report-loc">
+                  2. Incident Location (Mangaluru)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleRequestGps("report")}
+                  className={`text-[11px] px-2.5 py-1 rounded-lg font-medium border transition ${
+                    useGpsReport
+                      ? "bg-primary text-white border-primary"
+                      : "bg-surface-container-low border-surface-container text-primary hover:bg-surface-container"
+                  }`}
+                >
+                  {useGpsReport ? "📍 Using Device GPS" : "📍 Use device GPS"}
+                </button>
+              </div>
+
+              {useGpsReport && userLocation ? (
+                <div className="flex items-center justify-between text-xs px-3.5 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100">
+                  <span className="font-mono">
+                    GPS Fix: {userLocation[1].toFixed(5)}° N, {userLocation[0].toFixed(5)}° E
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setUseGpsReport(false)}
+                    className="text-[11px] font-semibold text-primary underline ml-2"
+                  >
+                    Switch to preset
+                  </button>
+                </div>
+              ) : (
+                <select
+                  id="report-loc"
+                  className="w-full text-xs rounded-xl border border-surface-container bg-surface-container-low px-3 py-2.5 text-surface-on focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  value={reportLocationIndex}
+                  onChange={(e) => {
+                    setUseGpsReport(false);
+                    setReportLocationIndex(Number(e.target.value));
+                  }}
+                >
+                  {MANGALURU_PRESETS.map((p, idx) => (
+                    <option key={p.name} value={idx}>
+                      {p.name} ({p.coords[1].toFixed(4)}° N, {p.coords[0].toFixed(4)}° E)
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Optional Note */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-surface-on" htmlFor="report-note">
+                3. Observed Details (Optional)
+              </label>
+              <input
+                id="report-note"
+                type="text"
+                placeholder="e.g. Near traffic signal, left lane blocked, water depth ~1 ft"
+                className="w-full text-xs rounded-xl border border-surface-container bg-surface-container-low px-3 py-2.5 text-surface-on placeholder:text-surface-on-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                value={reportNote}
+                onChange={(e) => setReportNote(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-3 border-t border-surface-container flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                className="button secondary text-xs px-4 py-2 font-medium"
+                onClick={() => setShowReportForm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="button text-xs px-5 py-2 font-bold"
+                disabled={isSubmittingReport}
+              >
+                {isSubmittingReport ? "Submitting Report…" : "Submit Incident Report"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+  </div>
+);
 }
