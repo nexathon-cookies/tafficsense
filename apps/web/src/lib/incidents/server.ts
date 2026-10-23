@@ -22,6 +22,9 @@ export type SubmitIncidentInput = {
   gps_accuracy_m?: number | null;
   gps_fix_at?: string | null;
   note?: string | null;
+  /** True when the client obtained a genuine L5 AI vision result for an attached photo. */
+  l5_verified?: boolean;
+  l5_summary?: string | null;
 };
 
 export type SubmitIncidentResult =
@@ -58,7 +61,20 @@ export async function submitIncidentReport(
     return { ok: false, error: error?.message ?? "Failed to submit incident report" };
   }
 
-  return data as SubmitIncidentResult;
+  const result = data as SubmitIncidentResult;
+
+  // L5: promote to visual corroboration unless an authority already confirmed (L6).
+  if (result.ok && result.incident_id && input.l5_verified) {
+    const { data: promoted, error: promoteError } = await supabase.rpc("apply_incident_photo_verification", {
+      p_incident_id: result.incident_id,
+      p_summary: input.l5_summary ?? null,
+    });
+    if (!promoteError && promoted?.ok) {
+      return { ...result, level: "L5", level_reason: promoted.level_reason as string };
+    }
+  }
+
+  return result;
 }
 
 /**

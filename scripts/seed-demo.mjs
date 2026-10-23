@@ -115,4 +115,4 @@ for (const scenario of reportScenarios) {
   }
 }
 
-console.log("Created eight synthetic accounts, a normal-traffic corridor, and four TEST DATA incident scenarios for Hampankatta/Jyothi, Pumpwell, Kottara, and Thokkottu. Local passwords are in the ignored supabase/.temp/demo-accounts.json file; do not publish it.");
+console.log("Created eight synthetic accounts, a normal-traffic corridor, and four TEST DATA incident scenarios for Hampankatta/Jyothi, Pumpwell, Kottara, and Thokkottu. TEST DATA · spread check uses this incident (Ambedkar Circle accident, L3). Local passwords are in the ignored supabase/.temp/demo-accounts.json file; do not publish it.");

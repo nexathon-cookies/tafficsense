@@ -4,8 +4,10 @@ import { SignOut } from "@/components/sign-out";
 import { JourneyManager } from "@/components/journeys/journey-manager";
 import { getCommuterJourneys, getAvailableOrganisations } from "@/lib/journeys/server";
 
-export default async function WorkspacePage() {
+export default async function WorkspacePage({ searchParams }: { searchParams?: Promise<{ corridor?: string | string[] }> }) {
   const viewer = await requireViewer();
+  const resolvedParams = searchParams ? await searchParams : undefined;
+  const initialCorridor = typeof resolvedParams?.corridor === "string" ? resolvedParams.corridor.slice(0, 120) : undefined;
 
   const journeys = viewer.role === "commuter" ? await getCommuterJourneys(viewer.supabase) : [];
   const organisations = viewer.role === "commuter" ? await getAvailableOrganisations(viewer.supabase) : [];
@@ -42,7 +44,7 @@ export default async function WorkspacePage() {
 
       {viewer.role === "commuter" && (
         <div className="pt-2">
-          <JourneyManager journeys={journeys} organisations={organisations} />
+          <JourneyManager journeys={journeys} organisations={organisations} initialCorridor={initialCorridor} />
         </div>
       )}
 

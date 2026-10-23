@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import type { CommuterJourney } from "@/lib/journeys/rules";
 import {
   handleStartJourney,
@@ -12,11 +12,14 @@ import {
 export function JourneyManager({
   journeys,
   organisations,
+  initialCorridor,
 }: {
   journeys: CommuterJourney[];
   organisations: Array<{ id: string; name: string }>;
+  initialCorridor?: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [corridorName, setCorridorName] = useState(initialCorridor || "Pumpwell – Hampankatta Central Corridor");
 
   const activeJourneys = journeys.filter((j) => j.status === "active");
   const pastJourneys = journeys.filter((j) => j.status === "ended");
@@ -30,12 +33,20 @@ export function JourneyManager({
             Start and stop a private journey, then explicitly share its corridor and status with an employer. Delay is not measured yet.
           </p>
         </div>
+        <input
+          type="text"
+          value={corridorName}
+          onChange={(e) => setCorridorName(e.target.value)}
+          maxLength={120}
+          aria-label="Corridor name"
+          className="text-sm px-3 py-2 rounded-lg border border-surface-container-high bg-surface-container w-full sm:w-64"
+        />
         <button
           type="button"
-          disabled={isPending}
+          disabled={isPending || corridorName.trim().length === 0}
           onClick={() => {
             startTransition(async () => {
-              await handleStartJourney();
+              await handleStartJourney(corridorName.trim());
             });
           }}
           className="button whitespace-nowrap bg-primary text-primary-on px-4 py-2 rounded-lg font-medium shadow-sm hover:opacity-90 disabled:opacity-50"

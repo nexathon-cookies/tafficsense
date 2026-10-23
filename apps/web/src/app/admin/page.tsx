@@ -77,37 +77,39 @@ export default async function AdminPage() {
             No active incident reports in the system.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto rounded-lg border border-surface-container">
+            <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-surface-container text-surface-on-variant font-semibold">
-                  <th className="pb-2">Incident</th>
-                  <th className="pb-2">Current Tier</th>
-                  <th className="pb-2">Reports</th>
-                  <th className="pb-2">Coordinates</th>
-                  <th className="pb-2">Authority Verification</th>
+                <tr className="bg-surface-container-low border-b border-surface-container text-surface-on-variant font-semibold">
+                  <th className="py-2.5 px-3">Incident</th>
+                  <th className="py-2.5 px-3">Current Tier</th>
+                  <th className="py-2.5 px-3">Reports</th>
+                  <th className="py-2.5 px-3">Coordinates</th>
+                  <th className="py-2.5 px-3">Authority Verification</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-container">
+              <tbody className="divide-y divide-surface-container bg-surface-container-lowest">
                 {incidents.map((incident) => {
                   const category = reportCategories[incident.category] ?? incident.category;
                   const isConfirmed = incident.level === "L6";
                   return (
-                    <tr key={incident.id} className="text-surface-on">
-                      <td className="py-2.5 font-medium flex items-center gap-1.5">
-                        <span>{reportCategoryIcons[incident.category] ?? "⚠️"}</span>
-                        <span>{category}</span>
+                    <tr key={incident.id} className="text-surface-on hover:bg-surface-container-low/40 transition-colors">
+                      <td className="py-2.5 px-3 font-medium">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>{reportCategoryIcons[incident.category] ?? "⚠️"}</span>
+                          <span>{category}</span>
+                        </span>
                       </td>
-                      <td className="py-2.5">
-                        <span className="font-mono px-1.5 py-0.5 rounded bg-surface-container-high text-[11px]">
+                      <td className="py-2.5 px-3">
+                        <span className="font-mono px-2 py-0.5 rounded bg-surface-container-high text-[11px]">
                           {incident.level} · {incident.provenance}
                         </span>
                       </td>
-                      <td className="py-2.5">{incident.report_count}</td>
-                      <td className="py-2.5 font-mono text-[11px] text-surface-on-variant">
+                      <td className="py-2.5 px-3 font-semibold">{incident.report_count}</td>
+                      <td className="py-2.5 px-3 font-mono text-[11px] text-surface-on-variant">
                         {incident.lat.toFixed(4)}, {incident.lng.toFixed(4)}
                       </td>
-                      <td className="py-2.5">
+                      <td className="py-2.5 px-3">
                         {isConfirmed ? (
                           <span className="inline-flex items-center text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                             ✓ Authority Confirmed (L6)
@@ -126,7 +128,7 @@ export default async function AdminPage() {
           </div>
         )}
 
-        <div className="pt-2 flex items-center justify-between text-xs text-surface-on-variant border-t border-surface-container">
+        <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-surface-on-variant border-t border-surface-container">
           <span>Verification decisions are executed exclusively by the Traffic Authority role.</span>
           <Link href="/authority" className="button secondary text-xs px-3 py-1">
             Open Authority Civic Portal →
