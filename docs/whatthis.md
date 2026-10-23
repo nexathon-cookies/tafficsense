@@ -154,40 +154,56 @@ sequenceDiagram
   * Client cannot forge submission timestamps — the server binds the observation instant.
   * Prevents duplicate flooding from the same client session within a cooldown window.
 
-### Module 4: Verification & Traversal Delay Engine
-TrafficSense employs a **4-tier evidence model**:
-* **L1 (Device Context)**: Validates client source identity, time bounds, and segment direction.
-* **L2 (Corridor Continuity)**: Verifies the incident falls within valid contiguous segment boundaries.
+### Module 4: Verification & Traversal Delay Engine (L1–L6 Ladder)
+TrafficSense employs a **comprehensive 6-tier evidence hierarchy**:
+* **L1 (Reported)**: Validates client source identity, time bounds, and segment/coordinate binding.
+* **L2 (Location Supported)**: Snaps the report to verified corridor geometry or spatial bounding within acceptable accuracy.
 * **L3 (Multi-Source Corroboration)**: Requires $\ge 3$ eligible, distinct client sources reporting the same segment/direction within a 15-minute window.
-* **L4 (Synthetic Speed & Traversal Delay)**:
+* **L4 (Speed Slowdown Supported)**:
   * Measures actual segment entry-to-exit traversal times against frozen baseline speeds.
   * Integrates speed schedule changes step-by-step rather than naively dividing distance by instantaneous speed.
   * Calculates exact excess traversal delay: $\max(0, \text{exit} - \text{entry} - \text{baseline})$.
+* **L5 (Multimodal AI Vision Verified)**:
+  * Integrates **Google Gemini 2.5 Multimodal Vision API** (`verify-incident-photo.ts`).
+  * Analyzes uploaded citizen hazard photos to verify authentic vehicle damage, road barriers, construction equipment, or standing flood water, actively filtering out spoofed images.
+* **L6 (Civic Authority Confirmed)**:
+  * Official municipal, traffic police, or emergency dispatch confirmation executed via the `/authority` review panel with immutable database audit records.
 
 ```
                     ┌────────────────────────────────────────────────────────┐
-                    │               EVIDENCE HIERARCHY (L1 - L4)             │
+                    │               EVIDENCE HIERARCHY (L1 - L6)             │
                     ├────────────────────────────────────────────────────────┤
-                    │  L4: Speed Traversal Excess Delay (Physical slowdown) │
-                    │  L3: Multi-Source Corroboration (≥3 independent reps)  │
-                    │  L2: Corridor Continuity & Segment Membership          │
-                    │  L1: Source Identity, Time Bounding & Geometry Bounds  │
+                    │  L6: Civic Authority Confirmed (Official Police Audit) │
+                    │  L5: Multimodal AI Vision Verified (Gemini Analysis)   │
+                    │  L4: Speed Traversal Excess Delay (Physical Slowdown)  │
+                    │  L3: Multi-Source Corroboration (≥3 Independent Reps)  │
+                    │  L2: Location Snapped & Corridor Continuity            │
+                    │  L1: Source Identity & Valid Time Bounded Submission   │
                     └────────────────────────────────────────────────────────┘
 ```
 
-### Module 5: Alternative-Route Alert & Comparison Engine
-* **Fixed Route Geometry**:
-  * **Primary Route**: `primary-west` (1500m) + `primary-east` (1000m)
-  * **Alternative Route**: `alternative-west` (2200m) + `alternative-east` (1200m)
-* **The Exact 5-Minute Rule**:
+### Module 5: Route Planning, Dynamic Detours & Spread Analysis
+* **Dynamic OSRM Engine (`/planner`)**:
+  * Edge-to-edge interactive Google Maps-style planner.
+  * Presets for key Mangaluru landmarks (Ambedkar Circle, Pumpwell, KSRTC Bejai, Ladyhill, Hampankatta).
+  * Real-time free-flow transit estimates and interactive route polyline rendering.
+* **Incident Collision Detection & Proactive Detours**:
+  * Evaluates active verified database incidents within a 200m buffer of the planned route.
+  * Computes automated detour routes bypassing verified bottlenecks and reports time differences.
+* **Spread Analysis Engine (`/api/spread`)**:
+  * Computes which arterial transit routes across the city are disrupted by a verified incident.
+  * Evaluates alternative bypass feasibility across the urban network.
+* **Fixed Route Geometry & Conservative 5-Minute Rule**:
+  * Primary Route: `primary-west` (1500m) + `primary-east` (1000m)
+  * Alternative Route: `alternative-west` (2200m) + `alternative-east` (1200m)
   $$\text{Savings} = \text{Duration}_{\text{primary}} - \text{Duration}_{\text{alternative}}$$
   * $\text{Savings} < 300\text{ seconds} \implies$ **Abstain** (Reason: *Simulated estimated time difference is below five minutes*).
   * $\text{Savings} \ge 300\text{ seconds} \implies$ **Alert** (Displays exact savings in seconds/minutes).
 * **Conservative Safety Abstention Matrix**:
-  * **Alternative Hazard**: If a recent reported accident, road repair, flood, or closure exists on the alternative route $\implies$ **Abstain**.
-  * **Alternative Slowdown**: If the alternative itself has an active L4 slowdown $\implies$ **Abstain**.
-  * **Stale / Missing Data**: If either route's traversal data is $> 20$ minutes old $\implies$ **Abstain**.
-  * **Incompatible Membership**: If any segment is removed, substituted, or reordered $\implies$ **Abstain**.
+  * **Alternative Hazard**: If a recent reported hazard exists on the alternative $\implies$ **Abstain**.
+  * **Alternative Slowdown**: If the alternative itself has active slowdown $\implies$ **Abstain**.
+  * **Stale / Missing Data**: Traversal data $> 20$ minutes old $\implies$ **Abstain**.
+  * **Incompatible Membership**: Segment removed or reordered $\implies$ **Abstain**.
 
 ### Module 6: Commuter Journeys & Consent-Based Employer Sharing
 * **Commuter Portal (`/workspace`)**:
@@ -199,9 +215,13 @@ TrafficSense employs a **4-tier evidence model**:
   * Protected by database RLS: only authenticated employers belonging to that specific organization can view shared rows.
   * Dedicated PostgreSQL RPC `read_employer_shared_journeys()` returns allowlisted metadata only.
   * **Strict Privacy Firewalls**: Coordinates, route geometry, user home address, and raw GPS logs are **physically excluded from the query projection**.
+* **Ed25519 Cryptographic Delay Receipts (`/receipts`)**:
+  * Provides tamper-proof digital certificates confirming transit delay duration without exposing private commuter tracklogs.
 
 ### Module 7: Civic Authority Hotspots & Monthly Analytics
 * **Dashboard (`/authority`)**:
+  * **Interactive Hotspot Heatmap (`hotspot-map.tsx`)**: Leaflet heatmap layer and marker clustering visualizing high-frequency accident zones and recurring bottlenecks across Mangaluru.
+  * **Incident Review Panel**: Authoritative tool allowing civic officers to confirm (L6) or clear active incident reports with official notes.
   * **Analysis Period Filter**: Filter by `All Months`, `October 2026`, `September 2026`, `August 2026 (Monsoon)`, `July 2026`.
   * **Hotspot Rankings**: Junctions ranked by total commuter delay-hours, showing average delay, peak window, and predominant trigger.
   * **Cause Distribution**: Visual progress bars illustrating the percentage mix of collisions, monsoon flooding, road works, and volume surges.

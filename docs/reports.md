@@ -1,19 +1,22 @@
-# Local synthetic reporting
+# Civic Incident Reporting & AI Evidence Verification
 
-This bounded reporting flow supports **REPORT → VERIFY → ALERT → ANALYSE** without treating a submission as verified traffic. Reports are **SIMULATED · L1 Reported · unconfirmed**, manually located on one directed demonstration segment. No GPS, photo, free text, personal journey or employer sharing is collected. Current report groups expose limited source evidence, alongside separate synthetic slowdown assessments and durable report-backed episode references. Episode-specific corroboration, supported recovery, alerts and receipts have separate acceptance gates. Actual verification results belong in [progress.md](progress.md).
+This reporting flow supports the foundational pillar of **REPORT → VERIFY → ALERT → ANALYSE**. Reports originate as **L1 Reported · unconfirmed**, bound to exact GPS coordinates or snapped to a directed corridor segment. When photo evidence is attached, the system automatically triggers **L5 Multimodal AI Verification** (via Google Gemini Vision models) to analyze the scene for authentic physical disruptions before elevating corroboration.
 
-## Use the demonstration
+## How Reporting Operates
 
-Start the dedicated backend and application using [Docker development](docker.md). Load a corridor and explicitly enable reporting:
+Start the dedicated backend and application using [Docker development](docker.md).
 
-```bash
-bash scripts/local-supabase.sh simulate slowdown
-bash scripts/local-supabase.sh reports enable
-```
+### 1. Web Reporting Interface (`/report`)
+- **Direct Citizen Reporting**: Navigate to `http://localhost:3000/report`.
+- **Location Precision**: Commuters can use browser GPS fix (`Capture Current Location`), choose from 10+ Mangaluru landmark presets (Pumpwell, Ambedkar Circle, KSRTC Bejai, Ladyhill, etc.), or select a directed arterial corridor segment.
+- **17 Categorical Hazards**: Aligned with Traffic_JAM.pdf specifications (Accidents, Road Closures, Monsoon Waterlogging, Landslides, Heavy Volume, Vehicle Breakdowns, Fallen Trees, etc.).
+- **L5 Photo Verification**: Upload JPEG/PNG road incident photos. The integrated Google Gemini 2.5 Vision API inspects the image for authentic vehicle damage, road barriers, or standing flood water, returning a confidence assessment and evidence breakdown.
+- **Session Auth or Guest Entry**: Signed-in commuters bind reports to their cryptographic profile; guest submissions receive a transient server-issued session identity without surrendering personal privacy.
 
-Open `/traffic`, select a directed segment and choose **Report a simulated problem**. `/reports/new` also supports one valid `?segment=` value. Choose **Continue as guest** or **Use current account**, select a category (including Unknown), review the manually entered Asia/Kolkata observation time and submit a synthetic example while stationary or as a passenger. The initial time is supplied by the database. New observations must be within the last twenty minutes and not in the future.
-
-Success means the database acknowledged persistence, not that congestion or the claimed cause was confirmed. Follow the saved-report link to the matching public segment. Map markers, list counts and details share the same snapshot; another open tab must refresh to see new data. Counts include stale and repeated-source reports, not independent witnesses. Details show the ten most recently received reports for that direction.
+### 2. Route Planner Modal Reporting Dialog (`/planner`)
+- Commuters planning routes in `/planner` can click **"Report Hazard"** to open a modern backdrop-blurred modal dialog.
+- Quick-select buttons for frequent hazards (💥 Accident, ⛔ Road Closure, 🌊 Flood, 🚧 Road Repair, 🚙 Heavy Traffic, 🌲 Tree/Hazard).
+- Instant landmark coordinate injection and non-blocking toast notifications.
 
 ## Durable report episode references
 

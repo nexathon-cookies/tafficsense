@@ -77,27 +77,29 @@ Per our strict honesty rules, every number and status in TrafficSense carries an
 
 ## 3. The Core Solution: Deterministic Evidence-Based Corroboration
 
-TrafficSense replaces heuristics and probabilistic guessing with **four deterministic tiers of corroborated evidence**:
+TrafficSense replaces heuristics and probabilistic guessing with **six deterministic tiers of corroborated evidence**:
 
 ```mermaid
 flowchart TD
-    Raw[Raw Input / Speed Observation] --> L1[L1: Authored Baseline Benchmark]
-    L1 --> L2[L2: Directed Observation Ingestion]
-    L2 --> L3[L3: Multi-Source Incident Clustering]
+    Raw[Raw Citizen Report / Telemetry] --> L1[L1: Valid Source Submission]
+    L1 --> L2[L2: Location Snapped & Spatial Bounds]
+    L2 --> L3[L3: Multi-Source Clustering >= 3 Sources]
     L2 --> L4[L4: Quantitative Speed Slowdown Proof]
+    Raw --> L5[L5: Multimodal AI Vision Verification]
+    L3 & L4 & L5 --> L6[L6: Civic Authority Confirmation]
     
-    L3 --> Decision{Corroboration Engine}
-    L4 --> Decision
-    
-    Decision -->|L3 or L4 Verified| ActiveIncident[Supported Incident Bound to Segment]
+    L3 & L4 & L5 & L6 --> Decision{Corroboration Engine}
+    Decision -->|Verified| ActiveIncident[Supported Incident Bound to Segment]
     Decision -->|Unconfirmed / Expired| Abstain[Explicit Abstention / Historical Status]
 ```
 
-### The Corroboration Hierarchy
-* **L1 (Authored Baseline)**: Defined by physical corridor geometry ($1500\,\text{m}$, $180\,\text{s}$ baseline speed $= 30\,\text{km/h}$). Represents free-flow transit conditions.
-* **L2 (Raw Single-Source Observation)**: Fresh, single synthetic source speed observation within an active 20-minute window. Marked as *unconfirmed*.
+### The Corroboration Hierarchy (L1–L6)
+* **L1 (Reported Context)**: Single-source citizen or guest submission with valid timestamp and category bounds.
+* **L2 (Location Supported)**: Report snapped to verified arterial corridor segment within acceptable spatial accuracy without storing track logs.
 * **L3 (Multi-Source Cluster)**: Requires $\ge 3$ eligible, distinct, non-expired reports bound to the same directed corridor segment within 15 minutes. Protects against single-device spam or malicious fabrication.
 * **L4 (Quantitative Continuous Slowdown)**: Requires contiguous speed observations spanning **six exact one-minute intervals (5 complete minutes)** where all bound sources register speeds $\le 40\%$ of the segment's authored baseline.
+* **L5 (Multimodal AI Vision Verified)**: Analyzed by Google Gemini 2.5 Vision API (`verify-incident-photo.ts`). Automatically evaluates scene authenticity, damage, barriers, or waterlogging from citizen-uploaded photos.
+* **L6 (Civic Authority Confirmed)**: Explicit official verification or clearance logged by authorized municipal officers or traffic police via `/authority` with immutable audit logging.
 
 ---
 
@@ -338,13 +340,13 @@ graph LR
 | Module | Feature Code | Primary URL | Core Functional Capabilities |
 |---|---|---|---|
 | **Module 1** | Auth & Profiles | `/login`, `/register`, `/workspace` | Role assignment (`commuter`, `employer`, `authority`, `admin`), guest sessions, secure session cookies, profile isolation. |
-| **Module 2** | Traffic Corridor Map | `/traffic`, `/demo` | MapLibre GL corridor visualization, directional filters, segment geometry overlays, real-time segment selection. |
-| **Module 3** | Incident Reporting | `/reports/new` | Citizen incident submission, category allowlist, server-side anti-abuse throttling, public/private data separation. |
-| **Module 4** | Evidence & Traversals | `/traffic` (inspect) | Immutable speed evidence batches, L1–L4 corroboration badges, piecewise completed traversals, recovery proofs. |
-| **Module 5** | Alternative-Route Alerts | `/traffic` (alerts) | Dual-route traversal subtraction, 5-minute threshold trigger, conservative hazard/slowdown abstention. |
-| **Module 6** | Journeys & Employer Sharing | `/workspace`, `/employer/[id]` | Commuter journey tracker, recipient-bound sharing consent, allowlisted employer summary, instantaneous access revocation. |
-| **Module 7** | Hotspots & Civic Analytics | `/authority` | Multi-month junction incident aggregations, hotspot delay rankings, cause mix percentages, CSV export. |
-| **Extension** | Protected Delay Receipts | `/workspace` (planned) | Ed25519 cryptographic receipts binding verified traversal delay to an intended employer without location tracking. |
+| **Module 2** | Traffic Corridor Map | `/traffic`, `/demo` | Full-screen interactive Leaflet & MapLibre map, real database incident pins with category icons, live telemetry bar, synthetic corridor inspect drawer. |
+| **Module 3** | Incident Reporting | `/report`, `/planner` (modal) | Citizen incident submission across 17 categories, exact GPS coordinates with landmark snapping, modal dialog in route planner, rate-limiting. |
+| **Module 4** | Verification & Evidence | `/traffic`, `/report` | **Full L1–L6 Ladder**: Immutable speed evidence, L3 multi-source clustering, L4 physical slowdown proofs, **L5 Gemini Multimodal AI Vision verification**, and **L6 Civic Authority confirmation**. |
+| **Module 5** | Route Planner & Alerts | `/planner`, `/api/spread` | **Dynamic OSRM Routing Engine** with landmark search, 200m incident collision detection, automated detour bypass calculation, spread analysis, and fixed-route 300s abstention alerts. |
+| **Module 6** | Journeys & Employer Sharing | `/workspace`, `/employer/[id]` | Commuter journey tracker, recipient-bound sharing consent, allowlisted employer summary, instantaneous access revocation, zero continuous GPS tracking. |
+| **Module 7** | Hotspots & Civic Analytics | `/authority` | **Interactive Leaflet Heatmap (`hotspot-map.tsx`)** with marker clustering, incident review panel with L6 confirmation, peak window analysis, and one-click municipal CSV export. |
+| **Extension** | Protected Delay Receipts | `/receipts`, `/workspace` | **Ed25519 Cryptographic Delay Certificates** binding verified traversal delay to an intended employer without disclosing commuter route footprints. |
 
 ---
 
@@ -352,11 +354,11 @@ graph LR
 
 | Dimension | Commercial Turn-by-Turn GPS (e.g. Google Maps, Waze) | Municipal Smart City Portals | **TrafficSense Platform** |
 |---|---|---|---|
-| **Location Tracking** | Continuous, background tracking of latitude/longitude coordinates. | Static roadside cameras or inductive loop sensors. | **Zero continuous tracking.** Segment-level aggregation only. |
-| **Verification Basis** | Proprietary black-box machine learning algorithms. | Manual operator confirmation (slow, high overhead). | **Transparent L1–L4 Corroboration Engine** with inspectable proofs. |
-| **Re-routing Philosophy** | Reroutes traffic for fractional (e.g. 30s) theoretical savings. | No real-time routing provided. | **Conservative Arterial Comparison**; requires $\ge 5$ min verified savings. |
-| **Employer Tardiness Verification** | None; employees take screenshots or photos of traffic. | Inaccessible to private sector employers. | **Allowlisted Delay Summary**: verifiable, consented, zero GPS disclosure. |
-| **Civic Data Usability** | Proprietary data locked behind expensive commercial APIs. | Infrequent, delayed municipal PDF reports. | **Interactive Authority Dashboard** with hotspot rankings from real report counts & CSV export. |
+| **Location Tracking** | Continuous, background tracking of latitude/longitude coordinates. | Static roadside cameras or inductive loop sensors. | **Zero continuous tracking.** Segment-level aggregation and on-demand foreground capture only. |
+| **Verification Basis** | Proprietary black-box machine learning algorithms. | Manual operator confirmation (slow, high overhead). | **Transparent L1–L6 Corroboration Engine** with inspectable proofs and multimodal AI vision. |
+| **Re-routing Philosophy** | Reroutes traffic through residential side-streets for tiny (30s) theoretical savings. | No real-time routing provided. | **Conservative Arterial Comparison & Proactive Detours**; requires $\ge 5$ min verified savings without secondary hazards. |
+| **Employer Tardiness Verification** | None; employees take screenshots or photos of traffic. | Inaccessible to private sector employers. | **Allowlisted Delay Summary & Cryptographic Receipts**: verifiable, consented, zero GPS disclosure. |
+| **Civic Data Usability** | Proprietary data locked behind expensive commercial APIs. | Infrequent, delayed municipal PDF reports. | **Interactive Authority Heatmap & Review Portal** with hotspot rankings from real report counts & CSV export. |
 
 ---
 
