@@ -9,18 +9,10 @@ import { L5PhotoPanel } from "@/components/reports/l5-photo-panel";
 import type { L5DetectedCategory, L5VerificationResult } from "@/lib/vision/verify-incident-photo";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-export const MANGALURU_LOCATIONS = [
-  { name: "Hampankatta (City Centre)", coords: [74.842, 12.868] as [number, number] },
-  { name: "Lalbagh Junction (MG Road)", coords: [74.846, 12.877] as [number, number] },
-  { name: "KSRTC Bus Stand (Bejai)", coords: [74.848, 12.885] as [number, number] },
-  { name: "Ladyhill Circle", coords: [74.841, 12.894] as [number, number] },
-  { name: "Bunts Hostel Circle", coords: [74.849, 12.872] as [number, number] },
-  { name: "Jyoti (Ambedkar) Circle", coords: [74.845, 12.871] as [number, number] },
-  { name: "Nanthoor Junction", coords: [74.865, 12.874] as [number, number] },
-  { name: "Pumpwell Circle", coords: [74.862, 12.858] as [number, number] },
-  { name: "Kottara Chowki", coords: [74.838, 12.908] as [number, number] },
-  { name: "Kadri Park / Circuit House", coords: [74.858, 12.882] as [number, number] },
-];
+import { MANGALURU_PRESETS } from "@/lib/routing/presets";
+import type { LiveIncident } from "@/lib/incidents/server";
+
+export const MANGALURU_LOCATIONS = MANGALURU_PRESETS;
 
 /** Maps a live report category onto the coarser set the vision classifier understands. */
 function toL5Category(category: ReportCategory): L5DetectedCategory {
@@ -60,16 +52,49 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
     distinctReporters?: number;
   } | null>(null);
 
+  const [liveIncidents, setLiveIncidents] = useState<LiveIncident[]>([]);
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
   const markerRef = useRef<MarkerInstance | null>(null);
+  const incidentMarkersRef = useRef<MarkerInstance[]>([]);
+
+  useEffect(() => {
+    let disposed = false;
+    async function fetchActiveIncidents() {
+      try {
+        const res = await fetch("/api/incidents", { cache: "no-store" });
+        const data = await res.json();
+        if (!disposed && data.ok && Array.isArray(data.incidents)) {
+          setLiveIncidents(data.incidents);
+        }
+      } catch {
+        // Ignore background error
+      }
+    }
+    void fetchActiveIncidents();
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  async function refreshIncidents() {
+    try {
+      const res = await fetch("/api/incidents", { cache: "no-store" });
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.incidents)) {
+        setLiveIncidents(data.incidents);
+      }
+    } catch {
+      // Ignore background error
+    }
+  }
 
   // Priority: map click > device GPS > preset list
   const activeCoords: [number, number] = customCoords
     ? customCoords
     : useGps && userLocation
       ? userLocation
-      : MANGALURU_LOCATIONS[locationIndex].coords;
+      : MANGALURU_PRESETS[locationIndex].coords;
 
   // Request browser GPS position
   function handleRequestGps() {
@@ -155,9 +180,43 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
         mapRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update marker position when activeCoords change
+  // Update existing community incident markers on the report map
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    let disposed = false;
+    for (const m of incidentMarkersRef.current) m.remove();
+    incidentMarkersRef.current = [];
+
+    void import("maplibre-gl").then(({ Marker }) => {
+      if (disposed || !mapRef.current) return;
+      for (const inc of liveIncidents) {
+        const el = document.createElement("div");
+        const icon = reportCategoryIcons[inc.category] ?? "⚠️";
+        el.className = "px-1.5 py-0.5 rounded-full bg-surface-container-lowest/95 border border-surface-container shadow flex items-center gap-1 text-[11px] font-bold cursor-pointer hover:scale-110 transition";
+        el.title = `${reportCategories[inc.category] ?? inc.category} (${inc.level}): ${inc.level_reason}`;
+        el.innerHTML = `<span>${icon}</span><span class="text-[9px] px-1 rounded bg-amber-500 text-white font-bold">${inc.level}</span>`;
+        el.addEventListener("click", () => {
+          mapRef.current?.flyTo({ center: [inc.lng, inc.lat], zoom: 15.5, duration: 600 });
+        });
+        const marker = new Marker({ element: el, anchor: "center" })
+          .setLngLat([inc.lng, inc.lat])
+          .addTo(mapRef.current);
+        incidentMarkersRef.current.push(marker);
+      }
+    });
+
+    return () => {
+      disposed = true;
+      for (const m of incidentMarkersRef.current) m.remove();
+      incidentMarkersRef.current = [];
+    };
+  }, [liveIncidents]);
+
+  // Update picker marker position when activeCoords change
   useEffect(() => {
     if (markerRef.current) {
       markerRef.current.setLngLat(activeCoords);
@@ -173,6 +232,13 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
     setIsSubmitting(true);
     setErrorMessage(null);
 
+    const isL5Verified = Boolean(
+      l5Result &&
+        l5Result.source === "gemini" &&
+        l5Result.isGenuineIncident &&
+        l5Result.confidenceTier !== "low",
+    );
+
     try {
       const res = await fetch("/api/incidents", {
         method: "POST",
@@ -184,8 +250,10 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
           gps_accuracy_m: useGps ? gpsAccuracy : null,
           gps_fix_at: useGps ? new Date().toISOString() : null,
           note: note.trim() || null,
-          l5_verified: Boolean(l5Result?.isGenuineIncident && l5Result.confidenceTier !== "low"),
-          l5_summary: l5Result?.isGenuineIncident ? l5Result.visualSummary : null,
+          l5_verified: isL5Verified,
+          l5_summary: isL5Verified ? (l5Result?.visualSummary ?? null) : null,
+          l5_photo_data_url: isL5Verified ? (l5Result?.photoDataUrl ?? null) : null,
+          l5_confidence_tier: isL5Verified ? (l5Result?.confidenceTier ?? null) : null,
         }),
       });
 
@@ -202,6 +270,10 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
       });
       setNote("");
       setL5Result(null);
+      void refreshIncidents();
+      if (mapRef.current) {
+        mapRef.current.flyTo({ center: activeCoords, zoom: 15.5, duration: 800 });
+      }
       // Notify other views that incidents changed
       window.dispatchEvent(new Event("trafficsense:incidents-changed"));
     } catch (err: unknown) {
@@ -240,7 +312,10 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
             </div>
 
             <div className="flex flex-col gap-2 pt-2">
-              <Link href="/traffic" className="button text-xs py-2 text-center">
+              <Link
+                href={`/traffic?incident=${encodeURIComponent(successResult.incidentId)}`}
+                className="button text-xs py-2 text-center font-semibold"
+              >
                 View on Live Traffic Map →
               </Link>
               <Link href="/authority" className="button secondary text-xs py-2 text-center">
@@ -369,7 +444,7 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
                   }}
                   className="w-full text-xs p-2.5 rounded-lg bg-surface-container border border-surface-container-high text-surface-on"
                 >
-                  {MANGALURU_LOCATIONS.map((loc, idx) => (
+                  {MANGALURU_PRESETS.map((loc, idx) => (
                     <option key={loc.name} value={idx}>
                       {loc.name}
                     </option>

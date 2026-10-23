@@ -65,6 +65,9 @@ case "${1:-}" in
   seed)
     docker compose run --rm -T supabase status --output json | docker compose run --rm -T demo node /app/scripts/seed-demo.mjs
     ;;
+  seed-if-empty)
+    docker compose run --rm -T supabase status --output json | docker compose run --rm -T demo node /app/scripts/seed-demo.mjs --if-empty
+    ;;
   test)
     docker compose run --build --rm -T demo node --test /app/tests/auth.integration.test.mjs
     ;;

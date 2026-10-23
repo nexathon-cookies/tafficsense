@@ -159,14 +159,19 @@ export function parseOsrmResponse(
   // If the primary route (index 0) passes within 200m of a verified incident (L3+ or L6),
   // and there is an alternative route that avoids it, promote the avoiding alternative.
   const primaryIncidents = parsedRoutes[0].incidents_on_route.filter(
-    (w) => w.level === "L3" || w.level === "L4" || w.level === "L6"
+    (w) => w.level === "L3" || w.level === "L4" || w.level === "L5" || w.level === "L6"
   );
 
   if (primaryIncidents.length > 0 && parsedRoutes.length > 1) {
     // Look for an alternative that avoids these incidents
-    const avoidingRouteIndex = parsedRoutes.findIndex(
+    let avoidingRouteIndex = parsedRoutes.findIndex(
       (r, idx) => idx > 0 && r.incidents_on_route.length === 0
     );
+    if (avoidingRouteIndex === -1) {
+      avoidingRouteIndex = parsedRoutes.findIndex(
+        (r, idx) => idx > 0 && !r.incidents_on_route.some((w) => w.id === primaryIncidents[0].id)
+      );
+    }
 
     if (avoidingRouteIndex !== -1) {
       const avoidingRoute = parsedRoutes[avoidingRouteIndex];
@@ -200,10 +205,12 @@ export function parseOsrmResponse(
 export function buildOsrmUrl(
   start: Coordinate,
   destination: Coordinate,
-  baseUrl = "https://router.project-osrm.org"
+  baseUrl = "https://router.project-osrm.org",
+  alternatives: boolean | number = true
 ): string {
   const coords = `${start[0]},${start[1]};${destination[0]},${destination[1]}`;
-  return `${baseUrl}/route/v1/driving/${coords}?overview=full&geometries=geojson&alternatives=true`;
+  const altValue = typeof alternatives === "number" ? alternatives : alternatives ? "true" : "false";
+  return `${baseUrl}/route/v1/driving/${coords}?overview=full&geometries=geojson&alternatives=${altValue}`;
 }
 
 /**
@@ -213,7 +220,8 @@ export async function queryRoute(
   start: Coordinate,
   destination: Coordinate,
   incidents: VerifiedIncident[] = [],
-  fetchFn: typeof fetch = fetch
+  fetchFn: typeof fetch = fetch,
+  enableCorridors = false
 ): Promise<RouteResponse> {
   if (!isWithinMangaluruBounds(start) || !isWithinMangaluruBounds(destination)) {
     return {
@@ -239,7 +247,50 @@ export async function queryRoute(
     }
 
     const data = (await res.json()) as RawOsrmResponse;
-    return parseOsrmResponse(data, incidents);
+    const directResult = parseOsrmResponse(data, incidents);
+    if (!directResult.ok || directResult.routes.length > 1 || !enableCorridors) {
+      return directResult;
+    }
+
+    // When OSRM direct query returns only 1 route and enableCorridors is true, check parallel Mangaluru corridors
+    const MANGALURU_CORRIDORS: Array<{ name: string; coord: Coordinate }> = [
+      { name: "via Kottara Chowki / NH66", coord: [74.8380, 12.9080] },
+      { name: "via Kuntikan / Derebail", coord: [74.8450, 12.9000] },
+      { name: "via Vamanjoor / Gurupura", coord: [74.8970, 12.9100] },
+    ];
+
+    const primary = directResult.routes[0];
+    const initialRoutes = Array.isArray(data.routes) ? data.routes : [];
+    const combinedRoutes = [...initialRoutes];
+
+    for (const corridor of MANGALURU_CORRIDORS) {
+      const dStart = haversineDistanceM(start, corridor.coord);
+      const dDest = haversineDistanceM(destination, corridor.coord);
+      if (dStart < 700 || dDest < 700) continue;
+
+      try {
+        const cUrl = `https://router.project-osrm.org/route/v1/driving/${start[0]},${start[1]};${corridor.coord[0]},${corridor.coord[1]};${destination[0]},${destination[1]}?overview=full&geometries=geojson`;
+        const cRes = await fetchFn(cUrl, { headers: { Accept: "application/json" } });
+        if (cRes.ok) {
+          const cData = (await cRes.json()) as RawOsrmResponse;
+          if (cData.code === "Ok" && Array.isArray(cData.routes) && cData.routes.length > 0) {
+            const alt = cData.routes[0];
+            if (alt.duration <= primary.duration_s * 1.5 && alt.distance <= primary.distance_m * 1.5) {
+              combinedRoutes.push(alt);
+              if (combinedRoutes.length >= 3) break;
+            }
+          }
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    }
+
+    if (combinedRoutes.length > initialRoutes.length) {
+      return parseOsrmResponse({ ...data, routes: combinedRoutes }, incidents);
+    }
+
+    return directResult;
   } catch {
     return {
       ok: false,

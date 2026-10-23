@@ -52,7 +52,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Verification failed.";
-    const unavailable = message.includes("unavailable") || message.includes("not configured") || message.includes("returned an error");
-    return NextResponse.json({ ok: false, error: message }, { status: unavailable ? 503 : 400 });
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
   }
 }

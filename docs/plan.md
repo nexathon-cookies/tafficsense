@@ -58,7 +58,7 @@ The template is a visual reference, not functional or verified behavior. Replace
 | Application | One Next.js App Router application, TypeScript and Tailwind; no extra backend framework |
 | Runtime/package manager | Docker-only development, package commands and checks; pinned pnpm and sole `pnpm-lock.yaml` |
 | Auth/data | Supabase Auth/Postgres, migrations, RLS and server authorization; local Docker for development |
-| Map | Non-WebGL Leaflet renderer in the Expo WebView with OpenStreetMap raster tiles; identify the app in tile requests, preserve attribution, avoid bulk/offline downloads, and keep list/schematic fallbacks |
+| Map | Pinned MapLibre with opt-in OpenFreeMap Liberty background tiles; first-party renderer/worker, permanent OpenMapTiles/OpenStreetMap attribution, no keys or offline downloads; list remains usable without WebGL or provider access |
 | Routes/data | Deterministic corridor, segment/direction matching, synthetic scenarios and one precomputed alternative |
 | State | Shared server-derived evidence/lifecycle/consent/history rules; explicit refresh allowed; no stale private data after account changes |
 | Receipts | Proposed server-side Ed25519 canonical payload/version and protected keys; implement only with full validity/access checks |
