@@ -13,7 +13,7 @@ test("verification ladder defines all 6 tiers aligned with the brief", () => {
   assert.equal(LADDER_SPEC.L2.status, "implemented");
   assert.equal(LADDER_SPEC.L3.status, "implemented");
   assert.equal(LADDER_SPEC.L4.status, "implemented");
-  assert.equal(LADDER_SPEC.L5.status, "planned");
+  assert.equal(LADDER_SPEC.L5.status, "implemented");
   assert.equal(LADDER_SPEC.L6.status, "implemented");
 });
 
