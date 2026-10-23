@@ -58,7 +58,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
         style={styles.tabItem}
       >
         <Icon
-          name="home"
+          name="explore"
           size={24}
           color={activeTab === "home" ? colors.primary : colors.textSecondary}
         />
@@ -81,7 +81,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
         style={styles.tabItem}
       >
         <Icon
-          name="explore"
+          name="traffic"
           size={24}
           color={activeTab === "map" ? colors.primary : colors.textSecondary}
         />
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(248, 250, 249, 0.98)",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderTopWidth: 1,
     borderTopColor: colors.border,
     flexDirection: "row",

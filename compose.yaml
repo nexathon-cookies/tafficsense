@@ -47,7 +47,7 @@ services:
       - .:/app
       - dependencies:/app/node_modules
     working_dir: /app/apps/mobile
-    command: ["sh", "-c", "export EXPO_PUBLIC_SUPABASE_ANON_KEY=\"$${EXPO_PUBLIC_SUPABASE_ANON_KEY:-$${SUPABASE_ANON_KEY}}\" && CI=true pnpm install --frozen-lockfile && pnpm exec expo start --lan"]
+    command: ["sh", "-c", "export EXPO_PUBLIC_SUPABASE_ANON_KEY=\"$${EXPO_PUBLIC_SUPABASE_ANON_KEY:-$${SUPABASE_ANON_KEY}}\" && CI=true pnpm install --frozen-lockfile && pnpm exec expo start --lan --clear"]
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/status').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 10s

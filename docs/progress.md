@@ -33,14 +33,14 @@
   - D7 (Center FAB): 56px circle in `#00665E` with `warning` triangle icon and 1px white border.
   - D8 (Header): Pure text wordmark (`headlineSm`) with 48px touch targets for back and avatar controls.
 - **Implementation Slices:**
-  - `apps/mobile/design/plan2/`: Created `DESIGN.md` and `PLAN.md` specification files.
-  - `src/theme/tokens.ts`: Updated color tokens (primary `#00665E`, background `#F8FAF9`, border `#E5EAE8`, text `#172321`, textSecondary `#3E4947`, textMuted `#77817F`), 16px card radius, 12px control radius, Level 2/3 shadows, and 12px min typography with tabular numerics.
-  - `src/components/ui/`: Restyled `Button`, `Card`, `Badge`, `FormField`, `BottomNav`, and `AppHeader` to match Plan 2 tokens, enforcing minimum 48×48px interactive touch envelopes.
-  - `app/index.tsx` (Explore): Updated greeting and live metadata, equal-height 2x2 quick action tiles, styled corridor feed cards with prominent L0–L3 evidence chips, and 12px minimum labels.
-  - `app/traffic.tsx` (Traffic): Restyled floating search pill, map fab controls (48px, Level 3 shadow), and bottom sheet (36×4px drag handle, `#E5EAE8` border, tabular clocks).
-  - `app/planner.tsx` (Planner): Upgraded origin/destination picker box with swap FAB (48px), styled recommended route with 2px teal border and 4% tint, alternative detour card with slate accent, and tabular durations.
+  - `apps/mobile/design/plan2/`: Verified full visual source package including `explore/`, `live_traffic_map/`, `me_workspace/`, `report_hazard/`, `route_planner/`, and `trafficsense_precision_mobility/DESIGN.md`.
+  - `src/theme/tokens.ts`: Aligned exact token values with `trafficsense_precision_mobility/DESIGN.md` (mint canvas `#EFFCF9`, surfaceContainerLowest `#FFFFFF`, surfaceContainerLow `#E9F7F3`, surfaceContainer `#E3F1ED`, surfaceContainerHigh `#DDEBE7`, primary `#00665E`, primaryDark `#004C46`, secondary `#516072`, secondaryContainer `#D2E1F7`, text `#121E1C`, warning `#8B4A00`, error `#BA1A1A`).
+  - `src/components/ui/`: Restyled `AppHeader` (frosted white `#FFFFFF/95%`, centered screen title, `TrafficSense` wordmark), `BottomNav` (`explore` and `traffic` icons, raised warning FAB `-mt-5`, frosted white bar), and `Card` (`#FFFFFF` background on `#EFFCF9` canvas).
+  - `app/index.tsx` (Explore): Faithfully implemented `explore/code.html` layout with `LIVE CORRIDOR RADAR` eyebrow, Daily Commute card with 3-segment density gauge (free-flow teal, moderate amber, city-merge gray), 144px equal-height 2×2 quick-action grid (Saved Places, Incidents, Transit Sync, Traffic Map), and Live Corridor Feed header.
+  - `app/traffic.tsx` (Traffic): Restyled rounded-full pill search bar, white floating action buttons, clean bottom sheet with Level-3 shadow.
+  - `app/planner.tsx` (Planner): Upgraded origin/destination card, swap FAB, recommended route with 2px teal border, and alternative detour card with slate accent.
   - `app/report.tsx` (Report): Restyled category cards (2-column equal-height grid with 48px touch cells), location card, photo upload area with dashed accent, and 3-step indicator.
-  - `app/workspace.tsx` & `app/journeys.tsx`: Updated commuter profile card, action tiles, stop-sharing section, and tabular timestamps.
+  - `app/workspace.tsx` (Me): Added Commuter Metric Highlights (Miles Tracked, Saved Rerouting, Valid Reports) inside profile card, action tiles, and stop-sharing section.
 - **Verification Evidence:**
   - `git diff -- apps/mobile/src/lib apps/mobile/src/providers apps/mobile/src/map`: Verified completely empty (0 lines changed in logic/providers/map).
   - `docker compose run --rm app pnpm lint:mobile`: Passed with 0 errors and 0 warnings.
@@ -49,7 +49,8 @@
   - **Runtime Bundle Resolution:** Resolved `ReferenceError: Property 'minTouchTarget' doesn't exist` by importing `minTouchTarget` from `../src/theme/tokens` in `apps/mobile/app/index.tsx` and `apps/mobile/app/journeys.tsx`. Metro bundling (`node_modules/expo-router/entry.js`) compiled cleanly with 1535 modules (HTTP 200, 0 runtime reference errors, 0 missing default export warnings).
 - **Commits:**
   - `fcd15c7` — `feat(mobile): implement Premium UI redesign across tokens, primitives, and commuter screens`.
-  - `4f5329e` — `fix(mobile): import minTouchTarget in index and journeys screens to fix Metro bundling`.
+  - `df9f38f` — `fix(mobile): import minTouchTarget in index and journeys screens to fix Metro bundling`.
+  - `8b52494` — `feat(mobile): align UI tokens, Explore layout, BottomNav, and screens with Plan 2 prototype`.
 
 
 - **Issue:** Pressing the incident sheet's X set `selectedId` to null, but the derived selection immediately fell back to the first incident, leaving the sheet open. The visual drag handle had no gesture handler.

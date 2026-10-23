@@ -105,6 +105,23 @@ export default function WorkspaceScreen() {
               </View>
             </View>
           </View>
+
+          {/* Commuter Metric Highlights */}
+          <View style={styles.metricsRow}>
+            <View style={styles.metricCol}>
+              <Text style={styles.metricVal}>1,420</Text>
+              <Text style={styles.metricLbl}>Miles Tracked</Text>
+            </View>
+            <View style={[styles.metricCol, styles.metricColHighlight]}>
+              <Text style={styles.metricValHighlight}>18.4 hrs</Text>
+              <Text style={styles.metricLblHighlight}>Saved Rerouting</Text>
+            </View>
+            <View style={styles.metricCol}>
+              <Text style={styles.metricVal}>47</Text>
+              <Text style={styles.metricLbl}>Valid Reports</Text>
+            </View>
+          </View>
+
           <Text style={styles.accountNote}>
             Your reports contribute directly to community verification levels (L1–L6). Your journey corridor updates can be selectively shared with employer organisations.
           </Text>
@@ -280,6 +297,46 @@ const styles = StyleSheet.create({
     ...typography.labelSm,
     color: colors.success,
     fontWeight: "700",
+  },
+  metricsRow: {
+    flexDirection: "row",
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: radius.control,
+    padding: 8,
+    gap: 6,
+    marginTop: 4,
+  },
+  metricCol: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
+  metricColHighlight: {
+    backgroundColor: colors.surfaceContainerLowest,
+    borderRadius: radius.md,
+    ...shadows.card,
+  },
+  metricVal: {
+    ...typography.headlineSm,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  metricValHighlight: {
+    ...typography.headlineSm,
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  metricLbl: {
+    ...typography.labelSm,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  metricLblHighlight: {
+    ...typography.labelSm,
+    color: colors.primary,
+    fontWeight: "600",
+    marginTop: 2,
   },
   accountNote: {
     ...typography.bodySm,

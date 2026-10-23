@@ -929,7 +929,7 @@ const styles = StyleSheet.create({
     gap: 10,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest,
   },
   detourHeader: {
     flexDirection: "row",

@@ -904,7 +904,7 @@ const styles = StyleSheet.create({
     width: "48%",
     flexGrow: 1,
     minHeight: 124,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest,
     borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,

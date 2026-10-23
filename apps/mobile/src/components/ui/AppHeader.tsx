@@ -57,15 +57,17 @@ export function AppHeader({
             </Pressable>
           ) : null}
 
-          <View style={styles.titleColumn}>
-            <Text numberOfLines={1} style={styles.brandTitle}>
-              {canGoBack ? title : "TrafficSense"}
-            </Text>
-            <Text numberOfLines={1} style={styles.brandSubtitle}>
-              {canGoBack ? "Mangaluru" : subtitle.toUpperCase()}
-            </Text>
-          </View>
+          <Text numberOfLines={1} style={styles.brandTitle}>
+            TrafficSense
+          </Text>
         </View>
+
+        {/* Center Screen Title */}
+        {title && title !== "TrafficSense" ? (
+          <Text numberOfLines={1} style={styles.centerTitle}>
+            {title}
+          </Text>
+        ) : null}
 
         {/* Right Side */}
         <View style={styles.rightGroup}>
@@ -100,13 +102,18 @@ export function AppHeader({
 
 const styles = StyleSheet.create({
   headerContainer: {
-    backgroundColor: colors.background,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    shadowColor: "#121e1c",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
     zIndex: 50,
   },
   headerContent: {
-    height: 58,
+    height: 60,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -115,7 +122,7 @@ const styles = StyleSheet.create({
   leftGroup: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
     flexShrink: 1,
   },
   backButton: {
@@ -132,9 +139,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  titleColumn: {
-    justifyContent: "center",
-    flexShrink: 1,
+  centerTitle: {
+    ...typography.headlineSm,
+    color: colors.text,
+    fontWeight: "600",
+    textAlign: "center",
   },
   brandTitle: {
     ...typography.headlineSm,
