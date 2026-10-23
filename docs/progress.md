@@ -1,5 +1,31 @@
 # Project Progress
 
+## Mobile traffic detail sheet dismissal — in progress, 23 Oct 2026
+
+- **Issue:** Pressing the incident sheet's X set `selectedId` to null, but the derived selection immediately fell back to the first incident, leaving the sheet open. The visual drag handle had no gesture handler.
+- **Implementation:** The selected report now follows only the explicitly selected incident ID; the initial fetch still opens the first report once. The X clears selection, and dragging the handle downward animates the sheet away and clears selection. The X has a 48px touch target and accessible dismissal hint.
+- **Verification:** Docker mobile typecheck and scoped ESLint passed; `git diff --check` passed with only existing line-ending warnings. Expo Go X and swipe-down interactions remain to be checked on the phone; no commit yet.
+
+## Mobile OSM map renderer update — in progress, 23 Oct 2026
+
+- **Current implementation:** Replaced both the black native OSM tile layer and the WebGL MapLibre page with a Leaflet map rendered in the Expo WebView. Leaflet uses OpenStreetMap raster tiles, live report/corridor/route overlays, map fit and foreground location controls, and touch pan/zoom. The WebView identifies TrafficSense in tile requests. Failure and timeout states return to the traffic schematic; map/list and OSM attribution remain available.
+- **Why:** The user confirmed the map was still black after the native `react-native-maps` tile layer was changed. React Native's OSM UrlTile path is not rendering on that Android device. Leaflet does not need WebGL and avoids the Google base map.
+- **Verification:** Docker mobile typecheck and scoped ESLint passed; `git diff --check` passed. The Expo container was restarted to serve the renderer update. The updated map-browser check was not run, and Expo Go tile rendering/pan/selection still need the phone reload; no post-change device screenshot is available, so no commit is made yet.
+
+## Mobile OpenStreetMap rendering — in progress, 23 Oct 2026
+
+- **Scope:** Implement the user-requested MapLibre/OpenStreetMap mobile street map on the Traffic and Planner screens (Module 2: traffic map/details), replacing the black native map surface. Keep the schematic map usable when the optional street map cannot load.
+- **Observed cause:** The shared map component used a native `react-native-maps` view with the public OpenStreetMap raster tile endpoint, while the mobile map helper and project guidance are built around MapLibre in a WebView. The screenshot shows a black map surface; the exact device-side failure is not confirmed.
+- **Acceptance checks:** Street-map load is an explicit user action with a clear provider notice; successful MapLibre renders corridors/reports/routes and selection events; renderer/provider failure returns to the usable schematic; run the Docker mobile typecheck and lint, review the diff, and record phone limitations. OSM tiles must retain attribution, identify this app in the HTTP user agent, use normal caching, and avoid bulk requests.
+- **Implementation:** The shared map now defaults to the schematic map, with a visible `Load map` control on the map canvas. Confirming the OpenStreetMap notice creates a MapLibre WebView using the standard OSM raster tile URL, app-identifying user agent, default HTTP cache, and visible OSM attribution. Corridor/route/report GeoJSON and marker selection use the existing map helpers; a loading timeout, WebView failure, or unavailable renderer returns to the schematic. The home and report details attribution now match OpenStreetMap.
+- **Verification:** Docker `just mobile-typecheck`, scoped mobile ESLint, and `git diff --check` passed. The map-browser check and Expo Go phone rendering/selection remain unverified; no commit has been made pending map verification.
+
+## Mobile LAN bridge transition — in progress, 23 Oct 2026
+
+- **Scope:** Repair `just mobile-lan <LAN-IP>` when the dedicated local Supabase bridge was previously created with loopback-only port bindings. This is local developer infrastructure supporting the mobile public-traffic reader; it does not alter the report, verification, alert, or analytics contracts.
+- **Observed blocker:** `just mobile-lan 192.168.1.104` stopped before seeding because `trafficsense-nk_supabase` was configured with `127.0.0.1`, whereas LAN mode requires `0.0.0.0`. Docker bridge host-binding options cannot be changed in place, and the Supabase tooling correctly rejected the mismatch.
+- **Acceptance checks:** Preserve the local database volume while changing only this project's bridge and containers; complete the exact LAN recipe; confirm the web API and Metro are reachable through the supplied LAN address; run relevant Docker/static checks and whitespace review.
+
 ## Fix Incident Report Commuter Session Authentication — verified, 23 Oct 2026
 
 - **Issue:** Submitting a report via `/report` (or `/api/incidents`) returned HTTP 401 `"Sign in with a commuter account to submit an incident. Anonymous reports cannot establish corroboration."` even after signing in with a commuter account.
