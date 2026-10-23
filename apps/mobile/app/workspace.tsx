@@ -16,24 +16,10 @@ import { useTabBackHandler } from "../src/lib/use-tab-back-handler";
 
 export default function WorkspaceScreen() {
   useTabBackHandler();
-  const { session, loading, role, roleLoading, roleError, reloadRole, signOut } = useAuth();
+  const { session, loading, signOut } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [orgName, setOrgName] = useState<string | null>(null);
-  const roleLabel = roleLoading ? "Checking account role…" : role ? `${role[0].toUpperCase()}${role.slice(1)} account` : "Role unavailable";
-  const workspaceHeading = role === "authority" ? "Authority Workspace" : role === "employer" ? "Employer Workspace" : role === "admin" ? "Admin Workspace" : "Your Workspace";
-  const actionsHeading = role === "authority" ? "Authority Actions" : role === "employer" ? "Employer Actions" : role === "admin" ? "Admin Actions" : role === "commuter" ? "Commuter Actions" : "Account Actions";
-  const accountDescription = role === "authority"
-    ? "Review active community incidents and recent authority actions in the restricted dashboard."
-    : role === "employer"
-      ? "Your account access is based on your assigned employer role and organisation membership."
-      : role === "admin"
-        ? "Your account has platform administration access assigned by the server."
-        : role === "commuter"
-          ? "Your reports contribute to community verification levels (L1–L6). Journey corridor updates can be selectively shared with employer organisations."
-          : roleLoading
-            ? "Checking the role assigned to your account…"
-            : "The role assigned to your account could not be verified.";
 
   useEffect(() => {
     if (!loading && !session) router.replace("/auth/login");
@@ -80,7 +66,7 @@ export default function WorkspaceScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AppHeader
         title="Workspace"
-        subtitle={role === "authority" ? "Authority Profile" : role === "employer" ? "Employer Profile" : role === "admin" ? "Admin Profile" : "Account Profile"}
+        subtitle="Commuter Profile"
         canGoBack
         onBack={() => router.replace("/")}
         showLive={false}
@@ -91,8 +77,8 @@ export default function WorkspaceScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>AUTHENTICATED ACCOUNT</Text>
-          <Text style={styles.title}>{workspaceHeading}</Text>
+          <Text style={styles.eyebrow}>AUTHENTICATED COMMUTER</Text>
+          <Text style={styles.title}>Your Workspace</Text>
           <Text style={styles.subtitle}>
             Signed in as <Text style={styles.boldEmail}>{session.user.email ?? "Commuter"}</Text>.
           </Text>
@@ -100,10 +86,6 @@ export default function WorkspaceScreen() {
 
         {error ? (
           <FeedbackBox variant="error" message={error} />
-        ) : null}
-
-        {roleError ? (
-          <FeedbackBox variant="error" message={roleError} actionText="Retry" onAction={() => void reloadRole()} />
         ) : null}
 
         {/* Account Details Card */}
@@ -118,38 +100,19 @@ export default function WorkspaceScreen() {
               <Text style={styles.accountEmail}>{session.user.email}</Text>
               <View style={styles.roleBadge}>
                 <Text style={styles.roleBadgeText}>
-                  {role === "employer" && orgName ? `Employer · ${orgName}` : role === "authority" ? "Traffic Authority" : role === "admin" ? "TrafficSense Administrator" : roleLabel}
+                  {orgName ? `Employee · ${orgName}` : "Verified Commuter Account"}
                 </Text>
               </View>
             </View>
           </View>
           <Text style={styles.accountNote}>
-            {roleLoading ? "Checking the role assigned to your account…" : accountDescription}
+            Your reports contribute directly to community verification levels (L1–L6). Your journey corridor updates can be selectively shared with employer organisations.
           </Text>
         </Card>
 
         {/* Quick Navigation Cards */}
         <View style={styles.actionsSection}>
-          <Text style={styles.sectionHeading}>{actionsHeading}</Text>
-
-          {!roleLoading && role === "authority" ? (
-            <Text style={styles.accountNote}>Authority access is verified from your Supabase profile.</Text>
-          ) : null}
-
-          {!roleLoading && role === "authority" ? (
-            <Card onPress={() => router.push("/authority")} style={styles.actionCard}>
-              <View style={styles.actionRow}>
-                <View style={[styles.actionIconBg, { backgroundColor: colors.evidenceSurface }]}>
-                  <Icon name="verified" size={20} color={colors.secondary} />
-                </View>
-                <View style={styles.actionTextCol}>
-                  <Text style={styles.actionTitle}>Mini Authority Dashboard</Text>
-                  <Text style={styles.actionSubtitle}>Review active incidents and recent authority actions</Text>
-                </View>
-                <Icon name="chevron_right" size={18} color={colors.textMuted} />
-              </View>
-            </Card>
-          ) : null}
+          <Text style={styles.sectionHeading}>Commuter Actions</Text>
 
           <Card
             onPress={() => router.push("/report")}

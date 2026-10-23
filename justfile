@@ -13,18 +13,19 @@ default:
 list:
     @just --list
 
-# Start development environment (Supabase backend + seed only if uninitialized + web + mobile)
+# Start development environment (Supabase backend + seed + web + mobile)
 up:
     just db-start
-    just db-seed-if-empty
+    @echo "==> Seeding synthetic test accounts..."
+    just db-seed
     docker compose up --build -d app
     just mobile-up
     @echo "==> Ready! Web: http://localhost:3000 | Expo: exp://127.0.0.1:8081"
 
-# Start only the web app (starts local Supabase and seeds only if uninitialized)
+# Start only the web app (starts local Supabase and synthetic seed first)
 web-up:
     just db-start
-    just db-seed-if-empty
+    just db-seed
     docker compose up --build -d app
     @echo "==> Web app ready at http://localhost:3000"
 
@@ -35,18 +36,14 @@ mobile-up:
 
 # Start Expo and local services for a phone on the same LAN
 mobile-lan host="192.168.0.224":
-    @just _mobile-lan-run {{ trim_start_matches(host, "host=") }}
-
-[private]
-_mobile-lan-run target_host:
     @echo "==> LAN mode exposes local Supabase and Expo on a trusted network only..."
     @docker compose --profile mobile rm --stop --force app mobile 2>/dev/null || true
     LOCAL_SUPABASE_HOST_BIND=0.0.0.0 bash scripts/local-supabase.sh start
-    LOCAL_SUPABASE_HOST_BIND=0.0.0.0 bash scripts/local-supabase.sh seed-if-empty
+    LOCAL_SUPABASE_HOST_BIND=0.0.0.0 bash scripts/local-supabase.sh seed
     APP_HOST_BIND=0.0.0.0 docker compose up --build -d app
-    EXPO_PUBLIC_API_BASE_URL="http://{{target_host}}:3000" EXPO_PUBLIC_SUPABASE_URL="http://{{target_host}}:54321" EXPO_PUBLIC_SUPABASE_ANON_KEY="$$(grep '^SUPABASE_ANON_KEY=' .env.local | cut -d= -f2-)" MOBILE_HOST_BIND=0.0.0.0 docker compose --profile mobile up --build -d mobile
-    @echo "==> Expo Go URL: exp://{{target_host}}:8081"
-    @for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do if docker compose exec -T mobile node --input-type=module -e 'import qrcode from "qrcode-terminal"; qrcode.generate("exp://{{target_host}}:8081", { small: true });' 2>/dev/null; then exit 0; fi; sleep 2; done; docker compose exec -T mobile node --input-type=module -e 'import qrcode from "qrcode-terminal"; qrcode.generate("exp://{{target_host}}:8081", { small: true });'
+    EXPO_PACKAGER_PROXY_URL="http://{{ trim_start_matches(host, "host=") }}:8081" EXPO_PUBLIC_API_BASE_URL="http://{{ trim_start_matches(host, "host=") }}:3000" EXPO_PUBLIC_SUPABASE_URL="http://{{ trim_start_matches(host, "host=") }}:54321" EXPO_PUBLIC_SUPABASE_ANON_KEY="$$(grep '^SUPABASE_ANON_KEY=' .env.local | cut -d= -f2-)" MOBILE_HOST_BIND=0.0.0.0 docker compose --profile mobile up --build -d mobile
+    @echo "==> Expo Go URL: exp://{{ trim_start_matches(host, "host=") }}:8081"
+    @for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do if docker compose exec -T mobile node -e 'require("qrcode-terminal").generate("exp://{{ trim_start_matches(host, "host=") }}:8081", { small: true });' 2>/dev/null; then exit 0; fi; sleep 2; done; docker compose exec -T mobile node -e 'require("qrcode-terminal").generate("exp://{{ trim_start_matches(host, "host=") }}:8081", { small: true });'
 
 # Start dev app and follow logs directly
 dev:
@@ -113,10 +110,6 @@ shell service="app":
 # Start local Supabase backend
 db-start:
     bash scripts/local-supabase.sh start
-
-# Seed local Supabase backend only if uninitialized
-db-seed-if-empty:
-    bash scripts/local-supabase.sh seed-if-empty
 
 # Seed local Supabase backend with synthetic accounts and demo data
 db-seed:

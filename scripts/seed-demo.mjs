@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
-import { mkdir, writeFile, readFile, chmod } from "node:fs/promises";
+import { mkdir, writeFile, chmod } from "node:fs/promises";
 import { readLocalStatus, internalSupabaseUrl } from "./local-status.mjs";
 import { createTrafficFixture } from "../apps/web/src/lib/traffic/simulator.ts";
 
@@ -15,17 +15,6 @@ if (process.env.DEMO_MODE !== "true" || process.env.SUPABASE_URL !== internalSup
 }
 const status = await readLocalStatus();
 const supabase = createClient(internalSupabaseUrl, status.SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
-
-const ifEmptyOnly = process.argv.includes("--if-empty");
-if (ifEmptyOnly) {
-  const existingUsers = await supabase.auth.admin.listUsers({ page: 1, perPage: 1 });
-  const existingCorridor = await supabase.from("demo_traffic_corridors").select("id").limit(1);
-  if (!existingUsers.error && (existingUsers.data?.users?.length ?? 0) > 0 && !existingCorridor.error && (existingCorridor.data?.length ?? 0) > 0) {
-    console.log("==> Database already initialized with synthetic data. Preserving existing accounts, corridors, and user reports.");
-    process.exit(0);
-  }
-}
-
 const orgA = "10000000-0000-4000-8000-000000000001";
 const orgB = "10000000-0000-4000-8000-000000000002";
 const organisations = await supabase.from("organisations").upsert([
@@ -35,15 +24,6 @@ const organisations = await supabase.from("organisations").upsert([
 if (organisations.error) throw new Error("Could not seed local organisations; apply migrations first.");
 const existing = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
 if (existing.error) throw new Error("Could not inspect synthetic accounts.");
-
-let savedAccounts = [];
-try {
-  const savedContent = await readFile("supabase/.temp/demo-accounts.json", "utf8");
-  savedAccounts = JSON.parse(savedContent);
-} catch {
-  // no saved accounts file yet
-}
-
 const definitions = [
   { label: "commuter", role: "commuter" },
   { label: "commuter-b", role: "commuter" },
@@ -57,10 +37,7 @@ const definitions = [
 const accounts = [];
 for (const definition of definitions) {
   const email = `${definition.label}@demo.trafficsense.test`;
-  const saved = Array.isArray(savedAccounts)
-    ? savedAccounts.find((a) => a.email === email && typeof a.password === "string" && a.password.length > 0)
-    : null;
-  const password = saved ? saved.password : randomBytes(24).toString("base64url");
+  const password = randomBytes(24).toString("base64url");
   const found = existing.data.users.find((user) => user.email === email);
   const attributes = { password, email_confirm: true, user_metadata: { simulated: true } };
   const result = found

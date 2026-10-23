@@ -1,219 +1,113 @@
-// Generates the self-contained page loaded by the native WebView map.
-// The page imports the pinned MapLibre GL module, falls back to a schematic background
-// when the street-tile style cannot load, and reports state back through postMessage.
-export const MAPLIBRE_VERSION = "6.14.0";
-export const MAPLIBRE_BASE_URL = `https://cdn.jsdelivr.net/npm/maplibre-gl@${MAPLIBRE_VERSION}/dist`;
-export const OPENFREEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
-export const MAP_ATTRIBUTION = "OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors";
+// Creates the non-WebGL OpenStreetMap page hosted by the Expo WebView.
+export const LEAFLET_VERSION = "1.9.4";
+export const LEAFLET_BASE_URL = `https://cdn.jsdelivr.net/npm/leaflet@${LEAFLET_VERSION}/dist`;
+export const OPENSTREETMAP_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+export const MAP_ATTRIBUTION = "\u00a9 OpenStreetMap contributors";
 
-export function buildMapHtml(options: { baseUrl?: string; styleUrl?: string } = {}): string {
-  const baseUrl = JSON.stringify(options.baseUrl ?? MAPLIBRE_BASE_URL);
-  const styleUrl = JSON.stringify(options.styleUrl ?? OPENFREEMAP_STYLE_URL);
+export function buildMapHtml(options: { baseUrl?: string } = {}): string {
+  const baseUrl = options.baseUrl ?? LEAFLET_BASE_URL;
+  const tileUrl = JSON.stringify(OPENSTREETMAP_TILE_URL);
   const attribution = JSON.stringify(MAP_ATTRIBUTION);
 
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>TrafficSense map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>TrafficSense OpenStreetMap</title>
+<link rel="stylesheet" href="${baseUrl}/leaflet.css" />
 <style>
-  html, body, #map { margin: 0; height: 100%; width: 100%; background: #faf8ff; overflow: hidden; }
-  .maplibregl-ctrl-attrib { font-size: 11px; }
-  #status { position: absolute; left: 8px; top: 8px; right: 8px; padding: 6px 10px; border-radius: 8px;
-    background: rgba(255,255,255,0.92); color: #3e4947; font: 600 12px system-ui, sans-serif; display: none; }
+  html, body, #map { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #f1efe9; }
+  .leaflet-container { font: 12px system-ui, sans-serif; background: #f1efe9; }
+  .leaflet-control-attribution { font-size: 10px !important; }
+  .leaflet-control-zoom a { width: 40px !important; height: 40px !important; line-height: 40px !important; }
+  #status { position: absolute; z-index: 1000; top: 10px; left: 10px; padding: 7px 10px; border-radius: 8px;
+    background: rgba(255,255,255,.95); color: #3e4947; font: 600 12px system-ui, sans-serif; }
 </style>
 </head>
 <body>
-<div id="map" role="region" aria-label="Traffic map"></div>
-<div id="status" role="status" aria-live="polite"></div>
-<script type="module">
-  const BASE = ${baseUrl};
-  const STYLE_URL = ${styleUrl};
-  const ATTRIBUTION = ${attribution};
-  const FALLBACK_STYLE = {
-    version: 8,
-    sources: {},
-    layers: [{ id: "background", type: "background", paint: { "background-color": "#f1efe9" } }],
-  };
-
-  function post(type, data) {
-    const message = JSON.stringify(Object.assign({ type: type }, data || {}));
-    if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-      window.ReactNativeWebView.postMessage(message);
+<div id="map" role="region" aria-label="Interactive OpenStreetMap traffic map"></div>
+<div id="status" role="status" aria-live="polite">Loading street map…</div>
+<script src="${baseUrl}/leaflet.js"></script>
+<script>
+  (function () {
+    function post(type, data) {
+      var bridge = window.ReactNativeWebView;
+      if (bridge && bridge.postMessage) bridge.postMessage(JSON.stringify(Object.assign({ type: type }, data || {})));
     }
-  }
+    var tileUrl = ${tileUrl};
+    var attribution = ${attribution};
+    var status = document.getElementById("status");
+    if (!window.L) { post("failed", { reason: "leaflet-library" }); return; }
 
-  function setStatus(text) {
-    const el = document.getElementById("status");
-    el.textContent = text || "";
-    el.style.display = text ? "block" : "none";
-  }
+    var map = L.map("map", { zoomControl: true, attributionControl: true, preferCanvas: true }).setView([12.87, 74.84], 12);
+    var segments = L.layerGroup().addTo(map);
+    var routes = L.layerGroup().addTo(map);
+    var incidents = L.layerGroup().addTo(map);
+    var you = L.layerGroup().addTo(map);
+    var lastData = null;
+    var loadedTile = false;
+    var tileErrors = 0;
+    var tileLayer = L.tileLayer(tileUrl, { maxZoom: 19, attribution: attribution }).addTo(map);
+    tileLayer.on("tileload", function () { loadedTile = true; status.style.display = "none"; });
+    tileLayer.on("tileerror", function () {
+      tileErrors += 1;
+      if (!loadedTile && tileErrors >= 2) status.textContent = "Waiting for OpenStreetMap tiles…";
+    });
 
-  function hasWebGL() {
-    try {
-      const canvas = document.createElement("canvas");
-      return Boolean(canvas.getContext("webgl2") || canvas.getContext("webgl"));
-    } catch (error) {
-      return false;
+    function featureCollection(features) { return { type: "FeatureCollection", features: features || [] }; }
+    function fitData(data) {
+      var coordinates = [];
+      [data.segments, data.routes].forEach(function (collection) {
+        ((collection && collection.features) || []).forEach(function (feature) {
+          (feature.geometry.coordinates || []).forEach(function (point) { coordinates.push([point[1], point[0]]); });
+        });
+      });
+      ((data.incidents && data.incidents.features) || []).forEach(function (feature) {
+        var point = feature.geometry.coordinates; coordinates.push([point[1], point[0]]);
+      });
+      if (data.you && data.you.coordinates) coordinates.push([data.you.coordinates[1], data.you.coordinates[0]]);
+      if (coordinates.length) map.fitBounds(coordinates, { padding: [28, 28], maxZoom: 15, animate: false });
     }
-  }
-
-  const empty = { type: "FeatureCollection", features: [] };
-  let pending = null;
-  let map = null;
-  let ready = false;
-  let usingFallback = false;
-  let fallbackReason = null;
-  let lastData = null;
-
-  function applyData(payload) {
-    if (!map || !ready) return;
-    map.getSource("segments").setData(payload.segments);
-    map.getSource("routes").setData(payload.routes);
-    map.getSource("incidents").setData(payload.incidents);
-    map.getSource("you").setData(payload.you ? { type: "Feature", properties: {}, geometry: payload.you } : empty);
-    if (payload.fit) fitToData(payload);
-  }
-
-  function fitToData(payload) {
-    const points = [];
-    payload.segments.features.forEach(f => f.geometry.coordinates.forEach(c => points.push(c)));
-    payload.routes.features.forEach(f => f.geometry.coordinates.forEach(c => points.push(c)));
-    payload.incidents.features.forEach(f => points.push(f.geometry.coordinates));
-    if (payload.you) points.push(payload.you.coordinates);
-    if (points.length === 0) return;
-    let west = points[0][0], east = points[0][0], south = points[0][1], north = points[0][1];
-    points.forEach(([lng, lat]) => {
-      west = Math.min(west, lng); east = Math.max(east, lng);
-      south = Math.min(south, lat); north = Math.max(north, lat);
-    });
-    map.fitBounds([[west, south], [east, north]], { padding: 40, maxZoom: 15, duration: 0 });
-  }
-
-  function addLayers() {
-    map.addSource("segments", { type: "geojson", data: empty });
-    map.addSource("routes", { type: "geojson", data: empty });
-    map.addSource("incidents", { type: "geojson", data: empty });
-    map.addSource("you", { type: "geojson", data: empty });
-
-    map.addLayer({ id: "segments", type: "line", source: "segments",
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": ["get", "colour"], "line-width": 5, "line-opacity": 0.85 } });
-
-    map.addLayer({ id: "routes-casing", type: "line", source: "routes",
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": "#ffffff", "line-width": 9 } });
-    map.addLayer({ id: "routes", type: "line", source: "routes",
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: { "line-color": ["get", "colour"], "line-width": ["case", ["get", "selected"], 7, 5] } });
-
-    map.addLayer({ id: "incidents", type: "circle", source: "incidents",
-      paint: {
-        "circle-radius": ["case", ["get", "selected"], 11, ["get", "onRoute"], 9, 7],
-        "circle-color": ["get", "colour"],
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 2,
-      } });
-
-    map.addLayer({ id: "you", type: "circle", source: "you",
-      paint: { "circle-radius": 6, "circle-color": "#2563eb", "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
-
-    // One click handler so a tap on an incident never also selects the route beneath it.
-    map.on("click", (event) => {
-      const hits = map.queryRenderedFeatures(event.point, { layers: ["incidents", "routes"] });
-      const incident = hits.find((feature) => feature.layer.id === "incidents");
-      const route = hits.find((feature) => feature.layer.id === "routes");
-      if (incident) post("select-incident", { id: incident.properties.id });
-      else if (route) post("select-route", { id: route.properties.id });
-    });
-    ["incidents", "routes"].forEach((layer) => {
-      map.on("mouseenter", layer, () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", layer, () => { map.getCanvas().style.cursor = ""; });
-    });
-  }
-
-  function createMap(style, isFallback, reason) {
-    usingFallback = isFallback;
-    fallbackReason = reason || null;
-    map = new maplibregl.Map({
-      container: "map",
-      style: style,
-      center: [74.84, 12.87],
-      zoom: 12,
-      attributionControl: { compact: true, customAttribution: ATTRIBUTION },
-      dragRotate: false,
-      pitchWithRotate: false,
-      touchPitch: false,
-    });
-    // Individual tile, sprite or glyph errors are normal on a slow network and must not
-    // replace a working street map. The style itself is checked before the map is created.
-    map.on("error", (event) => {
-      const message = (event && event.error && event.error.message) || "";
-      post("map-error", { detail: message.slice(0, 160) });
-    });
-    map.on("load", () => {
-      if (!ready) {
-        ready = true;
-        addLayers();
-        if (usingFallback) setStatus("Street map unavailable · schematic corridor only");
-        else setStatus("");
-        post("ready", { fallback: usingFallback, reason: fallbackReason });
-        if (pending) { applyData(pending); pending = null; }
-        else if (lastData) applyData(lastData);
-      }
-    });
-  }
-
-  window.trafficMap = {
-    setData(payload) {
-      lastData = payload;
-      if (ready) applyData(payload); else pending = payload;
-    },
-    showYou(point) {
-      if (ready) map.getSource("you").setData(point ? { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: point } } : empty);
-    },
-    refit() {
-      if (ready && lastData) fitToData(lastData);
-    },
-  };
-
-  // Checks that the phone can reach the street style file before MapLibre tries to use it.
-  // Returns null when reachable, otherwise a short description of the problem.
-  async function checkStyle() {
-    try {
-      const response = await fetch(STYLE_URL, { cache: "no-store" });
-      if (!response.ok) return "OpenFreeMap answered HTTP " + response.status;
-      return null;
-    } catch (error) {
-      return "the phone could not reach OpenFreeMap (" + ((error && error.message) || "network error") + ")";
+    function onFeature(layer, feature, eventName) {
+      layer.on("click", function (event) {
+        if (event && event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+        if (feature.properties && feature.properties.id) post(eventName, { id: feature.properties.id });
+      });
     }
-  }
+    function setData(data) {
+      lastData = data;
+      segments.clearLayers(); routes.clearLayers(); incidents.clearLayers(); you.clearLayers();
+      L.geoJSON(featureCollection(data.segments && data.segments.features), {
+        style: function (feature) { return { color: feature.properties.colour || "#d97706", weight: 5, opacity: .9 }; }
+      }).addTo(segments);
+      L.geoJSON(featureCollection(data.routes && data.routes.features), {
+        style: function (feature) { return { color: feature.properties.colour || "#005c55", weight: feature.properties.selected ? 7 : 5, opacity: .92 }; },
+        onEachFeature: function (feature, layer) { onFeature(layer, feature, "select-route"); }
+      }).addTo(routes);
+      L.geoJSON(featureCollection(data.incidents && data.incidents.features), {
+        pointToLayer: function (feature, latlng) {
+          var selected = feature.properties.selected;
+          return L.circleMarker(latlng, { radius: selected ? 10 : 8, color: "#ffffff", weight: 2, fillColor: feature.properties.colour || "#b91c1c", fillOpacity: 1 });
+        },
+        onEachFeature: function (feature, layer) { onFeature(layer, feature, "select-incident"); }
+      }).addTo(incidents);
+      if (data.you) L.geoJSON({ type: "Feature", properties: {}, geometry: data.you }, {
+        pointToLayer: function (feature, latlng) { return L.circleMarker(latlng, { radius: 7, color: "#ffffff", weight: 2, fillColor: "#2563eb", fillOpacity: 1 }); }
+      }).addTo(you);
+      if (data.fit) fitData(data);
+    }
 
-  if (!hasWebGL()) {
-    post("failed", { reason: "webgl" });
-  } else {
-    import(BASE + "/maplibre-gl.mjs").then(async (module) => {
-      window.maplibregl = module.default || module;
-      const css = document.createElement("link");
-      css.rel = "stylesheet";
-      css.href = BASE + "/maplibre-gl.css";
-      document.head.appendChild(css);
-      try {
-        const problem = await checkStyle();
-        if (problem) {
-          post("map-error", { detail: problem });
-          createMap(FALLBACK_STYLE, true, problem);
-        } else {
-          createMap(STYLE_URL, false, null);
-        }
-      } catch (error) {
-        post("failed", { reason: "renderer" });
-      }
-    }).catch(() => {
-      post("failed", { reason: "library" });
-    });
-  }
+    window.trafficMap = {
+      setData: setData,
+      centerOn: function (point) { if (Array.isArray(point) && point.length === 2) map.setView([point[1], point[0]], 14); },
+      refit: function () { if (lastData) fitData(lastData); }
+    };
+    setTimeout(function () {
+      if (!loadedTile) post("map-error", { detail: "OpenStreetMap tiles have not loaded yet." });
+    }, 12000);
+    post("ready", { fallback: false });
+  }());
 </script>
 </body>
 </html>`;
