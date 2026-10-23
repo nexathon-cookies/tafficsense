@@ -1,0 +1,107 @@
+# Test-only overlay; select these services explicitly to leave app/production untouched.
+name: trafficsense-nk
+
+services:
+  auth-faults:
+    profiles: ["auth-test"]
+    build:
+      context: .
+      target: development
+    init: true
+    networks: [supabase]
+    # No env_file or source mounts: the proxy receives no local credentials.
+    command: ["node", "/app/tests/auth-faults.mjs"]
+    ports:
+      - "127.0.0.1:54323:8000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/__health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      start_period: 5s
+      retries: 5
+
+  auth-recovery:
+    profiles: ["auth-test"]
+    build:
+      context: .
+      target: development
+    init: true
+    networks: [supabase]
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      SUPABASE_URL: http://auth-faults:8000
+      AUTH_COOKIE_SECURE: "false"
+    # Image snapshots avoid sharing app dependencies, build output or local files.
+    command: ["pnpm", "dev", "--hostname", "0.0.0.0"]
+    depends_on:
+      auth-faults:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3002:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  auth-recovery-production:
+    profiles: ["auth-test"]
+    build:
+      context: .
+      target: production
+    init: true
+    networks: [supabase]
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      SUPABASE_URL: http://auth-faults:8000
+      AUTH_COOKIE_SECURE: "false"
+    depends_on:
+      auth-faults:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3003:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  auth-unconfigured-development:
+    profiles: ["auth-test"]
+    build:
+      context: .
+      target: development
+    init: true
+    networks: [default]
+    command: ["pnpm", "dev", "--hostname", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:3005:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  auth-unconfigured:
+    profiles: ["auth-test"]
+    build:
+      context: .
+      target: production
+    init: true
+    # No auth environment, env_file, inherited app service or source mounts.
+    networks: [default]
+    ports:
+      - "127.0.0.1:3004:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5

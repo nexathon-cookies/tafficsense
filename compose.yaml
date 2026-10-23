@@ -1,0 +1,128 @@
+name: trafficsense-nk
+
+services:
+  app:
+    build:
+      context: .
+      target: development
+    init: true
+    networks: [default, supabase]
+    env_file:
+      - path: .env.local
+        required: false
+    ports:
+      - "${APP_HOST_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - dependencies:/app/node_modules
+      - next-cache:/app/apps/web/.next
+    # Bind-mounted workspaces can exceed the host's inotify watch limit under
+    # Turbopack. Webpack polling keeps the local API available to Expo Go.
+    command: ["sh", "-c", "pnpm install --frozen-lockfile && cd apps/web && WATCHPACK_POLLING=true WATCHPACK_POLLING_INTERVAL=1000 pnpm exec next dev --hostname 0.0.0.0 --webpack"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 5
+
+  mobile:
+    profiles: ["mobile"]
+    build:
+      context: .
+      target: development
+    init: true
+    networks: [default, supabase]
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      EXPO_PUBLIC_API_BASE_URL: ${EXPO_PUBLIC_API_BASE_URL:-http://127.0.0.1:3000}
+      EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL:-http://127.0.0.1:54321}
+    ports:
+      - "${MOBILE_HOST_BIND:-127.0.0.1}:8081:8081"
+      - "${MOBILE_HOST_BIND:-127.0.0.1}:19000:19000"
+    volumes:
+      - .:/app
+      - dependencies:/app/node_modules
+    working_dir: /app/apps/mobile
+    command: ["sh", "-c", "export EXPO_PUBLIC_SUPABASE_ANON_KEY=\"$${EXPO_PUBLIC_SUPABASE_ANON_KEY:-$${SUPABASE_ANON_KEY}}\" && CI=true pnpm install --frozen-lockfile && pnpm exec expo start --lan"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8081/status').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 45s
+      retries: 5
+
+  checks:
+    profiles: ["tools"]
+    build:
+      context: .
+      target: development
+    init: true
+    command: ["sh", "-c", "CI=true pnpm install --frozen-lockfile && pnpm test && pnpm lint && pnpm --filter @trafficsense/mobile typecheck && cd apps/web && pnpm exec next typegen && pnpm exec tsc --noEmit && cd ../.. && pnpm build"]
+
+  production:
+    profiles: ["production"]
+    build:
+      context: .
+      target: production
+    init: true
+    networks: [default, supabase]
+    env_file:
+      - path: .env.local
+        required: false
+    ports:
+      - "127.0.0.1:${PRODUCTION_PORT:-3001}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  supabase:
+    profiles: ["tools"]
+    build:
+      context: .
+      target: supabase-tools
+    init: true
+    network_mode: host
+    group_add: ["${DOCKER_GID:-65534}"]
+    environment:
+      DOCKER_HOST: unix:///var/run/docker.sock
+      SUPABASE_EXPERIMENTAL_STACK: "0"
+      SUPABASE_SERVICES_HOSTNAME: "127.0.0.1"
+      SUPABASE_NETWORK_ID: trafficsense-nk_supabase
+      LOCAL_SUPABASE_HOST_BIND: ${LOCAL_SUPABASE_HOST_BIND:-127.0.0.1}
+      CI: ${CI:-}
+      TMPDIR: ${PWD}/supabase/.temp
+    working_dir: ${PWD}
+    volumes:
+      - .:${PWD}
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["node", "/app/scripts/supabase-tool.mjs"]
+
+  demo:
+    profiles: ["tools"]
+    build:
+      context: .
+      target: development
+    init: true
+    networks: [supabase]
+    env_file:
+      - path: .env.local
+        required: false
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    command: ["node", "/app/scripts/seed-demo.mjs"]
+
+networks:
+  supabase:
+    external: true
+    name: trafficsense-nk_supabase
+
+volumes:
+  dependencies:
+  next-cache:
