@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { reportCategories, reportCategoryIcons, type ReportCategory } from "@/lib/reports/rules";
 import type { Map as MapInstance, Marker as MarkerInstance } from "maplibre-gl";
 import { createFallbackStyle } from "@/lib/traffic/mangaluru-basemap";
+import { L5PhotoPanel } from "@/components/reports/l5-photo-panel";
+import type { L5DetectedCategory, L5VerificationResult } from "@/lib/vision/verify-incident-photo";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 export const MANGALURU_LOCATIONS = [
@@ -20,10 +22,32 @@ export const MANGALURU_LOCATIONS = [
   { name: "Kadri Park / Circuit House", coords: [74.858, 12.882] as [number, number] },
 ];
 
-export function WebReportScreen() {
+/** Maps a live report category onto the coarser set the vision classifier understands. */
+function toL5Category(category: ReportCategory): L5DetectedCategory {
+  switch (category) {
+    case "accident":
+      return "accident";
+    case "road_repair":
+    case "road_closed":
+    case "bridge_maintenance":
+      return "road_repair";
+    case "heavy_traffic":
+      return "heavy_volume";
+    case "flood":
+    case "heavy_rain":
+      return "flood";
+    default:
+      return "unknown";
+  }
+}
+
+export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: string } | null } = {}) {
   const [category, setCategory] = useState<ReportCategory>("accident");
   const [locationIndex, setLocationIndex] = useState<number>(0);
   const [useGps, setUseGps] = useState<boolean>(false);
+  const [customCoords, setCustomCoords] = useState<[number, number] | null>(null);
+  const [l5Result, setL5Result] = useState<L5VerificationResult | null>(null);
+  const handleL5Result = useCallback((r: L5VerificationResult | null) => setL5Result(r), []);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [note, setNote] = useState<string>("");
@@ -40,9 +64,12 @@ export function WebReportScreen() {
   const mapRef = useRef<MapInstance | null>(null);
   const markerRef = useRef<MarkerInstance | null>(null);
 
-  const activeCoords: [number, number] = useGps && userLocation
-    ? userLocation
-    : MANGALURU_LOCATIONS[locationIndex].coords;
+  // Priority: map click > device GPS > preset list
+  const activeCoords: [number, number] = customCoords
+    ? customCoords
+    : useGps && userLocation
+      ? userLocation
+      : MANGALURU_LOCATIONS[locationIndex].coords;
 
   // Request browser GPS position
   function handleRequestGps() {
@@ -55,6 +82,7 @@ export function WebReportScreen() {
       (pos) => {
         const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
         setUserLocation(coords);
+        setCustomCoords(null);
         setGpsAccuracy(pos.coords.accuracy);
         setUseGps(true);
       },
@@ -96,6 +124,12 @@ export function WebReportScreen() {
         }
       });
 
+      // Click anywhere on the map to drop the incident pin there.
+      map.on("click", (e) => {
+        setCustomCoords([Number(e.lngLat.lng.toFixed(5)), Number(e.lngLat.lat.toFixed(5))]);
+      });
+      map.getCanvas().style.cursor = "crosshair";
+
       map.on("load", async () => {
         if (disposed) return;
         const { Marker } = await import("maplibre-gl");
@@ -131,7 +165,8 @@ export function WebReportScreen() {
     if (mapRef.current) {
       mapRef.current.easeTo({ center: activeCoords, zoom: 14.5 });
     }
-  }, [activeCoords]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCoords[0], activeCoords[1]]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -149,6 +184,8 @@ export function WebReportScreen() {
           gps_accuracy_m: useGps ? gpsAccuracy : null,
           gps_fix_at: useGps ? new Date().toISOString() : null,
           note: note.trim() || null,
+          l5_verified: Boolean(l5Result?.isGenuineIncident && l5Result.confidenceTier !== "low"),
+          l5_summary: l5Result?.isGenuineIncident ? l5Result.visualSummary : null,
         }),
       });
 
@@ -164,6 +201,7 @@ export function WebReportScreen() {
         distinctReporters: data.distinct_reporters,
       });
       setNote("");
+      setL5Result(null);
       // Notify other views that incidents changed
       window.dispatchEvent(new Event("trafficsense:incidents-changed"));
     } catch (err: unknown) {
@@ -226,9 +264,49 @@ export function WebReportScreen() {
               </p>
             </div>
 
+            {viewer ? (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-base leading-none">👤</span>
+                  <span>
+                    Reporting as <strong>{viewer.email}</strong> ({viewer.role})
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 font-bold">
+                  AUTHENTICATED
+                </span>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-base leading-none">⚠️</span>
+                  <span>You are not signed in. Commuter sign-in is required to submit verified reports.</span>
+                </div>
+                <Link
+                  href="/login"
+                  className="button secondary text-xs py-1 px-3 self-start sm:self-auto font-semibold whitespace-nowrap"
+                >
+                  Sign In (1-Click Demo) →
+                </Link>
+              </div>
+            )}
+
             {errorMessage && (
-              <div className="p-3 rounded-lg bg-error-container text-error-on text-xs">
-                {errorMessage}
+              <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-100 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>{errorMessage}</span>
+                </div>
+                {errorMessage.includes("Sign in") && (
+                  <div>
+                    <Link
+                      href="/login"
+                      className="inline-block button text-xs py-1 px-3 font-semibold"
+                    >
+                      Sign In with Demo Commuter Account →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
@@ -255,7 +333,7 @@ export function WebReportScreen() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label htmlFor="report-location" className="text-xs font-semibold text-surface-on">
-                  2. Incident Location (Mangaluru)
+                  2. Incident Location (click the map to place pin)
                 </label>
                 <button
                   type="button"
@@ -270,11 +348,25 @@ export function WebReportScreen() {
                 </button>
               </div>
 
-              {!useGps ? (
+              {customCoords ? (
+                <div className="p-2.5 rounded-lg bg-surface-container border border-surface-container-high text-xs text-surface-on flex items-center justify-between">
+                  <span>📌 Map pin: {activeCoords[1].toFixed(5)}, {activeCoords[0].toFixed(5)}</span>
+                  <button
+                    type="button"
+                    onClick={() => setCustomCoords(null)}
+                    className="text-[11px] text-primary hover:underline ml-2"
+                  >
+                    Switch to preset list
+                  </button>
+                </div>
+              ) : !useGps ? (
                 <select
                   id="report-location"
                   value={locationIndex}
-                  onChange={(e) => setLocationIndex(Number(e.target.value))}
+                  onChange={(e) => {
+                    setLocationIndex(Number(e.target.value));
+                    setCustomCoords(null);
+                  }}
                   className="w-full text-xs p-2.5 rounded-lg bg-surface-container border border-surface-container-high text-surface-on"
                 >
                   {MANGALURU_LOCATIONS.map((loc, idx) => (
@@ -290,7 +382,10 @@ export function WebReportScreen() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setUseGps(false)}
+                    onClick={() => {
+                      setUseGps(false);
+                      setCustomCoords(null);
+                    }}
                     className="text-[11px] text-primary hover:underline ml-2"
                   >
                     Switch to preset list
@@ -315,6 +410,15 @@ export function WebReportScreen() {
               />
             </div>
 
+            <div className="space-y-1.5">
+              <p className="block text-xs font-semibold text-surface-on">4. Photo Evidence (Optional · L5 AI Vision)</p>
+              <L5PhotoPanel
+                segmentId="live-report"
+                userSelectedCategory={toL5Category(category)}
+                onResult={handleL5Result}
+              />
+            </div>
+
             <div className="p-3 rounded-lg bg-surface-container-low text-[11px] text-surface-on-variant space-y-1">
               <p className="font-semibold text-surface-on">Verification Pipeline:</p>
               <p>
@@ -324,7 +428,10 @@ export function WebReportScreen() {
                 2. Reports from 3+ distinct commuters promote to <strong>L3 Corroborated</strong>.
               </p>
               <p>
-                3. The <strong>Civic Traffic Authority</strong> verifies and confirms reports to <strong>L6 Confirmed</strong>.
+                3. A genuine photo verified by AI vision promotes the report to <strong>L5 Visual Corroboration</strong>.
+              </p>
+              <p>
+                4. The <strong>Civic Traffic Authority</strong> verifies and confirms reports to <strong>L6 Confirmed</strong>.
               </p>
             </div>
 
@@ -344,7 +451,7 @@ export function WebReportScreen() {
         <div className="relative rounded-xl overflow-hidden border border-surface-container bg-surface-container-low h-[480px]">
           <div ref={mapContainer} className="w-full h-full" />
           <div className="absolute bottom-2 left-2 bg-surface/90 backdrop-blur-sm px-2.5 py-1 rounded text-[10px] text-surface-on-variant border border-surface-container">
-            OpenStreetMap road data via OpenFreeMap · Pin indicates report location
+            OpenStreetMap road data via OpenFreeMap · Click the map to move the pin
           </div>
         </div>
 

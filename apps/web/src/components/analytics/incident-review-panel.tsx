@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { reportCategories, reportCategoryIcons } from "@/lib/reports/rules";
 import type { AuthorityIncidentHistoryItem, LiveIncident } from "@/lib/incidents/server";
+import type { SpreadResult } from "@/lib/routing/spread";
 
 function formatIncidentTime(value: string): string {
   return new Intl.DateTimeFormat("en-GB", {
@@ -21,6 +23,12 @@ export function IncidentReviewPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [pendingIncidentId, setPendingIncidentId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  // Spread check state
+  const [spreadIncidentId, setSpreadIncidentId] = useState<string | null>(null);
+  const [spreadResult, setSpreadResult] = useState<SpreadResult | null>(null);
+  const [spreadLoading, setSpreadLoading] = useState(false);
+  const [spreadError, setSpreadError] = useState<string | null>(null);
 
   const fetchIncidents = useCallback(async (): Promise<LiveIncident[]> => {
     const response = await fetch("/api/incidents", { cache: "no-store" });
@@ -96,6 +104,35 @@ export function IncidentReviewPanel() {
     }
   }
 
+  async function handleCheckSpread(incident: LiveIncident) {
+    if (spreadIncidentId === incident.id && spreadResult) {
+      // Toggle off if already showing
+      setSpreadIncidentId(null);
+      setSpreadResult(null);
+      setSpreadError(null);
+      return;
+    }
+
+    setSpreadIncidentId(incident.id);
+    setSpreadLoading(true);
+    setSpreadError(null);
+    setSpreadResult(null);
+
+    try {
+      const originName = "Pumpwell (Mahaveera) Circle";
+      const res = await fetch(`/api/spread?incident=${encodeURIComponent(incident.id)}&origin=${encodeURIComponent(originName)}`);
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Could not check route spread.");
+      }
+      setSpreadResult(data);
+    } catch (err) {
+      setSpreadError(err instanceof Error ? err.message : "Failed to check spread.");
+    } finally {
+      setSpreadLoading(false);
+    }
+  }
+
   return (
     <section className="p-5 rounded-xl bg-surface-container-lowest border border-surface-container shadow-sm space-y-3" aria-labelledby="incident-review-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -119,6 +156,10 @@ export function IncidentReviewPanel() {
           {incidents.map((incident) => {
             const isPending = pendingIncidentId === incident.id;
             const category = reportCategories[incident.category] ?? incident.category;
+            const isVerified = incident.level === "L3" || incident.level === "L6";
+            const isCheckingSpread = spreadLoading && spreadIncidentId === incident.id;
+            const isSpreadOpen = spreadIncidentId === incident.id;
+
             return (
               <li key={incident.id} className="rounded-lg border border-surface-container bg-surface-container-low p-3 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -130,7 +171,95 @@ export function IncidentReviewPanel() {
                   {incident.level !== "L6" && <button type="button" className="button text-xs px-3 py-1.5" disabled={isPending} onClick={() => void updateIncident(incident, "confirm")}>{isPending ? "Saving…" : "Confirm (L6)"}</button>}
                   <button type="button" className="button secondary text-xs px-3 py-1.5" disabled={isPending} onClick={() => void updateIncident(incident, "resolve")}>{isPending ? "Saving…" : "Resolve incident"}</button>
                   <button type="button" className="button secondary text-xs px-3 py-1.5" disabled={isPending} onClick={() => void updateIncident(incident, "reject")}>{isPending ? "Saving…" : "Reject report"}</button>
+                  {isVerified && (
+                    <button
+                      type="button"
+                      className="button secondary text-xs px-3 py-1.5"
+                      disabled={isPending || isCheckingSpread}
+                      onClick={() => void handleCheckSpread(incident)}
+                    >
+                      {isCheckingSpread
+                        ? "Checking routes…"
+                        : isSpreadOpen && spreadResult
+                        ? "Hide spread"
+                        : "Check spread from Pumpwell"}
+                    </button>
+                  )}
                 </div>
+
+                {isSpreadOpen && (
+                  <div className="mt-3 p-3.5 rounded-lg border border-surface-container bg-surface-container-lowest space-y-2.5 text-xs">
+                    {spreadLoading ? (
+                      <p className="text-surface-on-variant animate-pulse">Checking routes from Pumpwell via OSRM…</p>
+                    ) : spreadError ? (
+                      <p className="text-error font-medium">{spreadError}</p>
+                    ) : spreadResult ? (
+                      <>
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold text-surface-on">
+                            Affects {spreadResult.affected} of {spreadResult.checked} routes from {spreadResult.origin}.
+                          </p>
+                          {spreadResult.checked < spreadResult.total && (
+                            <p className="text-amber-700 dark:text-amber-400 font-medium">
+                              {spreadResult.total - spreadResult.checked} routes could not be checked right now.
+                            </p>
+                          )}
+                          <p className="text-[11px] text-surface-on-variant">
+                            This route passes within 200 metres of the verified report. Free-flow estimate.
+                          </p>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="border-b border-surface-container text-surface-on-variant">
+                                <th className="py-1.5 pr-2 font-medium">Destination</th>
+                                <th className="py-1.5 px-2 font-medium">Affected</th>
+                                <th className="py-1.5 px-2 font-medium">Avoid Option</th>
+                                <th className="py-1.5 pl-2 font-medium text-right">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-surface-container/60">
+                              {spreadResult.rows.map((row) => (
+                                <tr key={row.destination} className="hover:bg-surface-container-low/50">
+                                  <td className="py-1.5 pr-2 font-medium text-surface-on">{row.destination}</td>
+                                  <td className="py-1.5 px-2">
+                                    {!row.checked ? (
+                                      <span className="text-surface-on-variant italic">Unchecked</span>
+                                    ) : row.affected ? (
+                                      <span className="font-semibold text-amber-700 dark:text-amber-400">Yes</span>
+                                    ) : (
+                                      <span className="text-surface-on-variant">No</span>
+                                    )}
+                                  </td>
+                                  <td className="py-1.5 px-2 text-surface-on-variant">
+                                    {!row.checked
+                                      ? "—"
+                                      : !row.affected
+                                      ? "Not affected"
+                                      : row.avoiding_extra_s !== null
+                                      ? row.avoiding_extra_s === 0
+                                        ? "0 min extra"
+                                        : `+${Math.round(row.avoiding_extra_s / 60)} min`
+                                      : "No alternative"}
+                                  </td>
+                                  <td className="py-1.5 pl-2 text-right">
+                                    <Link
+                                      href={`/planner?from=${encodeURIComponent(spreadResult.origin)}&to=${encodeURIComponent(row.destination)}`}
+                                      className="inline-block text-[11px] font-medium text-primary hover:underline whitespace-nowrap"
+                                    >
+                                      Plan pair →
+                                    </Link>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                )}
               </li>
             );
           })}

@@ -1,15 +1,16 @@
 import * as Location from "expo-location";
-import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import type { LiveIncident, RouteOption, TrafficSegment } from "@trafficsense/shared";
-import { INCIDENT_COLOUR, ROUTE_COLOURS, SEVERITY_COLOURS } from "../map/map-data";
-import { OpenStreetMap } from "./open-street-map";
+import { buildMapPayload, INCIDENT_COLOUR, ROUTE_COLOURS, SEVERITY_COLOURS, type MapPayload } from "../map/map-data";
+import { buildMapHtml } from "../map/map-html";
 import { Card, Icon, SimulatedBadge } from "./ui";
 import { SchematicMap } from "./schematic-map";
 import { colors, minTouchTarget, radius, shadows, space, typography } from "../theme/tokens";
 
 type Props = {
-  /** Fill the available page area instead of rendering a compact planner map. */
+  /** Expand to fill the available page area; planner retains the compact default. */
   fillContainer?: boolean;
   segments: TrafficSegment[];
   incidents: LiveIncident[];
@@ -23,24 +24,128 @@ type Props = {
   fitKey: number;
 };
 
-type Coordinate = [number, number];
 type ViewMode = "street" | "schematic";
+const MAP_HTML = buildMapHtml();
 
 function humanise(category: string): string {
   return category.replace(/_/g, " ").replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
+type CanvasProps = {
+  payload: MapPayload;
+  fitKey: number;
+  style: StyleProp<ViewStyle>;
+  onReady: () => void;
+  onFailure: (reason: string) => void;
+  onMapIssue: () => void;
+  onSelectIncident: (id: string) => void;
+  onSelectRoute?: (id: string) => void;
+};
+
+function MapCanvas({ payload, fitKey, style, onReady, onFailure, onMapIssue, onSelectIncident, onSelectRoute }: CanvasProps) {
+  const webViewRef = useRef<WebView>(null);
+  const lastFitKey = useRef<number | null>(null);
+  const lastYou = useRef<string | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!ready) return;
+    const shouldFit = lastFitKey.current !== fitKey;
+    const next = { ...payload, fit: shouldFit };
+    if (shouldFit) lastFitKey.current = fitKey;
+    webViewRef.current?.injectJavaScript(`window.trafficMap?.setData(${JSON.stringify(next)}); true;`);
+  }, [payload, fitKey, ready]);
+
+  useEffect(() => {
+    const coordinates = payload.you?.coordinates;
+    if (!ready || !coordinates) return;
+    const key = coordinates.join(",");
+    if (key === lastYou.current) return;
+    lastYou.current = key;
+    webViewRef.current?.injectJavaScript(`window.trafficMap?.centerOn(${JSON.stringify(coordinates)}); true;`);
+  }, [payload.you, ready]);
+
+  function handleMessage(event: WebViewMessageEvent) {
+    try {
+      const message = JSON.parse(event.nativeEvent.data) as { type?: string; id?: string; reason?: string };
+      if (message.type === "ready") {
+        setReady(true);
+        onReady();
+      } else if (message.type === "failed") {
+        onFailure(message.reason ?? "renderer");
+      } else if (message.type === "map-error") {
+        onMapIssue();
+      } else if (message.type === "select-incident" && message.id) {
+        onSelectIncident(message.id);
+      } else if (message.type === "select-route" && message.id) {
+        onSelectRoute?.(message.id);
+      }
+    } catch {
+      onFailure("message");
+    }
+  }
+
+  return (
+    <WebView
+      ref={webViewRef}
+      style={style}
+      source={{ html: MAP_HTML }}
+      originWhitelist={["*"]}
+      userAgent="TrafficSenseMobile/0.1 (OpenStreetMap tile client)"
+      cacheEnabled
+      javaScriptEnabled
+      domStorageEnabled
+      onMessage={handleMessage}
+      onError={() => onFailure("webview")}
+      onHttpError={() => onFailure("network")}
+      accessibilityLabel="Interactive OpenStreetMap traffic map"
+    />
+  );
 }
 
 export function TrafficMap(props: Props) {
   const fillContainer = props.fillContainer ?? false;
   const [mode, setMode] = useState<ViewMode>("street");
   const [fullScreen, setFullScreen] = useState(false);
-  const [you, setYou] = useState<Coordinate | null>(null);
+  const [you, setYou] = useState<[number, number] | null>(null);
   const [locationNote, setLocationNote] = useState<string | null>(null);
-  const [fitRequestKey, setFitRequestKey] = useState(0);
-  const [centerKey, setCenterKey] = useState(0);
+  const [fitRequest, setFitRequest] = useState(0);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [mapNote, setMapNote] = useState<string | null>(null);
+  const fitKey = props.fitKey + fitRequest;
+  const payload = useMemo(() => buildMapPayload({
+    segments: props.segments,
+    incidents: props.incidents,
+    routes: props.routes,
+    selectedIncidentId: props.selectedIncidentId,
+    selectedRouteId: props.selectedRouteId,
+    alternativeId: props.alternativeId,
+    you,
+    fit: false,
+  }), [props.segments, props.incidents, props.routes, props.selectedIncidentId, props.selectedRouteId, props.alternativeId, you]);
+
+  useEffect(() => {
+    if (mode !== "street" || !mapLoading) return;
+    const timeout = setTimeout(() => {
+      setMapLoading(false);
+      setMapNote("OpenStreetMap is taking too long to load. Showing the traffic schematic.");
+      setMode("schematic");
+    }, 15000);
+    return () => clearTimeout(timeout);
+  }, [mode, mapLoading]);
 
   function fitNow() {
-    setFitRequestKey((key) => key + 1);
+    setFitRequest((value) => value + 1);
+  }
+
+  function toggleMapMode() {
+    if (mode === "street") {
+      setMode("schematic");
+      return;
+    }
+    setMapNote(null);
+    setMapLoading(true);
+    setMode("street");
   }
 
   async function centreOnMe() {
@@ -53,8 +158,8 @@ export function TrafficMap(props: Props) {
     }
     try {
       const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setYou([position.coords.longitude, position.coords.latitude]);
-      setCenterKey((key) => key + 1);
+      const point: [number, number] = [position.coords.longitude, position.coords.latitude];
+      setYou(point);
     } catch {
       setLocationNote("Your location could not be read right now.");
     }
@@ -78,24 +183,33 @@ export function TrafficMap(props: Props) {
     <View style={[styles.wrapper, fillContainer && styles.fillWrapper]}>
       <View style={[styles.mapFrame, fillContainer && styles.fillMapFrame]}>
         {mode === "street" ? (
-          <OpenStreetMap
+          <MapCanvas
+            payload={payload}
+            fitKey={fitKey}
             style={styles.canvas}
-            segments={props.segments}
-            incidents={props.incidents}
-            routes={props.routes}
-            alternativeId={props.alternativeId}
-            selectedRouteId={props.selectedRouteId}
-            selectedIncidentId={props.selectedIncidentId}
-            you={you}
-            fitKey={props.fitKey + fitRequestKey}
-            centerKey={centerKey}
+            onReady={() => setMapLoading(false)}
+            onFailure={(reason) => {
+              setMapLoading(false);
+              setMapNote(`Street map could not start (${reason}). Showing the traffic schematic.`);
+              setMode("schematic");
+            }}
+            onMapIssue={() => {
+              setMapLoading(false);
+              setMapNote("OpenStreetMap tiles are unavailable. Showing the traffic schematic.");
+              setMode("schematic");
+            }}
             onSelectIncident={props.onSelectIncident}
             onSelectRoute={props.onSelectRoute}
-            onFailure={() => setMode("schematic")}
           />
         ) : (
           schematic
         )}
+        {mapLoading && mode === "street" ? (
+          <View style={styles.mapLoadingOverlay} accessibilityLiveRegion="polite">
+            <ActivityIndicator color={colors.primary} />
+            <Text style={styles.mapLoadingText}>Loading OpenStreetMap…</Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={[styles.toolbar, fillContainer && styles.fillToolbar]}>
@@ -110,7 +224,7 @@ export function TrafficMap(props: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={mode === "street" ? "Switch to schematic view" : "Switch to street map"}
-          onPress={() => setMode((current) => (current === "street" ? "schematic" : "street"))}
+          onPress={toggleMapMode}
           style={({ pressed }) => [styles.toolButton, fillContainer && styles.fillToolButton, pressed && styles.pressed]}
         >
           <Icon name="layers" size={16} color={colors.primary} />
@@ -123,6 +237,7 @@ export function TrafficMap(props: Props) {
       </View>
 
       {locationNote ? <Text style={[styles.notice, fillContainer && styles.fillNotice]}>{locationNote}</Text> : null}
+      {mapNote ? <Text style={styles.notice}>{mapNote}</Text> : null}
 
       {props.incidents.length === 0 ? (
         <Text style={[styles.notice, fillContainer && styles.fillEmptyNotice]}>No community reports in the last 3 hours.</Text>
@@ -166,20 +281,24 @@ export function TrafficMap(props: Props) {
             </Pressable>
           </View>
           {mode === "street" ? (
-            <OpenStreetMap
+            <MapCanvas
+              payload={payload}
+              fitKey={fitKey}
               style={styles.flexOne}
-              segments={props.segments}
-              incidents={props.incidents}
-              routes={props.routes}
-              alternativeId={props.alternativeId}
-              selectedRouteId={props.selectedRouteId}
-              selectedIncidentId={props.selectedIncidentId}
-              you={you}
-              fitKey={props.fitKey + fitRequestKey}
-              centerKey={centerKey}
+              onReady={() => setMapLoading(false)}
+              onFailure={(reason) => {
+                setMapLoading(false);
+                setMapNote(`Street map could not start (${reason}). Showing the traffic schematic.`);
+                setMode("schematic");
+                setFullScreen(false);
+              }}
+              onMapIssue={() => {
+                setMapLoading(false);
+                setMapNote("OpenStreetMap tiles are unavailable. Showing the traffic schematic.");
+                setMode("schematic");
+              }}
               onSelectIncident={props.onSelectIncident}
               onSelectRoute={props.onSelectRoute}
-              onFailure={() => setMode("schematic")}
             />
           ) : (
             <SchematicMap
@@ -219,30 +338,21 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surfaceContainerLow,
   },
-  fillMapFrame: {
-    height: undefined,
-    flex: 1,
-    borderRadius: 0,
-    borderWidth: 0,
-  },
+  fillMapFrame: { height: undefined, flex: 1, borderRadius: 0, borderWidth: 0 },
   canvas: { flex: 1 },
-  toolbar: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  fillToolbar: {
-    position: "absolute",
-    top: space.md,
-    right: space.md,
-    alignItems: "flex-end",
-    flexDirection: "column",
-    zIndex: 30,
-  },
-  fillToolButton: {
-    width: minTouchTarget,
-    height: minTouchTarget,
-    paddingHorizontal: 0,
+  mapLoadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 2,
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "center",
-    borderRadius: radius.pill,
-    ...shadows.sheet,
+    gap: space.sm,
+    backgroundColor: "rgba(250, 248, 255, 0.88)",
   },
+  mapLoadingText: { ...typography.bodySm, color: colors.textSecondary },
+  toolbar: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
+  fillToolbar: { position: "absolute", top: space.md, right: space.md, alignItems: "flex-end", flexDirection: "column", zIndex: 30 },
+  fillToolButton: { width: minTouchTarget, height: minTouchTarget, paddingHorizontal: 0, justifyContent: "center", borderRadius: radius.pill, ...shadows.sheet },
   toolButton: {
     minHeight: minTouchTarget,
     flexDirection: "row",
@@ -257,55 +367,19 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
   toolText: { ...typography.bodySm, color: colors.primary, fontWeight: "600" },
   notice: { ...typography.bodySm, color: colors.textSecondary },
-  fillNotice: {
-    position: "absolute",
-    top: 232,
-    left: space.md,
-    right: 76,
-    padding: space.sm,
-    borderRadius: radius.control,
-    backgroundColor: colors.surface,
-    zIndex: 30,
-  },
-  fillEmptyNotice: {
-    position: "absolute",
-    top: space.md,
-    left: space.md,
-    right: 76,
-    padding: space.sm,
-    borderRadius: radius.control,
-    backgroundColor: colors.surface,
-    zIndex: 20,
-  },
+  fillNotice: { position: "absolute", top: 232, left: space.md, right: 76, padding: space.sm, borderRadius: radius.control, backgroundColor: colors.surface, zIndex: 30 },
+  fillEmptyNotice: { position: "absolute", top: space.md, left: space.md, right: 76, padding: space.sm, borderRadius: radius.control, backgroundColor: colors.surface, zIndex: 20 },
   detailsCard: { gap: space.xs },
   detailsEyebrow: { ...typography.labelSm, color: colors.error, letterSpacing: 0.6 },
   detailsTitle: { ...typography.titleSm, color: colors.text },
   detailsText: { ...typography.bodySm, color: colors.textSecondary },
   legend: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
-  fillLegend: {
-    position: "absolute",
-    left: space.md,
-    bottom: 300,
-    zIndex: 30,
-    padding: space.xs,
-    borderRadius: radius.card,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-  },
+  fillLegend: { position: "absolute", left: space.md, bottom: 300, zIndex: 30, padding: space.xs, borderRadius: radius.card, backgroundColor: "rgba(255, 255, 255, 0.9)" },
   legendItem: { flexDirection: "row", alignItems: "center", gap: space.xs },
   swatch: { width: 12, height: 12, borderRadius: 6 },
   legendText: { ...typography.labelSm, color: colors.textSecondary },
   attributionRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: space.xs },
-  fillAttributionRow: {
-    position: "absolute",
-    right: space.sm,
-    bottom: 270,
-    maxWidth: 230,
-    paddingHorizontal: space.xs,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    zIndex: 30,
-  },
+  fillAttributionRow: { position: "absolute", right: space.sm, bottom: 270, maxWidth: 230, paddingHorizontal: space.xs, paddingVertical: 2, borderRadius: radius.sm, backgroundColor: "rgba(255, 255, 255, 0.9)", zIndex: 30 },
   attribution: { ...typography.labelSm, color: colors.textMuted, flexShrink: 1 },
   fullScreenModal: { flex: 1, backgroundColor: colors.background },
   fullScreenHeader: { flexDirection: "row", alignItems: "center", gap: space.sm, padding: space.md, backgroundColor: colors.surface },

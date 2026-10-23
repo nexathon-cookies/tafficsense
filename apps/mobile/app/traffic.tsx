@@ -337,8 +337,9 @@ export default function TrafficScreen() {
                     </Text>
                   </View>
                   <Pressable
-                    accessibilityLabel="Close detail"
                     accessibilityRole="button"
+                    accessibilityLabel="Close incident details"
+                    accessibilityHint="Dismisses this report. Select a map marker or list item to open it again."
                     onPress={() => setSelectedId(null)}
                     style={styles.sheetCloseBtn}
                   >
@@ -412,7 +413,7 @@ export default function TrafficScreen() {
                   <View style={styles.tilePrivacyLeft}>
                     <Icon name="shield" size={16} color={colors.textSecondary} />
                     <Text style={styles.tilePrivacyText} numberOfLines={1}>
-                      Map tiles via OpenFreeMap. No GPS coordinates transmitted.
+                      OpenStreetMap receives tile requests for the viewed area; your GPS fix itself is not sent.
                     </Text>
                   </View>
                   <Text style={styles.detailsLink}>Details</Text>
@@ -757,9 +758,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheetCloseBtn: {
-    minWidth: minTouchTarget,
-    minHeight: minTouchTarget,
-    borderRadius: 16,
+    width: minTouchTarget,
+    height: minTouchTarget,
+    borderRadius: minTouchTarget / 2,
     alignItems: "center",
     justifyContent: "center",
   },

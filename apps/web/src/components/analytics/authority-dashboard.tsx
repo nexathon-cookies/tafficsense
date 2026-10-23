@@ -32,6 +32,53 @@ function suggestedInvestigation(cause: string): string {
   return "Collect a longer observation window before commissioning a traffic-engineering investigation.";
 }
 
+/** Approximate centres of the junctions tracked by the analytics dataset (lat, lng). */
+const JUNCTION_COORDS: Record<string, [number, number]> = {
+  hampankatta: [12.868, 74.842],
+  "ksrtc-bejai": [12.885, 74.848],
+  "jyothi-ambedkar": [12.871, 74.845],
+  ladyhill: [12.894, 74.841],
+  pumpwell: [12.858, 74.862],
+};
+
+/** Maps a live incident location to the closest tracked junction. */
+function nearestJunction(lat: number, lng: number) {
+  let best: (typeof MANGALURU_JUNCTIONS)[number] = MANGALURU_JUNCTIONS[0];
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (const junction of MANGALURU_JUNCTIONS) {
+    const [jLat, jLng] = JUNCTION_COORDS[junction.id];
+    // Equirectangular approximation is plenty accurate at city scale.
+    const dLat = lat - jLat;
+    const dLng = (lng - jLng) * Math.cos((jLat * Math.PI) / 180);
+    const dist = dLat * dLat + dLng * dLng;
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = junction;
+    }
+  }
+  return best;
+}
+
+/** Maps live incident categories onto the analytics cause taxonomy. */
+function liveCategoryToCause(category: string): HistoricalIncident["cause"] {
+  switch (category) {
+    case "accident":
+      return "accident";
+    case "road_repair":
+    case "road_closed":
+    case "bridge_maintenance":
+      return "road_repair";
+    case "heavy_traffic":
+    case "heavy_volume":
+      return "heavy_volume";
+    case "flood":
+    case "heavy_rain":
+      return "flood";
+    default:
+      return "unknown";
+  }
+}
+
 export function AuthorityDashboard() {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [selectedJunction, setSelectedJunction] = useState("all");
@@ -47,13 +94,13 @@ export function AuthorityDashboard() {
             id: string;
             category: string;
             first_reported_at: string;
+            lat: number;
+            lng: number;
             level: string;
             provenance: string;
           }) => {
-            const validCauses = ["accident", "road_repair", "heavy_volume", "flood"] as const;
-            const cause = validCauses.includes(live.category as "accident" | "road_repair" | "heavy_volume" | "flood")
-              ? (live.category as "accident" | "road_repair" | "heavy_volume" | "flood")
-              : "unknown";
+            const cause = liveCategoryToCause(live.category);
+            const junction = nearestJunction(live.lat, live.lng);
             const date = new Date(live.first_reported_at);
             const hour = date.getUTCHours();
             let peak_window: HistoricalIncident["peak_window"] = "off_peak";
@@ -63,9 +110,9 @@ export function AuthorityDashboard() {
 
             return {
               id: live.id,
-              junction_id: "jyothi-ambedkar",
-              junction_name: "Ambedkar (Jyothi) Circle",
-              segment_id: "alternative-west",
+              junction_id: junction.id,
+              junction_name: junction.name,
+              segment_id: junction.segment_id,
               direction: "outbound" as const,
               occurred_at: live.first_reported_at,
               duration_minutes: 0,

@@ -43,9 +43,9 @@ export const LADDER_SPEC: Record<VerificationLevel, {
   },
   L5: {
     name: "Photo Evidence",
-    source: "Media Upload",
-    status: "planned",
-    description: "Cryptographically verified, metadata-scrubbed photo/video proof.",
+    source: "AI Vision Pipeline (Gemini)",
+    status: "implemented",
+    description: "EXIF-stripped photo submitted for AI visual classification via the Gemini Vision API. Provides AI corroboration of the reported incident category. Image bytes are ephemeral and not stored.",
   },
   L6: {
     name: "Authority Action",
@@ -61,6 +61,7 @@ export function evaluateSegmentLadder(params: {
   isMultipleSources: boolean;
   isSlowdownSupported: boolean;
   isAuthorityConfirmed?: boolean;
+  isPhotoVerified?: boolean;
 }): {
   currentLevel: VerificationLevel | null;
   currentLabel: string;
@@ -70,7 +71,7 @@ export function evaluateSegmentLadder(params: {
   const l2Achieved = params.hasLocationSupport ?? false;
   const l3Achieved = params.isMultipleSources;
   const l4Achieved = params.isSlowdownSupported;
-  const l5Achieved = false; // Planned extension
+  const l5Achieved = params.isPhotoVerified ?? false;
   const l6Achieved = params.isAuthorityConfirmed ?? false;
 
   const tiers: LadderTier[] = [
@@ -88,6 +89,9 @@ export function evaluateSegmentLadder(params: {
   if (l6Achieved) {
     currentLevel = "L6";
     currentLabel = "L6 Authority Confirmed";
+  } else if (l5Achieved) {
+    currentLevel = "L5";
+    currentLabel = "L5 AI Visual Corroboration";
   } else if (l4Achieved) {
     currentLevel = "L4";
     currentLabel = "L4 Speed Slowdown Supported";

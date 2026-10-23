@@ -30,7 +30,120 @@
 - **Commit:** `77353e0` — `fix(dev): make Windows LAN recipes runnable`.
 - **Verification update:** Expo Go phone launch confirmed by the user; recorded in `34c745a` — `docs(progress): confirm Expo phone launch`.
 
+## Mobile traffic detail sheet dismissal — in progress, 23 Oct 2026
+
+- **Issue:** Pressing the incident sheet's X set `selectedId` to null, but the derived selection immediately fell back to the first incident, leaving the sheet open. The visual drag handle had no gesture handler.
+- **Implementation:** The selected report now follows only the explicitly selected incident ID; the initial fetch still opens the first report once. The X clears selection, and dragging the handle downward animates the sheet away and clears selection. The X has a 48px touch target and accessible dismissal hint.
+- **Verification:** Docker mobile typecheck and scoped ESLint passed; `git diff --check` passed with only existing line-ending warnings. Expo Go X and swipe-down interactions remain to be checked on the phone; no commit yet.
+
+## Mobile OSM map renderer update — in progress, 23 Oct 2026
+
+- **Current implementation:** Replaced both the black native OSM tile layer and the WebGL MapLibre page with a Leaflet map rendered in the Expo WebView. Leaflet uses OpenStreetMap raster tiles, live report/corridor/route overlays, map fit and foreground location controls, and touch pan/zoom. The WebView identifies TrafficSense in tile requests. Failure and timeout states return to the traffic schematic; map/list and OSM attribution remain available.
+- **Why:** The user confirmed the map was still black after the native `react-native-maps` tile layer was changed. React Native's OSM UrlTile path is not rendering on that Android device. Leaflet does not need WebGL and avoids the Google base map.
+- **Verification:** Docker mobile typecheck and scoped ESLint passed; `git diff --check` passed. The Expo container was restarted to serve the renderer update. The updated map-browser check was not run, and Expo Go tile rendering/pan/selection still need the phone reload; no post-change device screenshot is available, so no commit is made yet.
+
+## Mobile OpenStreetMap rendering — in progress, 23 Oct 2026
+
+- **Scope:** Implement the user-requested MapLibre/OpenStreetMap mobile street map on the Traffic and Planner screens (Module 2: traffic map/details), replacing the black native map surface. Keep the schematic map usable when the optional street map cannot load.
+- **Observed cause:** The shared map component used a native `react-native-maps` view with the public OpenStreetMap raster tile endpoint, while the mobile map helper and project guidance are built around MapLibre in a WebView. The screenshot shows a black map surface; the exact device-side failure is not confirmed.
+- **Acceptance checks:** Street-map load is an explicit user action with a clear provider notice; successful MapLibre renders corridors/reports/routes and selection events; renderer/provider failure returns to the usable schematic; run the Docker mobile typecheck and lint, review the diff, and record phone limitations. OSM tiles must retain attribution, identify this app in the HTTP user agent, use normal caching, and avoid bulk requests.
+- **Implementation:** The shared map now defaults to the schematic map, with a visible `Load map` control on the map canvas. Confirming the OpenStreetMap notice creates a MapLibre WebView using the standard OSM raster tile URL, app-identifying user agent, default HTTP cache, and visible OSM attribution. Corridor/route/report GeoJSON and marker selection use the existing map helpers; a loading timeout, WebView failure, or unavailable renderer returns to the schematic. The home and report details attribution now match OpenStreetMap.
+- **Verification:** Docker `just mobile-typecheck`, scoped mobile ESLint, and `git diff --check` passed. The map-browser check and Expo Go phone rendering/selection remain unverified; no commit has been made pending map verification.
+
 ## Mobile LAN bridge transition — in progress, 23 Oct 2026
+
+- **Scope:** Repair `just mobile-lan <LAN-IP>` when the dedicated local Supabase bridge was previously created with loopback-only port bindings. This is local developer infrastructure supporting the mobile public-traffic reader; it does not alter the report, verification, alert, or analytics contracts.
+- **Observed blocker:** `just mobile-lan 192.168.1.104` stopped before seeding because `trafficsense-nk_supabase` was configured with `127.0.0.1`, whereas LAN mode requires `0.0.0.0`. Docker bridge host-binding options cannot be changed in place, and the Supabase tooling correctly rejected the mismatch.
+- **Acceptance checks:** Preserve the local database volume while changing only this project's bridge and containers; complete the exact LAN recipe; confirm the web API and Metro are reachable through the supplied LAN address; run relevant Docker/static checks and whitespace review.
+
+## Fix Incident Report Commuter Session Authentication — verified, 23 Oct 2026
+
+- **Issue:** Submitting a report via `/report` (or `/api/incidents`) returned HTTP 401 `"Sign in with a commuter account to submit an incident. Anonymous reports cannot establish corroboration."` even after signing in with a commuter account.
+- **Root Cause:** `apps/web/src/app/api/incidents/route.ts` used `createServerClient` without passing `cookieOptions: authCookieOptions`. It defaulted to looking for `sb-*-auth-token` cookies rather than the application's configured `trafficsense-auth` cookies, so `supabase.auth.getUser()` always returned `null`.
+- **Implementation:**
+  - `apps/web/src/app/api/incidents/route.ts`: Updated `getSupabase` to use `createAuthClient(true)` for web cookie sessions and pass `authCookieOptions` for `authorization` header requests.
+  - `apps/web/src/app/api/spread/route.ts`: Updated `getSupabase` to use `createAuthClient(false)` and `authCookieOptions`.
+  - `apps/web/src/app/report/page.tsx`: Injected `viewer` via `getViewer()` into `WebReportScreen`.
+  - `apps/web/src/components/reports/web-report-screen.tsx`: Added authentication status indicator showing the active commuter's email and role, or a clean prompt linking to `/login` if unauthenticated. Enhanced the 401 error message with an actionable button linking directly to the sign-in / 1-click demo accounts page.
+- **Verification:**
+  - `pnpm build`: Passed (`✓ Generating static pages using 11 workers (24/24)`).
+  - `pnpm lint`: Passed (0 errors).
+  - `just test`: Passed (**231/231** across 10 test suites).
+  - `git diff --check`: Passed with 0 errors.
+- **Commit:** `4cb722a` — `fix(reports): resolve session authentication in api/incidents for signed-in commuters`.
+
+## Fix Next.js cacheComponents Route Config Build Error — verified, 23 Oct 2026
+
+- **Issue:** Next.js 16 build failed with `Error: Route segment config "dynamic" is not compatible with nextConfig.cacheComponents. Please remove it.` in `apps/web/src/app/api/demo-accounts/route.ts`.
+- **Implementation:**
+  - Removed `export const dynamic = "force-dynamic";` from `apps/web/src/app/api/demo-accounts/route.ts`.
+  - Added `/* turbopackIgnore: true */` comment to `readFile` call to eliminate Turbopack whole-project tracing warning.
+  - Updated `tests/verification-ladder.test.mjs` L5 status assertion to `"implemented"` to align with the recently merged L5 Gemini vision integration.
+- **Verification:**
+  - `pnpm build`: Passed (`✓ Generating static pages using 11 workers (24/24)`).
+  - `just test`: Passed (**231/231** across 10 test suites).
+  - `git diff --check`: Passed with 0 errors.
+- **Commit:** `6bbde85` — `fix(web): remove incompatible dynamic route config for nextConfig.cacheComponents`.
+
+## Full-Screen Interactive Maps with Floating Overlay Cards for /traffic and /planner — verified, 23 Oct 2026
+
+- **Scope:** Redesigned `http://localhost:3000/traffic` and `http://localhost:3000/planner` with full-viewport edge-to-edge interactive maps (Google Maps style) replacing the small embedded boxes. Switched primary focus to real seeded community reports and verified incidents from the Supabase database (`/api/incidents`) with interactive pins, floating side drawers, filter pills, direct incident detours, and collapsible corridor simulation panels.
+- **Implementation:**
+  - `apps/web/src/app/globals.css`: Added CSS rule allowing `[data-fullscreen="true"]` pages to bypass the 1200px container constraint and hide the site footer, giving map views true edge-to-edge canvas space.
+  - `apps/web/src/lib/routing/presets.ts`: Added `findNearestPreset(coords, maxDistanceKm)` to map coordinates to familiar Mangaluru landmarks (Ambedkar Circle, Pumpwell, KSRTC Bejai, etc.).
+  - `apps/web/src/app/traffic/page.tsx` & `traffic-explorer.tsx`:
+    - Full-screen container with live database incident markers (`data-live-incident-marker={id}`).
+    - Floating Top-Left Drawer with `● REAL DATA` badge, filter pills (All, Verified L3+, Accidents, Hazards), and active incident feed.
+    - Floating Selected Incident Card (`[aria-label="Selected community report"]`) with category badge, verification ladder status, confirmation count, nearest landmark, and a direct "Plan Detour Around This →" navigation link to `/planner`.
+    - Collapsible corridor and ladder drawer (`[data-segment-list]`) preserving synthetic corridor checks and test suite assertions.
+  - `apps/web/src/components/traffic/traffic-map.tsx`: Styled custom Leaflet markers for database incidents with pulsing rings, incident category icons, and auto-centering.
+  - `apps/web/src/app/planner/page.tsx` & `route-planner.tsx`:
+    - Full-viewport map canvas with floating Google Maps-style route input drawer on top-left.
+    - Origin with GPS and Mangaluru landmark quick-select, destination selector, swap button, free-flow time estimate, incident intersection warnings, alternative detour options, and floating incident details.
+- **Verification:**
+  - `docker exec trafficsense-nk-app-1 pnpm lint`: Passed (0 errors, 1 known hook warning in unrelated file).
+  - `docker exec -w /app/apps/web trafficsense-nk-app-1 pnpm exec tsc --noEmit`: Passed (0 errors).
+  - `just test`: Passed (**231/231** across 10 test suites).
+  - `git diff --check`: Passed with 0 whitespace issues.
+- **Commit:** `028cf5a` — `feat(web): full-screen interactive maps with floating overlay cards for traffic and planner`.
+
+## Styled Incident Reporting Modal Dialog for Route Planner — verified, 23 Oct 2026
+
+- **Issue:** Opening the report form in `/planner` (`showReportForm`) squeezed an entire 17-item button grid, location selector, note input, and actions inside the 380px floating directions drawer. The buttons wrapped awkwardly into 55px wide boxes with truncated labels ("construct...", "waterlogg...", "movemen..."), the note input and submit buttons were cut off below the viewport, and floating UI overlapped the form.
+- **Implementation:**
+  - `apps/web/src/components/routing/route-planner.tsx`:
+    - Replaced the cramped inline drawer form with a centered, modern floating modal dialog overlay (`z-50`) with backdrop blur.
+    - Added quick-select cards for the top 6 frequent road hazards (💥 Accident, ⛔ Road Closure, 🌊 Flood / Waterlogging, 🚧 Road Repair, 🚙 Heavy Traffic, 🌲 Tree / Hazard) and a synced full dropdown with all 17 PDF categories with emoji icons and full labels.
+    - Improved location selection with clean GPS fix badge and preset landmark dropdown with coordinates.
+    - Added Escape key handler and backdrop dismissal.
+    - Upgraded submission feedback with a dismissible toast alert in the directions drawer.
+- **Verification:**
+  - `docker exec trafficsense-nk-app-1 pnpm lint`: Passed (0 errors).
+  - `docker exec -w /app/apps/web trafficsense-nk-app-1 pnpm exec tsc --noEmit`: Passed (0 errors).
+  - `just test`: Passed (**231/231** across 10 test suites).
+  - `git diff --check`: Passed with 0 whitespace issues.
+- **Commit:** `7ca57b4` — `fix(planner): replace cramped inline report form with modern styled modal dialog`.
+
+## Spread Check: Which Routes Does a Verified Problem Reach? — verified, 23 Oct 2026
+
+- **Scope:** Added incident spread analysis for verified problems (L3/L6 only). Given a verified incident and an origin (e.g. Pumpwell Circle), evaluates OSRM primary routes to all other presets to count how many routes pass within 200m of the incident, whether an avoiding alternative exists, and free-flow duration differences. Strictly excludes simulated corridor slowdowns and unverified L1/L2 reports; marks failed OSRM pairs as unchecked rather than safe.
+- **Implementation:**
+  - `apps/web/src/lib/routing/presets.ts`: Extracted `MANGALURU_PRESETS` into a shared module accessible to server routes, lib functions, and client components.
+  - `apps/web/src/lib/routing/spread.ts`: Implemented `checkSpread(origin, destinations, incident, fetchFn, cacheTtlMs)` with L3/L6 verification gate, simulated slowdown rejection, sequential route querying, 5-minute TTL caching, avoidance comparison, and OSRM failure isolation.
+  - `tests/spread.test.mjs`: Added automated test suite covering 199m affected, 201m unaffected, L1 rejection, simulated slowdown rejection, OSRM failure handling (5 of 7 checked), zero-affected honest wording, negative extra time clamping (0 min extra), and 5-minute caching.
+  - `apps/web/src/app/api/spread/route.ts`: New `GET /api/spread?incident=<id>&origin=<preset>` endpoint reading active incidents from Supabase, rejecting non-verified incidents (400) or missing incidents (404).
+  - `apps/web/src/components/analytics/incident-review-panel.tsx`: Added "Check spread from Pumpwell" button for L3/L6 incidents, rendering the summary sentence ("Affects {affected} of {checked} routes from {origin}."), unchecked route notice if OSRM is partial, honesty footnote, and interactive table with avoid option and direct links to the route planner.
+  - `apps/web/src/components/routing/route-planner.tsx`: Added URL query parameter support (`?from=...&to=...`) allowing direct pair navigation from the authority spread table.
+  - `scripts/seed-demo.mjs`: Added spread check demo note to the seed completion log.
+- **Verification:**
+  - `docker compose exec app node --test tests/spread.test.mjs` passed (8/8).
+  - `just test` passed (**231/231** across 10 test suites).
+  - `docker compose exec app sh -c "cd apps/web && pnpm exec tsc --noEmit"` passed (0 errors).
+  - `just lint` passed (0 errors).
+  - `git diff --check` passed with no whitespace violations.
+  - Tested live endpoint `GET /api/spread?incident=1fac7b98-093f-4205-97bd-e5577cc1bef3&origin=Pumpwell+(Mahaveera)+Circle`: returned `total: 7`, `checked: 7`, `affected: 1` (Ambedkar Circle accident affected), L1 rejection returned 400, unknown incident returned 404.
+- **Commit:** `dcd7a59` — `feat(routing): add spread check for verified incidents`.
+
 
 - **Scope:** Repair `just mobile-lan <LAN-IP>` when the dedicated local Supabase bridge was previously created with loopback-only port bindings. This is local developer infrastructure supporting the mobile public-traffic reader; it does not alter the report, verification, alert, or analytics contracts.
 - **Observed blocker:** `just mobile-lan 192.168.1.104` stopped before seeding because `trafficsense-nk_supabase` was configured with `127.0.0.1`, whereas LAN mode requires `0.0.0.0`. Docker bridge host-binding options cannot be changed in place, and the Supabase tooling correctly rejected the mismatch.
@@ -829,11 +942,22 @@ Verdict: **Gate passed** — all four decisions recorded. WP1 begins immediately
 
 ## Current implementation
 
-## UI utility-style rendering repair — in progress, 23 Oct 2026
+## UI utility-style rendering repair — completed and verified, 23 Oct 2026
 
 - **Goal/scope:** repair the shared web styling pipeline after review screenshots showed `/report`, `/planner`, and `/admin` rendering Tailwind utility-based layouts as unstyled text. Inspect the remaining web routes sharing the same global stylesheet and verify desktop/mobile rendering after the shared repair. This is a Phase 2 regression repair; it changes no reporting, verification, authorization, or data behavior.
-- **Baseline/cause:** `compose.yaml` starts Next.js with `--webpack`, while `apps/web/next.config.ts` only configures `@tailwindcss/turbopack`. `globals.css` base rules still load, but Tailwind v4 utility classes used by the newer page components are not generated in the Webpack path. The supplied `/report`, `/planner`, and `/admin` screenshots demonstrate the resulting absent grids, spacing, card surfaces, and responsive layout.
-- **Acceptance:** configure the supported Webpack Tailwind integration without replacing the Docker workflow; confirm utilities are present in rendered CSS; inspect all web routes that use the shared layout at desktop and mobile widths; run the applicable Docker lint/type/build checks and preserve the existing truthful simulated-data labels.
+- **Baseline/cause:** `compose.yaml` starts Next.js with `--webpack`, while `apps/web/next.config.ts` only configured `@tailwindcss/turbopack` and had no PostCSS configuration file. In Webpack dev mode, PostCSS did not run, leaving Tailwind v4 utility classes ungenerated. In addition, `@theme` in `globals.css` was missing semantic token aliases used across components (`text-surface-on`, `text-surface-on-variant`, `text-primary-on`, `bg-error-container`, `text-success`).
+- **Fixes:**
+  1. Created `apps/web/postcss.config.mjs` with `@tailwindcss/postcss` plugin export for Webpack dev compatibility.
+  2. Expanded `@theme` in `apps/web/src/app/globals.css` with semantic color mappings (`--color-surface-on`, `--color-surface-on-variant`, `--color-primary-on`, `--color-secondary-on`, `--color-error-on`, `--color-error-container`, `--color-success`, `--color-warning-on-container`, etc.).
+  3. Added `.panel` wrapper class to `/report` and `/planner` pages for consistent card containment matching `/admin`, `/authority`, and `/workspace`.
+  4. Formatted the `/admin` incident table with proper horizontal cell padding (`px-3`), row hover styles, and clean column alignment.
+  5. Refined the `/planner` button layout to use `.button.secondary` with consistent button sizing.
+- **Verification evidence:**
+  - Runtime CSS generation verified in container: layout CSS expanded from minimal fallback to 54KB, containing `grid-cols-12`, `gap-6`, `space-y-4`, `text-surface-on`, and arbitrary dimensions (`480px`).
+  - Routes `/report`, `/planner`, and `/admin` verified returning HTTP 200 with complete CSS links.
+  - Node test suite: 223 passed, 0 failed across all 9 test suites (`pnpm test`).
+  - Linter: `pnpm lint` passed with 0 errors.
+  - Production build: `pnpm build` completed cleanly in 5.1s (Turbopack + TypeScript check passed).
 
 - Next.js, TypeScript, Tailwind and Docker development/check/production-preview workflows exist. Phase 2 integrates the supplied visual direction into the homepage and existing public/account/role/error screens; its current verification record is above.
 - Local Supabase authentication, server-enforced roles, profiles/organisation memberships, RLS and synthetic seeding are implemented. Phase 1 verification, including recovery, permission changes, signed expiry and non-destructive restart, is recorded complete in `092ebc2`; earlier pending entries below are historical.
@@ -941,6 +1065,23 @@ These summarize the old plan's task/verification records without reclassifying t
 - **Dependency finding:** the scaffold-era production audit reported no vulnerabilities, while full audit reported high-severity development-only `braces@3.0.3` through ESLint tooling. An update attempt found no patch and the registry lacked the stated `3.0.4`; the issue remained visible rather than suppressed. This is not a current clean-audit claim.
 - **Verification-policy commit:** `23b9e62` — `docs: record scaffold verification and task commit policy`.
 
+## Windows LAN mobile startup repair — implemented, 23 Oct 2026
+
+- **Goal and scope:** Make the existing LAN startup recipe run from Windows with a supplied phone-reachable IPv4 address. No application behavior changed.
+- **Implementation:** Removed the nested `just` executable call from `mobile-lan`, inlined its existing startup steps, and kept support for both positional IP input and `host=IP`. Added LF checkout rules for shell scripts and normalized `scripts/local-supabase.sh` so Bash can execute it from Windows.
+- **Verification:** Ran `just mobile-lan 192.168.1.138` successfully. The recipe started and seeded local Supabase, started the app and Expo, and printed `exp://192.168.1.138:8081`. Docker reported app and mobile healthy; Expo `/status`, web `/`, and Supabase REST returned HTTP 200. `git diff --check` passed.
+- **Limitations:** The phone-side Expo Go session was not verified in this run; use the laptop Wi-Fi address and keep phone and laptop on the same network.
+- **Commit:** `b363ef7` — `fix(dev): repair Windows LAN mobile startup` (local; not pushed).
+
+## Expo Go LAN bundle address repair — implemented, 23 Oct 2026
+
+- **Goal and scope:** Fix Expo Go loading after a physical phone scanned the LAN QR. Preserve the local Docker/Supabase workflow.
+- **Root cause:** The Expo manifest advertised `127.0.0.1:8081` in `launchAsset.url`, `hostUri`, and `debuggerHost`; on the phone this pointed back to the phone rather than the laptop.
+- **Implementation:** Pass Expo CLI's documented `EXPO_PACKAGER_PROXY_URL` through the mobile Compose service and set it from the `mobile-lan` IP argument.
+- **Verification:** Ran `just mobile-lan 10.76.80.104`; the manifest now advertises `http://10.76.80.104:8081` for the bundle and `10.76.80.104:8081` for `hostUri`. Docker reported app and mobile healthy; Expo `/status`, web `/`, and Supabase REST returned HTTP 200; `git diff --check` passed.
+- **Blocked:** Phone-side load remains unverified. The Wi-Fi network is classified Public, so Windows may block unsolicited device connections. A proposed firewall rule limited to this Wi-Fi subnet and TCP ports 3000, 54321, and 8081 was rejected by automatic approval review because it persistently opens Public-profile inbound ports; no firewall change was made.
+- **Commit:** `b7e02a7` — `fix(mobile): advertise LAN Expo bundle host` (local; not pushed).
+
 ## Execution record format
 
 For each bounded task, record: goal/source module and exclusions; dependencies and affected routes; planned acceptance checks; actual commands/browser interactions with environment/provenance/outcomes; failures or unverified cases; user review; scoped commit hash after creation. Keep sensitive credentials, personal journeys and full private payloads out of records.
@@ -964,3 +1105,11 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
 - **Cleanup:** Removed generated caches, ignored local state, the stale root generated `next-env.d.ts`, and the two untracked leftover documents requested for cleanup. Local Supabase credentials/state were regenerated only as needed by the Docker checks and are not tracked.
 - **Verification:** `just --list`, Compose config validation, `git diff --check`, Dockerized Expo startup/health, `just mobile-typecheck`, and `just check` passed. The Expo service reported healthy on `127.0.0.1:8081`. Local Supabase start was blocked by the existing LAN-bound `trafficsense_supabase` bridge/state when invoked without the matching `LOCAL_SUPABASE_HOST_BIND=0.0.0.0`; no backend state was changed.
 - **Commit:** Pending.
+
+## Merge conflict resolution — completed, 24 Oct 2026
+
+- **Scope:** Reconcile local `main` with `origin/main` while preserving the local map and incident-sheet work and the incoming OSM, Expo LAN, web, and Supabase changes.
+- **Resolution:** Kept the incoming Leaflet/OpenStreetMap WebView renderer and its non-WebGL fallback; restored the local full-height Traffic map controls while leaving Planner's default map compact; retained the local draggable/collapsible incident sheet and close control; combined both progress histories; retained the incoming Expo packager proxy and local `justfile` LF attribute.
+- **Security review:** Removed the HTTP endpoint and login UI that exposed seeded demo passwords to network clients. Removed the synthetic offline L5 photo assessment; unavailable Gemini verification now returns an error instead of a positive assessment.
+- **Verification:** `docker compose config -q`, the Git Bash `just --dry-run mobile-lan 10.166.153.16`, and `git diff --check` passed; no conflict markers remain. The full Docker checks passed all 234 tests, web ESLint (0 errors, one exhaustive-deps warning in `web-report-screen.tsx`), mobile typecheck, Next route type generation, web TypeScript, and production build. Focused mobile ESLint on the merged Traffic screen/map files passed. Full mobile ESLint remains blocked by the Rules-of-Hooks error at `apps/mobile/app/report.tsx:544`. Physical Android and map-browser verification were not run.
+- **Commit/push:** Pending final rerun, commit, and push.

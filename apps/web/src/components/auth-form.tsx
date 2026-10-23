@@ -6,7 +6,9 @@ import { login, register } from "@/app/auth-actions";
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const registration = mode === "register";
   const [state, action, pending] = useActionState(registration ? register : login, {});
+
   return (
+    <>
     <form action={action} className="form-stack">
       <div>
         <label htmlFor="email">Email address</label>
@@ -21,5 +23,6 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       {state.message && <p className="notice" role="status">{state.message}</p>}
       <button className="button" disabled={pending} type="submit">{pending ? "Please wait…" : registration ? "Create commuter account" : "Sign in"}</button>
     </form>
+    </>
   );
 }

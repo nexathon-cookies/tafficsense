@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as MapInstance, Marker } from "maplibre-gl";
 import type { TrafficFixture } from "@/lib/traffic/simulator";
 import type { PublicReport } from "@/lib/reports/rules";
@@ -13,13 +13,25 @@ import type { SlowdownView } from "@/lib/evidence/slowdown-presentation";
 import type { TraversalView } from "@/lib/traffic/phase4-presentation";
 import type { routeAlertView } from "@/lib/route-alerts/presentation";
 import { createFallbackStyle, MANGALURU_BASEMAP_GEOJSON } from "@/lib/traffic/mangaluru-basemap";
+import { findNearestPreset } from "@/lib/routing/presets";
 import "maplibre-gl/dist/maplibre-gl.css";
 import styles from "./traffic.module.css";
 
-type MapProps = { fixture: TrafficFixture; reports: PublicReport[]; assessments: Record<string, AssessmentView>; slowdowns: Record<string, SlowdownView>;
-  episodeCounts: Record<string, number>; lifecycleLabels: Record<string, string>; traversalViews: Record<string, TraversalView>;
+type MapProps = {
+  fixture: TrafficFixture;
+  reports: PublicReport[];
+  assessments: Record<string, AssessmentView>;
+  slowdowns: Record<string, SlowdownView>;
+  episodeCounts: Record<string, number>;
+  lifecycleLabels: Record<string, string>;
+  traversalViews: Record<string, TraversalView>;
   alertViews: Record<string, ReturnType<typeof routeAlertView>>;
-  selectedId: string | null; onSelect: (id: string) => void };
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  activeLiveIncidentId?: string | null;
+  onSelectLiveIncident?: (id: string | null) => void;
+  onIncidentsChange?: (incidents: LiveIncident[]) => void;
+};
 
 export function TrafficMap(props: MapProps) {
   const [attempt, setAttempt] = useState(0);
@@ -27,7 +39,23 @@ export function TrafficMap(props: MapProps) {
   return <MapAttempt key={`${attempt}:${geometryKey}`} {...props} geometryKey={geometryKey} onRetry={() => setAttempt(value => value + 1)} />;
 }
 
-function MapAttempt({ fixture, reports, assessments, slowdowns, episodeCounts, lifecycleLabels, traversalViews, alertViews, geometryKey, selectedId, onSelect, onRetry }: MapProps & { geometryKey: string; onRetry: () => void }) {
+function MapAttempt({
+  fixture,
+  reports,
+  assessments,
+  slowdowns,
+  episodeCounts,
+  lifecycleLabels,
+  traversalViews,
+  alertViews,
+  geometryKey,
+  selectedId,
+  onSelect,
+  activeLiveIncidentId,
+  onSelectLiveIncident,
+  onIncidentsChange,
+  onRetry,
+}: MapProps & { geometryKey: string; onRetry: () => void }) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapInstance | null>(null);
   const markers = useRef<Marker[]>([]);
@@ -37,7 +65,13 @@ function MapAttempt({ fixture, reports, assessments, slowdowns, episodeCounts, l
   const [failure, setFailure] = useState<"timeout" | "resources" | "renderer" | "initialization" | null>(null);
   const [liveIncidents, setLiveIncidents] = useState<LiveIncident[]>([]);
   const [liveIncidentState, setLiveIncidentState] = useState<"loading" | "ready" | "unavailable">("loading");
-  const [selectedLiveIncidentId, setSelectedLiveIncidentId] = useState<string | null>(null);
+  const [internalSelectedLiveIncidentId, setInternalSelectedLiveIncidentId] = useState<string | null>(null);
+
+  const effectiveSelectedIncidentId = activeLiveIncidentId !== undefined ? activeLiveIncidentId : internalSelectedLiveIncidentId;
+  const setIncidentSelection = useCallback((id: string | null) => {
+    setInternalSelectedLiveIncidentId(id);
+    onSelectLiveIncident?.(id);
+  }, [onSelectLiveIncident]);
 
   useEffect(() => {
     let disposed = false;
@@ -49,6 +83,7 @@ function MapAttempt({ fixture, reports, assessments, slowdowns, episodeCounts, l
         if (!data.ok || !Array.isArray(data.incidents)) throw new Error("Incident data was unavailable");
         setLiveIncidents(data.incidents);
         setLiveIncidentState("ready");
+        onIncidentsChange?.(data.incidents);
       } catch {
         if (!disposed) setLiveIncidentState("unavailable");
       }
@@ -59,7 +94,7 @@ function MapAttempt({ fixture, reports, assessments, slowdowns, episodeCounts, l
       disposed = true;
       window.clearInterval(refresh);
     };
-  }, []);
+  }, [onIncidentsChange]);
   useEffect(() => {
     selection.current = selectedId;
     const map = mapRef.current;
@@ -122,7 +157,10 @@ function MapAttempt({ fixture, reports, assessments, slowdowns, episodeCounts, l
         const label = `${category}. ${liveIncidentLevelLabel(incident)}. Reported ${formatLiveIncidentTime(incident.first_reported_at)}.`;
         button.setAttribute("aria-label", `Show report details: ${label}`);
         button.title = label;
-        button.addEventListener("click", () => setSelectedLiveIncidentId(incident.id));
+        button.addEventListener("click", () => {
+          setIncidentSelection(incident.id);
+          map?.flyTo({ center: [incident.lng, incident.lat], zoom: 15, duration: 600 });
+        });
         const marker = new Marker({ element: button, anchor: "bottom" })
           .setLngLat([incident.lng, incident.lat])
           .addTo(map);
@@ -135,7 +173,7 @@ function MapAttempt({ fixture, reports, assessments, slowdowns, episodeCounts, l
       for (const marker of liveMarkers.current) marker.remove();
       liveMarkers.current = [];
     };
-  }, [liveIncidents, state]);
+  }, [liveIncidents, state, setIncidentSelection]);
 
   useEffect(() => {
     const segments = JSON.parse(geometryKey) as Pick<TrafficFixture["segments"][number], "id" | "name" | "direction" | "geometry">[];
@@ -328,61 +366,93 @@ function MapAttempt({ fixture, reports, assessments, slowdowns, episodeCounts, l
     };
   }, [geometryKey, onSelect]);
 
-  const selectedLiveIncident = liveIncidents.find(incident => incident.id === selectedLiveIncidentId) ?? null;
+  const selectedLiveIncident = liveIncidents.find(incident => incident.id === effectiveSelectedIncidentId) ?? null;
+  const nearestPreset = selectedLiveIncident ? findNearestPreset([selectedLiveIncident.lng, selectedLiveIncident.lat]) : null;
 
   return (
     <div data-map-state={state} data-map-failure={failure ?? undefined} className={styles.mapRegion}>
-      <div className={styles.mapHeaderRow}>
-        <p role="status" className={styles.mapStatus}>
-          {state === "loading" ? "Loading interactive traffic map…"
-            : state === "failed" ? "Map fallback active · Segment list and details available"
-            : liveIncidentState === "loading" ? "Loading current community reports…"
-            : liveIncidentState === "unavailable" ? "Current community reports are unavailable · simulated corridor overlay still shown"
-            : liveIncidents.length === 0 ? "No reports in the last 3 hours."
-            : `${liveIncidents.length} current community report${liveIncidents.length === 1 ? "" : "s"} on the map`}
-        </p>
-      </div>
-      {state === "failed" && <button type="button" className="button secondary mb-2" onClick={onRetry}>Retry map</button>}
+      {state === "loading" && (
+        <div className="absolute top-4 right-4 z-20 bg-surface/90 backdrop-blur px-3 py-1.5 rounded-full border border-surface-container text-xs shadow-md">
+          Loading map…
+        </div>
+      )}
+      {state === "failed" && (
+        <div className="absolute top-4 right-4 z-20 bg-rose-50 text-rose-900 px-3 py-1.5 rounded-xl border border-rose-200 text-xs shadow-md flex items-center gap-2">
+          <span>Map fallback active</span>
+          <button type="button" className="underline font-bold" onClick={onRetry}>Retry</button>
+        </div>
+      )}
+      {liveIncidentState === "unavailable" && (
+        <div className="absolute top-4 right-4 z-20 bg-amber-50 text-amber-900 px-3 py-1.5 rounded-xl border border-amber-200 text-xs shadow-md">
+          Community reports temporarily unavailable
+        </div>
+      )}
+
       <div ref={container} className={styles.mapCanvas}
         role="region" aria-label="Interactive map with current community reports and synthetic segment selection" />
-      {selectedLiveIncident && <section className={styles.liveIncidentDetails} aria-live="polite" aria-label="Selected community report">
-        <p className={styles.liveIncidentEyebrow}>COMMUNITY REPORT</p>
-        <h3>{reportCategoryIcons[selectedLiveIncident.category]} {reportCategories[selectedLiveIncident.category] ?? selectedLiveIncident.category}</h3>
-        <p><strong>{liveIncidentLevelLabel(selectedLiveIncident)}.</strong></p>
-        <p>Reported <time dateTime={selectedLiveIncident.first_reported_at}>{formatLiveIncidentTime(selectedLiveIncident.first_reported_at)}</time>. This is a reported incident, not a measured traffic delay.</p>
-      </section>}
-      <div className={styles.legendRow}>
-        <div className={styles.legend}>
-          <span className={styles.legendChip} data-legend="primary">
-            <span className={styles.legendColor} style={{ backgroundColor: "#005c55" }} />
-            Primary route
-          </span>
-          <span className={styles.legendChip} data-legend="alternative">
-            <span className={styles.legendColor} style={{ backgroundColor: "#6616d7" }} />
-            Fixed alternative
-          </span>
-          <span className={styles.legendChip} data-legend="inbound">
-            <span className={styles.legendColor} style={{ backgroundColor: "#904d00" }} />
-            Opposite direction
-          </span>
-          <span className={styles.legendChip} data-legend="selected">
-            <span className={`${styles.legendColor} ${styles.legendColorSelected}`} />
-            Selected segment
-          </span>
-          <span className={styles.legendChip} data-legend="community-report">
-            <span className={styles.legendColor} style={{ backgroundColor: "#b91c1c" }} />
-            Community report
-          </span>
+
+      {selectedLiveIncident && (
+        <section className={styles.liveIncidentDetails} aria-live="polite" aria-label="Selected community report">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className={styles.liveIncidentEyebrow}>COMMUNITY REPORT</p>
+              <h3 className="flex items-center gap-1.5 mt-0.5">
+                <span>{reportCategoryIcons[selectedLiveIncident.category] ?? "⚠️"}</span>
+                <span>{reportCategories[selectedLiveIncident.category] ?? selectedLiveIncident.category}</span>
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIncidentSelection(null)}
+              className="text-xs px-2 py-1 rounded hover:bg-black/5 text-surface-on-variant"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 my-1.5">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-900">
+              {selectedLiveIncident.level} · {selectedLiveIncident.report_count} report{selectedLiveIncident.report_count !== 1 ? "s" : ""}
+            </span>
+            {nearestPreset && (
+              <span className="text-xs text-surface-on-variant font-medium">
+                Near {nearestPreset.name}
+              </span>
+            )}
+          </div>
+
+          <p><strong>{liveIncidentLevelLabel(selectedLiveIncident)}.</strong></p>
+          <p>Reported <time dateTime={selectedLiveIncident.first_reported_at}>{formatLiveIncidentTime(selectedLiveIncident.first_reported_at)}</time>. This is a reported incident, not a measured traffic delay.</p>
+
+          <div className="mt-3 pt-2 border-t border-rose-200 flex items-center gap-2">
+            <a
+              href={`/planner?from=${encodeURIComponent(nearestPreset?.name ?? "Hampankatta Junction")}&to=KSRTC / Bejai Circle`}
+              className="button text-xs py-1.5 px-3 w-full text-center font-semibold"
+            >
+              Plan Detour Around This →
+            </a>
+          </div>
+        </section>
+      )}
+
+      <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2 pointer-events-auto">
+        <button
+          type="button"
+          onClick={() => mapRef.current?.flyTo({ center: [74.856, 12.870], zoom: 13, duration: 800 })}
+          className="px-3 py-1.5 rounded-xl bg-surface/95 backdrop-blur border border-surface-container shadow-md text-xs font-semibold text-surface-on hover:bg-surface-container flex items-center gap-1.5"
+          title="Recenter Mangaluru map"
+        >
+          <span>🎯</span>
+          <span>Recenter</span>
+        </button>
+        <div className="text-[11px] bg-surface/80 backdrop-blur px-2.5 py-1 rounded-lg border border-surface-container/60 shadow-xs flex items-center gap-2 text-surface-on-variant">
+          <a href="https://openfreemap.org" target="_blank" rel="noreferrer" className="hover:underline">OpenFreeMap</a>
+          <span>·</span>
+          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="hover:underline">© OSM</a>
+          <span>·</span>
+          <a href="/map-notices.txt" target="_blank" rel="noreferrer" className="hover:underline">Notices</a>
         </div>
-      </div>
-      <p className={styles.mapNotice}>
-        Background roads: OpenStreetMap via OpenFreeMap. Coloured lines are schematic demonstration geometry.{" "}
-        <a href="/map-notices.txt" target="_blank" rel="noreferrer">Map notices &amp; licenses</a>
-      </p>
-      <div className={styles.attribution} aria-label="Map attribution">
-        <a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>
-        <a href="https://www.openmaptiles.org/" target="_blank" rel="noreferrer">© OpenMapTiles</a>
-        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
       </div>
     </div>
   );
