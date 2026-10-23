@@ -535,9 +535,9 @@ export default function HomeScreen() {
           <View style={styles.privacyAttributionRow}>
             <View style={styles.openFreeMapRow}>
               <Icon name="explore" size={14} color={colors.outline} />
-              <Text style={styles.attributionText}>OpenStreetMap</Text>
+              <Text style={styles.attributionText}>OpenFreeMap</Text>
             </View>
-            <Text style={styles.attributionText}>© OpenStreetMap contributors</Text>
+            <Text style={styles.attributionText}>© OpenMapTiles · © OSM contributors</Text>
           </View>
         </View>
 

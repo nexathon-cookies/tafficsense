@@ -1,14 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildMapPayload, incidentCollection, routeCollection, segmentCollection, SEVERITY_COLOURS, ROUTE_COLOURS } from "../apps/mobile/src/map/map-data.ts";
-import { buildMapHtml, LEAFLET_VERSION, OPENSTREETMAP_TILE_URL } from "../apps/mobile/src/map/map-html.ts";
+import { buildMapHtml, MAPLIBRE_VERSION, OPENFREEMAP_STYLE_URL } from "../apps/mobile/src/map/map-html.ts";
 import { parseTrafficSegmentsResponse } from "../apps/mobile/src/lib/response-parsers.ts";
 import { sharePreviewLines } from "../apps/mobile/src/lib/journeys.ts";
 import { safeReturnPath } from "../apps/mobile/src/lib/auth-rules.ts";
 import { EVIDENCE_LABELS, evidenceLabel } from "../apps/mobile/src/lib/evidence.ts";
 import { projectSchematicPoint } from "../apps/mobile/src/lib/schematic-map.ts";
 import { formatCoordinates, toReportLocationInput } from "../apps/mobile/src/lib/report-location.ts";
-import { clampIncidentSheetHeight, COLLAPSED_INCIDENT_SHEET_HEIGHT, shouldCollapseIncidentSheet } from "../apps/mobile/src/lib/incident-sheet.ts";
 
 const segment = {
   id: "s1",
@@ -86,13 +85,12 @@ test("the payload marks on-route reports from the route warnings", () => {
   assert.equal(payload.you, null);
 });
 
-test("the map page uses a pinned non-WebGL renderer and OpenStreetMap tile attribution", () => {
+test("the map page loads the pinned MapLibre module, a street style and a schematic fallback", () => {
   const html = buildMapHtml();
-  assert.ok(html.includes(`leaflet@${LEAFLET_VERSION}/dist`));
-  assert.ok(html.includes(JSON.stringify(OPENSTREETMAP_TILE_URL)));
+  assert.ok(html.includes(`@${MAPLIBRE_VERSION}/dist`));
+  assert.ok(html.includes(JSON.stringify(OPENFREEMAP_STYLE_URL)));
   assert.ok(html.includes("select-incident"));
-  assert.ok(html.includes("OpenStreetMap contributors"));
-  assert.ok(!html.includes("webgl"));
+  assert.ok(html.includes("Street map unavailable"));
   assert.ok(!html.includes("</script><script>"), "no injected script boundary");
 });
 
@@ -135,16 +133,4 @@ test("a chosen reference point never claims a GPS fix", () => {
   const reference = { source: "reference", label: "Hampankatta Junction", lat: 12.8698, lng: 74.8426, gpsAccuracyM: null, gpsFixAt: null };
   assert.deepEqual(toReportLocationInput(reference), { lat: 12.8698, lng: 74.8426, gpsAccuracyM: null, gpsFixAt: null });
   assert.equal(formatCoordinates(reference), "12.8698° N, 74.8426° E");
-});
-
-test("incident sheet drag height stays between the compact and expanded positions", () => {
-  assert.equal(clampIncidentSheetHeight(360, 120, COLLAPSED_INCIDENT_SHEET_HEIGHT, 360), 240);
-  assert.equal(clampIncidentSheetHeight(360, 500, COLLAPSED_INCIDENT_SHEET_HEIGHT, 360), COLLAPSED_INCIDENT_SHEET_HEIGHT);
-  assert.equal(clampIncidentSheetHeight(COLLAPSED_INCIDENT_SHEET_HEIGHT, -500, COLLAPSED_INCIDENT_SHEET_HEIGHT, 360), 360);
-});
-
-test("incident sheet snaps down to collapse and an upward swipe reopens it", () => {
-  assert.equal(shouldCollapseIncidentSheet(300, 360, false, 60, 0.2), true);
-  assert.equal(shouldCollapseIncidentSheet(94, 360, true, -45, 0.1), false);
-  assert.equal(shouldCollapseIncidentSheet(350, 360, false, -10, -0.8), false);
 });

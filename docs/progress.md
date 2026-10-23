@@ -1114,3 +1114,9 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
 - **Verification:** `docker compose config -q`, the Git Bash `just --dry-run mobile-lan 10.166.153.16`, and `git diff --check` passed; no conflict markers remain. The full Docker checks passed all 234 tests, web ESLint (0 errors, one exhaustive-deps warning in `web-report-screen.tsx`), mobile typecheck, Next route type generation, web TypeScript, and production build. Focused mobile ESLint on the merged Traffic screen/map files passed. Full mobile ESLint remains blocked by the Rules-of-Hooks error at `apps/mobile/app/report.tsx:544`. Physical Android and map-browser verification were not run.
 - **Commit:** `17d417c3a6410dbc476d50342b9fcc9a811ab9de` — `Merge origin/main with local map updates`.
 - **Push:** Both commits are on `origin/main`; push confirmed 24 Oct 2026.
+
+## Mobile map rollback — completed, 24 Oct 2026
+
+- **Scope:** Remove the mobile Leaflet/OpenStreetMap Traffic map and draggable sheet changes requested for rollback, restoring the prior React Native Maps screen while retaining the authority dashboard and its Workspace entry.
+- **Verification:** Confirmed `/authority` and the authority-only Workspace card remain present; the active Traffic screen uses the restored native `MapView` and no longer imports the Leaflet/OpenStreetMap renderer or draggable-sheet helper. `docker compose run --build --rm checks` passed (232/232 tests, web ESLint with zero errors and one `activeCoords` dependency warning, mobile typecheck, Next route type generation, web TypeScript, and production build). `git diff --check` passed. Physical Android verification was not run.
+- **Commit/push:** Pending.

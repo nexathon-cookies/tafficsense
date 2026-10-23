@@ -188,13 +188,6 @@ Cross-app changes also belong in [shared progress](../../../packages/shared/docs
 - **Authority analytics and hotspots:** the plan keeps these web-only unless the team decides otherwise.
 - **Background location:** not added, by design.
 
-## Authority role visibility in mobile Workspace — implemented, verification blocked, 24 Oct 2026
-
-- **Supabase review:** `profiles.role` is the server-owned source of access. New Auth signups receive `commuter`; the local synthetic seeder explicitly assigns the `authority` role to `authority@demo.trafficsense.test` and saves its generated password only in ignored `supabase/.temp/demo-accounts.json`. A login email alone does not grant authority access.
-- **Implementation:** Made the login copy role-neutral and made Workspace show the verified role, role-appropriate headings and descriptions, and an authority dashboard entry only when the profile role is `authority`. Kept dashboard API and database authorization unchanged.
-- **Verification:** `git diff --check` passed. The authority seed record is present locally. Docker checks could not run because the Docker Desktop Linux engine pipe is unavailable; mobile typecheck, lint, automated tests and Android device login remain unverified.
-- **Commit:** Pending verification.
-
 
 ## Phase 16 — mobile design system implementation (Phases 0–8) — implemented, 22 Oct 2026
 
