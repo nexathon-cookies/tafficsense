@@ -1,5 +1,11 @@
 # Project Progress
 
+## Windows just recipe invocation and LAN mobile launch — verified, 23 Oct 2026
+
+- **Scope:** Changed `web-up` to call the local Supabase scripts directly and moved the LAN startup steps into `mobile-lan`, removing nested `just` invocations that failed from the recipe's Bash shell on Windows. Added LF attributes for `justfile` and shell scripts to prevent CRLF parsing errors.
+- **Verification:** `just --dry-run mobile-lan 10.166.153.16`, `just --dry-run test`, and `git diff --check` passed. The default WSL Bash could not find Docker; running the recipe with Git Bash via `just --shell "C:\Program Files\Git\bin\bash.exe" --shell-arg=-cu mobile-lan 10.166.153.16` succeeded. Supabase migrations were current and the synthetic seed created eight accounts and four TEST DATA incidents. The database, web, and mobile containers became healthy. The LAN incidents API and Expo Metro returned HTTP 200 at `10.166.153.16:3000` and `:8081`. Physical-device scanning/Expo Go and tests were not run.
+- **Commit:** Pending.
+
 ## Mobile LAN bridge transition — in progress, 23 Oct 2026
 
 - **Scope:** Repair `just mobile-lan <LAN-IP>` when the dedicated local Supabase bridge was previously created with loopback-only port bindings. This is local developer infrastructure supporting the mobile public-traffic reader; it does not alter the report, verification, alert, or analytics contracts.
