@@ -1,0 +1,53 @@
+.banner {
+  background: var(--surface-container-low, #f2f3ff);
+  border: 1px solid var(--outline-variant, #cbd5e1);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.825rem;
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.badgeGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.text {
+  color: var(--on-surface-variant, #3e4947);
+  font-weight: 500;
+}
+
+.link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary, #005c55);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.link:hover {
+  color: var(--primary-hover, #004741);
+}

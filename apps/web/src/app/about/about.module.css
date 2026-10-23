@@ -1,0 +1,320 @@
+.aboutContainer {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 0.5rem 0 2rem 0;
+}
+
+.header {
+  border-bottom: 1px solid var(--outline-variant, #cbd5e1);
+  padding-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--on-surface, #131b2e);
+  letter-spacing: -0.02em;
+  margin: 0.4rem 0 0.75rem 0;
+  line-height: 1.2;
+}
+
+.lead {
+  font-size: 1.1rem;
+  color: var(--on-surface-variant, #3e4947);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.section {
+  background: var(--surface-container-lowest, #ffffff);
+  border: 1px solid var(--outline-variant, #cbd5e1);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(19, 27, 46, 0.04);
+}
+
+.sectionTitle {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary, #005c55);
+  margin: 0 0 1rem 0;
+  border-bottom: 1px solid var(--surface-container-high, #e2e7ff);
+  padding-bottom: 0.5rem;
+}
+
+.text {
+  font-size: 0.95rem;
+  color: var(--on-surface-variant, #3e4947);
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+.bulletList {
+  list-style: disc;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: 0.925rem;
+  color: var(--on-surface, #131b2e);
+  line-height: 1.6;
+}
+
+.bulletList strong {
+  color: var(--on-surface, #131b2e);
+}
+
+.ladderGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ladderCard {
+  background: var(--surface-container-low, #f2f3ff);
+  border: 1px solid var(--outline-variant, #cbd5e1);
+  border-radius: 0.6rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ladderHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ladderHeader h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--on-surface, #131b2e);
+}
+
+.ladderBadgeActive {
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: #005c55;
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.35rem;
+}
+
+.ladderBadgePending {
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: #94a3b8;
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.35rem;
+}
+
+.ladderCard p {
+  font-size: 0.85rem;
+  color: var(--on-surface-variant, #3e4947);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.statusIndicatorActive {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #047857;
+}
+
+.statusIndicatorPending {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* Provenance & Proof Section Styles */
+.badgeReal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #047857;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.badgeEstimated {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #b45309;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.badgeSimulated {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #6366f1;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.provenanceOverviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.provenanceOverviewCard {
+  border-radius: 0.6rem;
+  padding: 1.15rem;
+  border: 1px solid var(--outline-variant, #cbd5e1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--surface-container-low, #f2f3ff);
+}
+
+.provenanceOverviewCard h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--on-surface, #131b2e);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.provenanceOverviewCard p {
+  font-size: 0.875rem;
+  color: var(--on-surface-variant, #3e4947);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.provenanceOverviewCard ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.84rem;
+  color: var(--on-surface, #131b2e);
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  margin: 1.25rem 0;
+  border: 1px solid var(--outline-variant, #cbd5e1);
+  border-radius: 0.6rem;
+  background: var(--surface-container-lowest, #ffffff);
+}
+
+.provenanceTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.provenanceTable th {
+  background: var(--surface-container, #eaedff);
+  color: var(--on-surface, #131b2e);
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--outline-variant, #cbd5e1);
+  white-space: nowrap;
+}
+
+.provenanceTable td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--outline-variant, #cbd5e1);
+  vertical-align: top;
+  color: var(--on-surface, #131b2e);
+  line-height: 1.5;
+}
+
+.provenanceTable tr:last-child td {
+  border-bottom: none;
+}
+
+.provenanceTable tr:nth-child(even) td {
+  background: rgba(234, 237, 255, 0.25);
+}
+
+.sourceLink {
+  color: var(--primary, #005c55);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sourceLink:hover {
+  color: var(--primary-hover, #004741);
+}
+
+.verificationGuideBox {
+  background: var(--surface-container-low, #f2f3ff);
+  border: 1px solid var(--primary, #005c55);
+  border-left: 4px solid var(--primary, #005c55);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.verificationGuideBox h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary, #005c55);
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.verificationStepsList {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--on-surface, #131b2e);
+  line-height: 1.5;
+}
+
+.footer {
+  text-align: center;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--outline-variant, #cbd5e1);
+  color: var(--on-surface-variant, #3e4947);
+  font-size: 0.875rem;
+}
+
