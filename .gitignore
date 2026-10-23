@@ -33,8 +33,3 @@ apps/mobile/.expo/
 /app
 !apps/web/src/app/**
 !apps/mobile/app/**
-
-# Temporarily excluded modules
-apps/mobile/
-supabase/
-tests/
