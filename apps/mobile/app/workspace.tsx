@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   eyebrow: {
-    ...typography.codeSm,
+    ...typography.labelSm,
     color: colors.primary,
     fontWeight: "700",
     letterSpacing: 0.6,
@@ -249,15 +249,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.primaryFixed,
-    borderWidth: 2,
+    backgroundColor: "rgba(0, 102, 94, 0.08)",
+    borderWidth: 1.5,
     borderColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
     ...typography.headlineSm,
-    color: colors.onPrimaryFixed,
+    color: colors.primary,
     fontWeight: "700",
   },
   accountTextGroup: {
@@ -273,12 +273,11 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     backgroundColor: colors.successSurface,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: radius.pill,
   },
   roleBadgeText: {
-    ...typography.codeSm,
-    fontSize: 9.5,
+    ...typography.labelSm,
     color: colors.success,
     fontWeight: "700",
   },
@@ -321,8 +320,7 @@ const styles = StyleSheet.create({
   actionSubtitle: {
     ...typography.bodySm,
     color: colors.textSecondary,
-    fontSize: 11.5,
-    marginTop: 1,
+    marginTop: 2,
   },
   signOutSection: {
     paddingTop: 4,

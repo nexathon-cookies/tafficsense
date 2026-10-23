@@ -59,24 +59,26 @@ const styles = StyleSheet.create({
     gap: space.xs,
   },
   label: {
-    ...typography.titleSm,
+    ...typography.labelLg,
     color: colors.text,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   input: {
-    minHeight: minTouchTarget + 4,
+    minHeight: minTouchTarget,
     backgroundColor: colors.surface,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.control,
     paddingHorizontal: space.md,
     color: colors.text,
-    fontSize: 15,
+    fontSize: 14,
   },
   inputFocused: {
+    borderWidth: 1.5,
     borderColor: colors.primary,
   },
   inputError: {
+    borderWidth: 1.5,
     borderColor: colors.error,
   },
   inputMultiline: {

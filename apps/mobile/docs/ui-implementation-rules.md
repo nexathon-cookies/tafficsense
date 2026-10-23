@@ -10,7 +10,7 @@ Before changing a mobile UI, read this document, the mobile AI rules, and the cu
 
 1. Repository safety, privacy, truthfulness, authorization, and scope rules.
 2. The existing server/API contract and current working mobile behaviour. Do not replace a working flow with a static mockup.
-3. The mobile UI design source: [mobile design specification](../design/trafficsense_mangaluru/DESIGN.md), its adjacent screen references under [`apps/mobile/design/`](../design/), and the [Part A screen plan](part-a-mobile-device.md).
+3. The mobile UI design source: [mobile design specification (Plan 2)](../design/plan2/DESIGN.md) (Plan 1 reference under [`apps/mobile/design/plan1/`](../design/plan1/)), and the [Part A screen plan](part-a-mobile-device.md). Decisions D1–D8 in `IMPLEMENTATION_INSTRUCTIONS_premium_ui.md` govern conflicting tokens.
 4. The integration contract in [Part B](part-b-mobile-logic-integration.md), followed by the mobile [implementation and verification plan](ui-implementation-plan.md).
 
 The design files are visual references, not proof of live data, working routes, permissions, or backend behaviour. Preserve their clean civic style, but correct unsupported copy and never introduce a fake success state just to match a screenshot.

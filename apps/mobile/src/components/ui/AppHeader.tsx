@@ -53,16 +53,9 @@ export function AppHeader({
               onPress={handleBack}
               style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
             >
-              <Icon name="arrow_back" size={22} color={colors.text} />
+              <Icon name="arrow_back" size={24} color={colors.text} />
             </Pressable>
           ) : null}
-
-          {/* TrafficSense Civic Monogram Logo */}
-          <View style={styles.logoMark}>
-            <View style={styles.logoLinePrimary} />
-            <View style={styles.logoLineSecondary} />
-            <View style={styles.logoDot} />
-          </View>
 
           <View style={styles.titleColumn}>
             <Text numberOfLines={1} style={styles.brandTitle}>
@@ -126,46 +119,18 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radius.pill,
     marginLeft: -8,
   },
-  logoMark: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.primaryFixed,
+  avatarButton: {
+    width: 48,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
-    position: "relative",
-  },
-  logoLinePrimary: {
-    position: "absolute",
-    width: 14,
-    height: 2.5,
-    borderRadius: 1.5,
-    backgroundColor: colors.primary,
-    top: 9,
-  },
-  logoLineSecondary: {
-    position: "absolute",
-    width: 14,
-    height: 2.5,
-    borderRadius: 1.5,
-    backgroundColor: colors.secondary,
-    bottom: 9,
-  },
-  logoDot: {
-    position: "absolute",
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.onPrimaryFixed,
-    right: 5,
-    top: 5,
   },
   titleColumn: {
     justifyContent: "center",
@@ -199,12 +164,6 @@ const styles = StyleSheet.create({
     color: colors.onPrimaryFixed,
     fontWeight: "700",
     letterSpacing: 0.6,
-  },
-  avatarButton: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
   },
   avatarRing: {
     width: 34,

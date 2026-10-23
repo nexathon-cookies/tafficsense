@@ -118,7 +118,7 @@ function ReportForm() {
   const [locating, setLocating] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
 
-  const useCurrentLocation = async () => {
+  const requestCurrentLocation = async () => {
     setState({ kind: "idle" });
     setLocating(true);
     try {
@@ -541,7 +541,7 @@ function ReportForm() {
                 <Text style={styles.trustNoticePillText}>{location?.source === "device" ? "GPS was requested only after your tap" : "Reference points are approximate and are not GPS"}</Text>
               </View>
               <View style={styles.locationActions}>
-                <Button title={locating ? "Getting current location…" : "Use current location"} loading={locating} onPress={() => void useCurrentLocation()} variant="outline" />
+                <Button title={locating ? "Getting current location…" : "Use current location"} loading={locating} onPress={() => void requestCurrentLocation()} variant="outline" />
                 <Button title="Choose reference point" onPress={() => setLocationPickerOpen(true)} variant="outline" />
               </View>
             </Card>
@@ -855,9 +855,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   civicFeedBadgeText: {
-    ...typography.codeSm,
+    ...typography.labelSm,
     color: colors.textSecondary,
-    fontSize: 9.5,
   },
   stepperTrack: {
     flexDirection: "row",
@@ -904,7 +903,7 @@ const styles = StyleSheet.create({
   hazardCard: {
     width: "48%",
     flexGrow: 1,
-    height: 128,
+    minHeight: 124,
     backgroundColor: colors.surface,
     borderRadius: radius.card,
     borderWidth: 1,
@@ -914,9 +913,9 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   hazardCardActive: {
-    backgroundColor: colors.primaryFixed,
+    backgroundColor: "rgba(0, 102, 94, 0.06)",
     borderColor: colors.primary,
-    borderWidth: 1.5,
+    borderWidth: 2,
   },
   hazardCardTop: {
     flexDirection: "row",
@@ -924,16 +923,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   hazardIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
   },
   checkBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -947,15 +946,14 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   hazardCardTitleActive: {
-    color: colors.onPrimaryFixed,
+    color: colors.primary,
   },
   hazardCardSubtitle: {
     ...typography.bodySm,
-    fontSize: 11,
     color: colors.textSecondary,
   },
   hazardCardSubtitleActive: {
-    color: colors.onPrimaryFixedVariant,
+    color: colors.text,
   },
   noteCard: {
     padding: space.md,
@@ -975,11 +973,12 @@ const styles = StyleSheet.create({
   noteSubtitle: {
     ...typography.bodySm,
     color: colors.textSecondary,
-    fontSize: 11.5,
   },
   textInputBox: {
     backgroundColor: colors.surfaceContainerLow,
     borderRadius: radius.control,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: 10,
     minHeight: 74,
   },
@@ -1001,11 +1000,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   noteFooterText: {
-    ...typography.codeSm,
+    ...typography.labelSm,
     color: colors.textMuted,
   },
   noteFooterCounter: {
-    ...typography.codeSm,
+    ...typography.labelSm,
+    ...typography.numeric,
     color: colors.textMuted,
   },
   trustSection: {
@@ -1049,8 +1049,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   autoDetectedText: {
-    ...typography.codeSm,
-    fontSize: 9.5,
+    ...typography.labelSm,
     color: colors.textSecondary,
     fontWeight: "600",
   },
@@ -1061,15 +1060,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   tierL1BadgeText: {
-    ...typography.codeSm,
-    fontSize: 9.5,
+    ...typography.labelSm,
     color: colors.evidence,
     fontWeight: "700",
   },
   trustCoords: {
-    ...typography.codeSm,
+    ...typography.bodySm,
     color: colors.textSecondary,
-    fontSize: 11,
     marginTop: 2,
   },
   trustNoticePill: {
@@ -1077,13 +1074,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     backgroundColor: colors.surfaceContainerLow,
-    padding: 6,
+    padding: 8,
     borderRadius: radius.control,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   trustNoticePillText: {
-    ...typography.codeSm,
+    ...typography.labelSm,
     color: colors.textSecondary,
-    fontSize: 10.5,
   },
   honestyBanner: {
     flexDirection: "row",
@@ -1109,8 +1107,7 @@ const styles = StyleSheet.create({
   honestyBody: {
     ...typography.bodySm,
     color: colors.textSecondary,
-    fontSize: 11.5,
-    lineHeight: 16,
+    lineHeight: 18,
     marginTop: 2,
   },
   actionsStack: {
@@ -1194,7 +1191,6 @@ photoCard: {
   photoSubtitle: {
     ...typography.bodySm,
     color: colors.textSecondary,
-    fontSize: 11.5,
   },
   photoActions: {
     flexDirection: "row",
@@ -1206,12 +1202,12 @@ photoCard: {
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 14,
+    minHeight: minTouchTarget,
     borderWidth: 1.5,
     borderColor: colors.primary,
     borderRadius: radius.control,
     borderStyle: "dashed",
-    backgroundColor: colors.primaryFixed,
+    backgroundColor: "rgba(0, 102, 94, 0.05)",
   },
   photoActionText: {
     ...typography.labelMd,
@@ -1232,9 +1228,9 @@ photoCard: {
     position: "absolute",
     top: 8,
     right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center",
     justifyContent: "center",
@@ -1256,7 +1252,6 @@ photoCard: {
   },
   photoPrivacyText: {
     ...typography.bodySm,
-    fontSize: 10.5,
     color: colors.textMuted,
     flex: 1,
   },
@@ -1287,9 +1282,8 @@ photoCard: {
     borderRadius: radius.pill,
   },
   l5UpgradeBadgeText: {
-    ...typography.codeSm,
+    ...typography.labelSm,
     color: "#ffffff",
-    fontSize: 9.5,
   },
   l5ResultSummary: {
     ...typography.bodySm,

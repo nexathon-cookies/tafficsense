@@ -45,15 +45,15 @@ export function BottomNav({ activeTab }: BottomNavProps) {
         styles.navBar,
         {
           paddingBottom: Math.max(insets.bottom, 8),
-          height: 60 + Math.max(insets.bottom, 8),
+          height: 64 + Math.max(insets.bottom, 8),
         },
       ]}
     >
-      {/* Tab 1: Home */}
+      {/* Tab 1: Explore */}
       <Pressable
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === "home" }}
-        accessibilityLabel="Navigate to Home"
+        accessibilityLabel="Navigate to Explore"
         onPress={() => handleNavigate("home")}
         style={styles.tabItem}
       >
@@ -68,15 +68,15 @@ export function BottomNav({ activeTab }: BottomNavProps) {
             activeTab === "home" && styles.tabLabelActive,
           ]}
         >
-          Home
+          Explore
         </Text>
       </Pressable>
 
-      {/* Tab 2: Map */}
+      {/* Tab 2: Traffic */}
       <Pressable
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === "map" }}
-        accessibilityLabel="Navigate to Live Traffic Map"
+        accessibilityLabel="Navigate to Traffic"
         onPress={() => handleNavigate("map")}
         style={styles.tabItem}
       >
@@ -91,7 +91,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
             activeTab === "map" && styles.tabLabelActive,
           ]}
         >
-          Map
+          Traffic
         </Text>
       </Pressable>
 
@@ -106,7 +106,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
             pressed && styles.centerFabPressed,
           ]}
         >
-          <Icon name="add" size={28} color="#ffffff" />
+          <Icon name="warning" size={26} color="#ffffff" />
         </Pressable>
         <Text style={styles.centerFabLabel}>Report</Text>
       </View>
@@ -115,7 +115,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
       <Pressable
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === "plan" }}
-        accessibilityLabel="Navigate to Route Planner"
+        accessibilityLabel="Navigate to Plan"
         onPress={() => handleNavigate("plan")}
         style={styles.tabItem}
       >
@@ -138,7 +138,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
       <Pressable
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === "me" }}
-        accessibilityLabel="Navigate to Account and Journeys"
+        accessibilityLabel="Navigate to Me"
         onPress={() => handleNavigate("me")}
         style={styles.tabItem}
       >
@@ -166,16 +166,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(250, 248, 255, 0.96)",
+    backgroundColor: "rgba(248, 250, 249, 0.98)",
     borderTopWidth: 1,
     borderTopColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
     paddingHorizontal: 8,
-    shadowColor: "#000000",
+    shadowColor: "#172321",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 8,
     zIndex: 50,
@@ -199,16 +199,18 @@ const styles = StyleSheet.create({
   centerFabContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -22,
+    marginTop: -26,
     width: 68,
   },
   centerFab: {
-    width: 52,
-    height: 52,
+    width: 56,
+    height: 56,
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#ffffff",
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
@@ -216,7 +218,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   centerFabPressed: {
-    backgroundColor: colors.primaryPressed,
+    backgroundColor: colors.primary,
+    opacity: 0.9,
     transform: [{ scale: 0.94 }],
   },
   centerFabLabel: {

@@ -465,7 +465,8 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   activeTimestamp: {
-    ...typography.codeSm,
+    ...typography.labelSm,
+    ...typography.numeric,
     color: colors.textSecondary,
   },
   sharesBlock: {
@@ -499,11 +500,11 @@ const styles = StyleSheet.create({
   },
   shareTimestamp: {
     ...typography.bodySm,
-    fontSize: 11,
+    ...typography.numeric,
     color: colors.textSecondary,
   },
   stopShareBtn: {
-    minHeight: 36,
+    minHeight: minTouchTarget,
     paddingHorizontal: 12,
   },
   activeActionsRow: {
@@ -609,8 +610,7 @@ const styles = StyleSheet.create({
   previewLine: {
     ...typography.bodySm,
     color: colors.textSecondary,
-    fontSize: 11.5,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   checkboxRow: {
     flexDirection: "row",
@@ -658,7 +658,8 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   historyTime: {
-    ...typography.codeSm,
+    ...typography.labelSm,
+    ...typography.numeric,
     color: colors.textMuted,
   },
   centerLoading: {
