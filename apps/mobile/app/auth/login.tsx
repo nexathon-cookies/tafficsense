@@ -31,7 +31,7 @@ export default function LoginScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AppHeader
         title="Sign in"
-        subtitle="Commuter Access"
+        subtitle="Account Access"
         canGoBack
         onBack={() => router.replace("/")}
         showLive={false}
@@ -46,10 +46,10 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
-            <Text style={styles.eyebrow}>COMMUTER ACCESS</Text>
+            <Text style={styles.eyebrow}>ACCOUNT ACCESS</Text>
             <Text style={styles.title}>Sign in to TrafficSense</Text>
             <Text style={styles.subtitle}>
-              Sign in with your commuter account to submit road problem reports and share journey status. Public traffic map and routes remain open to all.
+              Sign in with the account assigned to you. Available features are based on the role in your TrafficSense profile. Public traffic map and routes remain open to all.
             </Text>
           </View>
 

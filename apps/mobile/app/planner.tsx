@@ -243,6 +243,10 @@ export default function PlannerScreen() {
             incidents={plan.kind === "result" ? plan.incidents : []}
             selectedIncidentId={selectedIncidentId}
             onSelectIncident={(id) => setSelectedIncidentId(id)}
+            onSelectRoute={(id) => {
+              setSelectedRouteId(id);
+              setFitKey((value) => value + 1);
+            }}
             fitKey={fitKey}
           />
         </View>

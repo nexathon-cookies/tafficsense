@@ -66,6 +66,7 @@ export function buildMapHtml(options: { baseUrl?: string; styleUrl?: string } = 
   let usingFallback = false;
   let fallbackReason = null;
   let lastData = null;
+  let pendingCenter = null;
 
   function applyData(payload) {
     if (!map || !ready) return;
@@ -161,6 +162,10 @@ export function buildMapHtml(options: { baseUrl?: string; styleUrl?: string } = 
         post("ready", { fallback: usingFallback, reason: fallbackReason });
         if (pending) { applyData(pending); pending = null; }
         else if (lastData) applyData(lastData);
+        if (pendingCenter) {
+          map.flyTo({ center: pendingCenter.point, zoom: pendingCenter.zoom, essential: true });
+          pendingCenter = null;
+        }
       }
     });
   }
@@ -176,7 +181,25 @@ export function buildMapHtml(options: { baseUrl?: string; styleUrl?: string } = 
     refit() {
       if (ready && lastData) fitToData(lastData);
     },
+    center(point, zoom) {
+      if (ready) map.flyTo({ center: point, zoom: zoom || 15, essential: true });
+      else pendingCenter = { point, zoom: zoom || 15 };
+    },
   };
+
+  function receiveNativeMessage(event) {
+    try {
+      const message = JSON.parse(event.data);
+      if (message.type === "set-data") window.trafficMap.setData(message.payload);
+      else if (message.type === "fit") window.trafficMap.refit();
+      else if (message.type === "center") window.trafficMap.center(message.point, message.zoom);
+    } catch (error) {
+      post("map-error", { detail: "Map update could not be read." });
+    }
+  }
+
+  window.addEventListener("message", receiveNativeMessage);
+  document.addEventListener("message", receiveNativeMessage);
 
   // Checks that the phone can reach the street style file before MapLibre tries to use it.
   // Returns null when reachable, otherwise a short description of the problem.

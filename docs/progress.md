@@ -8,6 +8,21 @@
 - **Status:** Implementation complete; device-side interaction review pending.
 - **Commit:** `1840f77` — `feat(mobile): add authority incident dashboard`.
 
+## OpenStreetMap mobile maps and draggable incident sheet — in progress, 23 Oct 2026
+
+- **Scope:** Replace the `react-native-maps` view with the existing MapLibre/OpenStreetMap integration for both Traffic → Map and Planner. Make the Traffic incident sheet draggable between expanded and compact states. Preserve the close control, details, live data, map/list flow, location consent, and planner map sizing.
+- **Acceptance checks:** Both screens render the same OpenStreetMap-backed map and data overlays; incident selection and route selection remain interactive; drag down collapses and up expands; tap handle toggles; the collapsed header and close control remain accessible; planner stays compact; focused map/sheet tests, Docker mobile typecheck/lint, and available Expo/device verification pass. No API/database changes.
+- **Implementation plan:** Wire the existing MapLibre HTML and GeoJSON builders into a reusable React Native WebView component; handle map messages, fit/center, and failure fallback; remove the native map package through Docker; add bounded sheet drag/snap helpers and an accessible PanResponder handle; test GeoJSON selection and sheet bounds/snapping.
+- **Status:** Implementation in progress.
+
+## Full-height native Mangaluru traffic map — implemented, device review pending, 23 Oct 2026
+
+- **Scope:** Expand the existing `react-native-maps` view on the mobile Traffic tab to fill the available screen area, with compact overlay controls. Keep the existing live API data, list view, incident sheet, location-consent action, attribution, and the planner's compact map unchanged.
+- **Acceptance checks:** The Traffic map fills the space between app navigation surfaces and opens centered on Mangaluru before data arrives; map/list and selected incident interactions remain intact; controls remain accessible; planner map stays compact; run Docker mobile typecheck/lint and inspect the live Expo Go screen. Do not change APIs or Supabase.
+- **Implementation:** Added a fill-container mode to the shared native map and enabled it only on the Traffic screen. Its map occupies the available page area with accessible floating map controls; the compact planner map and existing full-screen modal remain available.
+- **Verification:** Docker mobile TypeScript check passed. ESLint passed for `apps/mobile/app/traffic.tsx` and `apps/mobile/src/components/traffic-map.tsx`. Full mobile lint remains blocked by the existing Hooks-rule error at `apps/mobile/app/report.tsx:544` (`useCurrentLocation` called inside a callback). The Expo container remains healthy and Metro returns HTTP 200; device-side visual confirmation of the resized map is pending. No API or database changes were made.
+- **Status:** Implementation complete; device review and full lint remain pending.
+
 ## Windows just recipe invocation and LAN mobile launch — verified, 23 Oct 2026
 
 - **Scope:** Changed `web-up` to call the local Supabase scripts directly and moved the LAN startup steps into `mobile-lan`, removing nested `just` invocations that failed from the recipe's Bash shell on Windows. Added LF attributes for `justfile` and shell scripts to prevent CRLF parsing errors.

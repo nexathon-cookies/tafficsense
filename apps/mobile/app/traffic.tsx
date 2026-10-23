@@ -3,6 +3,8 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useTabBackHandler } from "../src/lib/use-tab-back-handler";
 import {
   ActivityIndicator,
+  Animated,
+  PanResponder,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -28,6 +30,7 @@ import {
   StatusBadge,
 } from "../src/components/ui";
 import { areIncidentListsEqual, areSegmentListsEqual } from "../src/lib/traffic-equality";
+import { clampIncidentSheetHeight, COLLAPSED_INCIDENT_SHEET_HEIGHT, shouldCollapseIncidentSheet } from "../src/lib/incident-sheet";
 import { colors, layout, minTouchTarget, radius, shadows, space, typography } from "../src/theme/tokens";
 
 type TrafficData = {
@@ -49,7 +52,67 @@ export default function TrafficScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [fitKey, setFitKey] = useState(0);
+  const [sheetCollapsed, setSheetCollapsed] = useState(false);
+  const [sheetHeightReady, setSheetHeightReady] = useState(false);
+  const [expandedSheetHeight, setExpandedSheetHeight] = useState<number | null>(null);
   const hasData = useRef(false);
+  const [sheetHeight] = useState(() => new Animated.Value(0));
+
+  const animateSheetTo = useCallback((collapsed: boolean) => {
+    if (expandedSheetHeight === null) {
+      setSheetCollapsed(collapsed);
+      return;
+    }
+
+    const targetHeight = collapsed ? COLLAPSED_INCIDENT_SHEET_HEIGHT : expandedSheetHeight;
+    sheetHeight.stopAnimation();
+    Animated.spring(sheetHeight, {
+      toValue: targetHeight,
+      useNativeDriver: false,
+      damping: 24,
+      stiffness: 220,
+      mass: 0.8,
+    }).start(({ finished }) => {
+      if (!finished) return;
+      setSheetCollapsed(collapsed);
+    });
+  }, [expandedSheetHeight, sheetHeight]);
+
+  const sheetPanResponder = useMemo(() => {
+    const dragStartHeight = sheetCollapsed ? COLLAPSED_INCIDENT_SHEET_HEIGHT : expandedSheetHeight ?? 0;
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_event, gesture) =>
+        Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+      onPanResponderGrant: () => sheetHeight.stopAnimation(),
+      onPanResponderMove: (_event, gesture) => {
+        const height = clampIncidentSheetHeight(
+          dragStartHeight,
+          gesture.dy,
+          COLLAPSED_INCIDENT_SHEET_HEIGHT,
+          expandedSheetHeight ?? dragStartHeight,
+        );
+        sheetHeight.setValue(height);
+      },
+      onPanResponderRelease: (_event, gesture) => {
+        const currentHeight = clampIncidentSheetHeight(
+          dragStartHeight,
+          gesture.dy,
+          COLLAPSED_INCIDENT_SHEET_HEIGHT,
+          expandedSheetHeight ?? dragStartHeight,
+        );
+        const collapsed = shouldCollapseIncidentSheet(
+          currentHeight,
+          expandedSheetHeight ?? dragStartHeight,
+          sheetCollapsed,
+          gesture.dy,
+          gesture.vy,
+        );
+        animateSheetTo(collapsed);
+      },
+      onPanResponderTerminate: () => animateSheetTo(sheetCollapsed),
+    });
+  }, [animateSheetTo, expandedSheetHeight, sheetCollapsed, sheetHeight]);
 
   const load = useCallback(async () => {
     if (apiConfigurationError) return;
@@ -93,7 +156,7 @@ export default function TrafficScreen() {
 
   const selected = useMemo(() => {
     if (!data) return null;
-    return data.incidents.find((incident) => incident.id === selectedId) ?? data.incidents[0] ?? null;
+    return data.incidents.find((incident) => incident.id === selectedId) ?? null;
   }, [data, selectedId]);
 
   const filteredIncidents = useMemo(() => {
@@ -220,10 +283,14 @@ export default function TrafficScreen() {
       {view === "map" ? (
         <View style={styles.mapContainer}>
           <TrafficMap
+            fillContainer
             incidents={data?.incidents ?? []}
             segments={data?.segments ?? []}
             selectedIncidentId={selectedId}
-            onSelectIncident={(id) => setSelectedId(id)}
+            onSelectIncident={(id) => {
+              setSelectedId(id);
+              animateSheetTo(false);
+            }}
             fitKey={fitKey}
           />
 
@@ -236,11 +303,27 @@ export default function TrafficScreen() {
 
           {/* Collapsible Inspection Bottom Sheet */}
           {selected ? (
-            <View style={styles.bottomSheet}>
+            <Animated.View
+              style={[styles.bottomSheet, sheetHeightReady && { height: sheetHeight }]}
+              onLayout={(event) => {
+                if (expandedSheetHeight !== null) return;
+                const height = event.nativeEvent.layout.height;
+                setExpandedSheetHeight(height);
+                sheetHeight.setValue(height);
+                setSheetHeightReady(true);
+              }}
+            >
               {/* Drag Handle */}
-              <View style={styles.dragHandleWrapper}>
+              <Pressable
+                {...sheetPanResponder.panHandlers}
+                accessibilityRole="button"
+                accessibilityLabel={sheetCollapsed ? "Expand incident details" : "Collapse incident details"}
+                accessibilityState={{ expanded: !sheetCollapsed }}
+                onPress={() => animateSheetTo(!sheetCollapsed)}
+                style={styles.dragHandleWrapper}
+              >
                 <View style={styles.dragHandle} />
-              </View>
+              </Pressable>
 
               <View style={styles.sheetContent}>
                 {/* Header & Verification Row */}
@@ -255,6 +338,7 @@ export default function TrafficScreen() {
                   </View>
                   <Pressable
                     accessibilityLabel="Close detail"
+                    accessibilityRole="button"
                     onPress={() => setSelectedId(null)}
                     style={styles.sheetCloseBtn}
                   >
@@ -262,6 +346,8 @@ export default function TrafficScreen() {
                   </Pressable>
                 </View>
 
+                {!sheetCollapsed ? (
+                  <View style={styles.sheetDetails}>
                 {/* Badges Row */}
                 <View style={styles.sheetBadgesRow}>
                   <EvidenceBadge
@@ -331,8 +417,10 @@ export default function TrafficScreen() {
                   </View>
                   <Text style={styles.detailsLink}>Details</Text>
                 </View>
+                  </View>
+                ) : null}
               </View>
-            </View>
+            </Animated.View>
           ) : null}
         </View>
       ) : (
@@ -373,6 +461,7 @@ export default function TrafficScreen() {
                   onPress={() => {
                     setSelectedId(incident.id);
                     setView("map");
+                    animateSheetTo(false);
                   }}
                   style={styles.listItemCard}
                 >
@@ -620,12 +709,14 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    overflow: "hidden",
     ...shadows.sheet,
     zIndex: 40,
   },
   dragHandleWrapper: {
     alignItems: "center",
-    paddingVertical: 8,
+    justifyContent: "center",
+    minHeight: minTouchTarget,
   },
   dragHandle: {
     width: 40,
@@ -638,6 +729,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     gap: 10,
   },
+  sheetDetails: { gap: 10 },
   sheetHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -665,8 +757,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheetCloseBtn: {
-    width: 32,
-    height: 32,
+    minWidth: minTouchTarget,
+    minHeight: minTouchTarget,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
