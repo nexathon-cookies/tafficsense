@@ -1,0 +1,119 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.75rem;
+  margin: 1rem 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.alertBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+}
+
+.abstainBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  background: var(--surface-container);
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+}
+
+.barsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.barRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.barLabelGroup {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.barName {
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.barTime {
+  font-family: var(--font-jetbrains-mono, monospace);
+  font-weight: 700;
+  color: var(--on-surface-variant);
+}
+
+.barTrack {
+  height: 12px;
+  background: var(--surface-container-high);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.barPrimaryDelayed {
+  background: linear-gradient(90deg, #ea580c, #dc2626);
+}
+
+.barPrimaryNormal {
+  background: #005c55;
+}
+
+.barAlternative {
+  background: #6616d7;
+}
+
+.summaryLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--outline-variant);
+}
+
+.reasonText {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--on-surface);
+}
+
+.reasonSub {
+  color: var(--on-surface-variant);
+}

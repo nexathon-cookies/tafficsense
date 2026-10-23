@@ -1,0 +1,140 @@
+.corridorStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.stripRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.routeHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 130px;
+}
+
+.routeBadge {
+  display: inline-block;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.35rem;
+  width: fit-content;
+}
+
+.routeSub {
+  font-size: 0.7rem;
+  color: var(--on-surface-variant);
+}
+
+.nodesContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.nodeWithConnector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.connectorLine {
+  font-size: 0.75rem;
+  color: var(--outline);
+  user-select: none;
+  font-weight: bold;
+}
+
+.stripNode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  min-width: 140px;
+}
+
+.stripNode:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stripNodeSelected {
+  box-shadow: 0 0 0 2px var(--primary);
+  border-width: 2px !important;
+}
+
+.stripNodeHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stripNodeArrow {
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.stripNodeName {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  white-space: nowrap;
+}
+
+.stripNodeMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.chip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid;
+  background: white;
+}
+
+.delayText {
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-jetbrains-mono, monospace);
+}
+
+@media (max-width: 768px) {
+  .stripRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .routeHeader {
+    min-width: 0;
+  }
+  .nodesContainer {
+    width: 100%;
+  }
+  .stripNode {
+    min-width: 120px;
+  }
+}

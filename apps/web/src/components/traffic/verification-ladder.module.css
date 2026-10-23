@@ -1,0 +1,185 @@
+.ladderContainer {
+  background: var(--surface-container-low, #f2f3ff);
+  border: 1px solid var(--outline-variant, #cbd5e1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin: 1.25rem 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--outline-variant, #cbd5e1);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--on-surface, #131b2e);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--on-surface-variant, #3e4947);
+  margin: 0.15rem 0 0 0;
+}
+
+.currentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--surface-container-lowest, #ffffff);
+  border: 1px solid var(--outline-variant, #cbd5e1);
+  border-radius: 9999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary, #005c55);
+}
+
+.currentDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--primary, #005c55);
+}
+
+.ladderSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ladderStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--surface-container-lowest, #ffffff);
+  border: 1px solid var(--outline-variant, #cbd5e1);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.stepAchieved {
+  border-color: #047857;
+  background: #f0fdf4;
+  box-shadow: 0 1px 3px rgba(4, 120, 87, 0.1);
+}
+
+.stepPlanned {
+  opacity: 0.75;
+  background: #f8fafc;
+  border-style: dashed;
+}
+
+.stepInactive {
+  opacity: 0.85;
+}
+
+.stepRail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 2.25rem;
+}
+
+.stepBadge {
+  font-family: var(--font-jetbrains-mono, monospace);
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.35rem;
+  text-align: center;
+}
+
+.badgeAchieved {
+  background: #047857;
+  color: white;
+}
+
+.badgePlanned {
+  background: #94a3b8;
+  color: white;
+}
+
+.badgeInactive {
+  background: #cbd5e1;
+  color: #334155;
+}
+
+.railLine {
+  display: none;
+}
+
+.stepContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.stepTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.stepNameGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stepName {
+  font-size: 0.875rem;
+  color: var(--on-surface, #131b2e);
+}
+
+.stepSource {
+  font-size: 0.75rem;
+  color: var(--on-surface-variant, #3e4947);
+}
+
+.pillAchieved {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #047857;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.pillPlanned {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.pillInactive {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #94a3b8;
+  padding: 0.1rem 0.4rem;
+  white-space: nowrap;
+}
+
+.stepDesc {
+  font-size: 0.775rem;
+  color: var(--on-surface-variant, #3e4947);
+  margin: 0.25rem 0 0 0;
+  line-height: 1.4;
+}

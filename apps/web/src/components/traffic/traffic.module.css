@@ -1,0 +1,189 @@
+.explorer { display: grid; gap: 1.5rem; min-width: 0; }
+.summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; }
+.summary > div { min-width: 0; }
+.timestamp { font-size: 0.85rem; overflow-wrap: anywhere; }
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.list ul { list-style: none; padding: 0; display: grid; gap: 0.75rem; }
+.list a { display: grid; gap: 0.3rem; border: 1px solid var(--outline-variant); border-radius: 0.75rem; padding: 0.85rem; text-decoration: none; overflow-wrap: anywhere; transition: border-color 0.15s ease; }
+.list a span { font-size: 0.8rem; color: var(--on-surface-variant); }
+.list a[aria-current="true"] { border: 2px solid var(--primary); padding: calc(0.85rem - 1px); background: var(--surface-container-low); }
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.cardArrow {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+.cardName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+.cardChip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.35rem;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.cardMetrics {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+}
+.cardDelay {
+  font-family: var(--font-jetbrains-mono, monospace);
+  font-weight: 700;
+}
+.cardAge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--on-surface-variant);
+  font-size: 0.75rem;
+}
+.ageDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dotGreen { background-color: #10b981; box-shadow: 0 0 0 2px #d1fae5; }
+.dotAmber { background-color: #f59e0b; box-shadow: 0 0 0 2px #fef3c7; }
+.dotGrey { background-color: #94a3b8; }
+
+.cardDetails {
+  margin-top: 0.4rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed var(--outline-variant);
+  font-size: 0.75rem;
+}
+.cardDetails summary {
+  font-size: 0.72rem;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  padding: 0.15rem 0;
+  user-select: none;
+}
+.cardDetails summary:hover {
+  color: var(--primary);
+}
+.cardDetailsContent {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  color: var(--on-surface-variant);
+}
+
+.mapPanel { min-width: 0; display: flex; flex-direction: column; gap: 1rem; }
+.mapHeader { display: flex; align-items: center; justify-content: space-between; }
+.mapHeaderRow { margin-bottom: 0.25rem; }
+.mapStatus { font-size: 0.85rem; color: var(--on-surface-variant); margin: 0; }
+
+.mapRegion { min-width: 0; }
+.mapCanvas { height: 520px; width: 100%; border: 1px solid var(--outline-variant); border-radius: 0.75rem; overflow: hidden; }
+.mapCanvas :global(.maplibregl-ctrl-group) button { width: 44px; height: 44px; }
+.mapCanvas :global(.maplibregl-ctrl-group) button:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; }
+
+.marker { width: 44px; height: 44px; border: 2px solid var(--primary); border-radius: 50%; background: white; color: var(--primary); font-weight: 800; box-shadow: 0 2px 6px #131b2e33; cursor: pointer; }
+.marker[aria-pressed="true"] { background: var(--primary); color: white; border: 3px solid white; box-shadow: 0 0 0 3px var(--on-surface); z-index: 1; }
+.marker:focus-visible { outline: 3px solid var(--tertiary); outline-offset: 4px; }
+.liveIncidentMarker { min-width: 38px; min-height: 38px; border: 3px solid white; border-radius: 9999px; background: #b91c1c; color: white; font-size: 1rem; box-shadow: 0 2px 8px #131b2e66; cursor: pointer; }
+.liveIncidentMarker:focus-visible { outline: 3px solid var(--tertiary); outline-offset: 4px; }
+.liveIncidentDetails { margin-top: 0.75rem; padding: 1rem; border: 1px solid #fecaca; border-left: 4px solid #b91c1c; border-radius: 0.75rem; background: #fff7f7; color: #451a1a; }
+.liveIncidentDetails h3 { margin: 0.15rem 0 0.5rem; font-size: 1rem; }
+.liveIncidentDetails p { margin: 0.35rem 0; }
+.liveIncidentEyebrow { color: #991b1b; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; }
+
+.legendRow { margin-top: 0.75rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.legendChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.25rem 0.6rem;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: 9999px;
+  color: var(--on-surface);
+}
+.legendColor { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.legendColorSelected { background: #131b2e; border: 1px dashed white; box-shadow: 0 0 0 1px #131b2e; }
+
+.mapNotice { font-size: 0.8rem; color: var(--on-surface-variant); margin: 0.5rem 0 0.25rem 0; }
+
+.attribution { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.8rem; margin-top: 0.25rem; }
+.attribution a { display: inline-flex; align-items: center; min-height: 44px; overflow-wrap: anywhere; }
+
+.directionToggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  background: var(--surface-container-low);
+  padding: 0.2rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--outline-variant);
+}
+.directionToggle button {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  min-height: 36px;
+  border-radius: 0.35rem;
+}
+.toggleActive { background: var(--primary) !important; color: white !important; }
+
+.detailsPanel { margin-top: 0.5rem; }
+
+.facts { display: grid; gap: 0.75rem; }
+.facts div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 1rem; }
+.facts dt { color: var(--on-surface-variant); }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+
+.samples { list-style: none; padding: 0; display: grid; gap: 0.75rem; }
+.samples li { display: flex; justify-content: space-between; gap: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--outline-variant); }
+.samples span { overflow-wrap: anywhere; }
+.samples strong { white-space: nowrap; }
+
+.reports { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--outline-variant); scroll-margin-top: 1rem; }
+.reports ul { list-style: none; padding: 0; display: grid; gap: 1rem; }
+.reports details { margin-block: 0.75rem; padding: 0.75rem; border: 1px solid var(--outline-variant); border-radius: 0.75rem; overflow-wrap: anywhere; }
+.reports summary { min-height: 44px; padding-block: 0.5rem; cursor: pointer; }
+.reports summary:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+.reports li { display: grid; gap: 0.35rem; padding: 1rem; border: 1px solid var(--outline-variant); border-radius: 0.75rem; overflow-wrap: anywhere; }
+.reports li span { font-size: 0.85rem; }
+
+.markerEvidence { position: absolute; bottom: -12px; left: -9px; background: var(--on-surface); color: white; border-radius: 0.4rem; padding: 0.1rem 0.3rem; font-size: 0.7rem; line-height: 1.3; }
+.markerSlowdown { position: absolute; bottom: -12px; right: -13px; background: var(--primary); color: white; border-radius: 0.4rem; padding: 0.1rem 0.3rem; font-size: 0.7rem; line-height: 1.3; }
+.markerCount { position: absolute; top: -9px; right: -12px; background: var(--tertiary); color: white; border-radius: 0.5rem; padding: 0.1rem 0.3rem; min-width: 22px; font-size: 0.7rem; line-height: 1.3; }
+
+@media (max-width: 960px) {
+  .heroGrid { grid-template-columns: minmax(0, 1fr); }
+  .summary { flex-direction: column; }
+  .mapCanvas { height: 380px; }
+}
+@media (max-width: 480px) {
+  .facts div { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; }
+  .samples li { flex-direction: column; gap: 0.25rem; }
+  .mapCanvas { height: 300px; }
+}
