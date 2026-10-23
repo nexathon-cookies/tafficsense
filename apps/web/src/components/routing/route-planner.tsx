@@ -76,6 +76,7 @@ export function RoutePlanner() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isDrawerExpanded, setIsDrawerExpanded] = useState<boolean>(false);
 
   // Incident reporting state
   const [showReportForm, setShowReportForm] = useState<boolean>(false);
@@ -217,6 +218,18 @@ export function RoutePlanner() {
       }
     });
   }
+
+  const handleSwap = () => {
+    const oldStart = startIndex;
+    const oldDest = destIndex;
+    setStartIndex(oldDest);
+    setDestIndex(oldStart);
+    setUseGpsStart(false);
+    setCustomStartCoord(null);
+    setActiveDetour(null);
+    setRecalculateError(null);
+    fetchRoutes(MANGALURU_PRESETS[oldDest].coords, MANGALURU_PRESETS[oldStart].coords);
+  };
 
   // Fetch active incidents
   async function loadIncidents() {
@@ -686,28 +699,111 @@ export function RoutePlanner() {
       {/* Fullscreen Map Canvas */}
       <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
 
-      {/* Floating Directions Drawer (Top-Left) */}
-      <aside className="absolute top-4 left-4 z-20 w-80 sm:w-[420px] max-h-[calc(100vh-80px)] flex flex-col bg-surface/95 backdrop-blur-md rounded-2xl border border-surface-container shadow-2xl overflow-hidden pointer-events-auto">
-        <div className="p-3.5 pb-3 border-b border-surface-container bg-surface-container-low/70 space-y-2.5">
+      {/* Google Maps Style Floating Search & Direction Card (Top) */}
+      <div className="absolute top-3 inset-x-3 sm:left-4 sm:right-auto sm:w-[420px] z-30 pointer-events-auto">
+        <div className="bg-surface/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-surface-container shadow-xl p-3 sm:p-3.5 space-y-2.5">
+          {/* Header Row: Title & Live Telemetry */}
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-surface-on flex items-center gap-1.5 m-0">
+            <h2 className="text-xs sm:text-sm font-bold text-surface-on flex items-center gap-1.5 m-0">
               <span>🗺️</span>
               <span>City Route Intelligence</span>
             </h2>
-            <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-surface-container text-surface-on-variant border border-surface-container-highest">
-              FREE-FLOW
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span className="text-[10px] font-semibold text-surface-on-variant">
+                LIVE · {liveIncidents.length} hazard{liveIncidents.length === 1 ? "" : "s"}
+              </span>
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-surface-container text-surface-on-variant border border-surface-container-highest">
+                FREE-FLOW
+              </span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
-            {/* Origin selector */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-surface-on flex items-center gap-1.5" htmlFor="start-select">
-                  <span className="w-2 h-2 rounded-full bg-emerald-600 inline-block" />
-                  Origin (Start A)
-                </label>
-                <div className="flex items-center gap-1">
+          {/* Google Maps Connected Origin & Destination Inputs */}
+          <div className="flex items-center gap-2 bg-surface-container-low/60 rounded-xl p-2 border border-surface-container/60">
+            {/* Visual Route Connector Track */}
+            <div className="flex flex-col items-center justify-between py-1 self-stretch shrink-0">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 ring-2 ring-emerald-200" />
+              <div className="w-0.5 flex-1 my-1 border-l-2 border-dotted border-surface-on-variant/30" />
+              <div className="w-2.5 h-2.5 rounded-full bg-rose-600 ring-2 ring-rose-200" />
+            </div>
+
+            {/* Inputs Column */}
+            <div className="flex-1 space-y-1.5 min-w-0">
+              {/* Origin Row */}
+              <div className="flex items-center gap-1.5 min-w-0">
+                {isPickingLocation ? (
+                  <div className="flex-1 text-xs px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 flex items-center justify-between animate-pulse">
+                    <span className="truncate">🎯 Click map for origin…</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsPickingLocation(false)}
+                      className="text-[10px] font-bold text-amber-900 underline ml-1"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : customStartCoord ? (
+                  <div className="flex-1 flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 min-w-0">
+                    <span className="font-medium truncate">📍 {customStartCoord[1].toFixed(4)}, {customStartCoord[0].toFixed(4)}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomStartCoord(null);
+                        setActiveDetour(null);
+                        setRecalculateError(null);
+                        fetchRoutes(MANGALURU_PRESETS[startIndex].coords, activeDest);
+                      }}
+                      className="text-[10px] font-bold underline ml-1 shrink-0"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                ) : useGpsStart && userLocation ? (
+                  <div className="flex-1 flex items-center justify-between text-xs px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 min-w-0">
+                    <span className="font-medium truncate">GPS: {userLocation[1].toFixed(4)}, {userLocation[0].toFixed(4)}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUseGpsStart(false);
+                        setActiveDetour(null);
+                        setRecalculateError(null);
+                        fetchRoutes(MANGALURU_PRESETS[startIndex].coords, activeDest);
+                      }}
+                      className="text-[10px] font-bold underline ml-1 shrink-0"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    id="start-select"
+                    aria-label="Origin starting location"
+                    className="flex-1 text-xs font-semibold rounded-lg border border-surface-container bg-surface px-2.5 py-1.5 text-surface-on shadow-2xs focus:ring-1 focus:ring-primary outline-none transition truncate"
+                    value={startIndex}
+                    onChange={(e) => {
+                      const newIdx = Number(e.target.value);
+                      setUseGpsStart(false);
+                      setCustomStartCoord(null);
+                      setStartIndex(newIdx);
+                      setActiveDetour(null);
+                      setRecalculateError(null);
+                      fetchRoutes(MANGALURU_PRESETS[newIdx].coords, activeDest);
+                    }}
+                  >
+                    {MANGALURU_PRESETS.map((p, idx) => (
+                      <option key={p.name} value={idx}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {/* Quick GPS & Map Pick Buttons */}
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     type="button"
                     onClick={() => {
@@ -715,10 +811,10 @@ export function RoutePlanner() {
                       setIsPickingLocation(false);
                       handleRequestGps("start");
                     }}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-surface-container hover:bg-surface-container-high text-primary font-medium border border-surface-container-highest transition"
+                    className="text-[11px] px-2 py-1.5 rounded-lg bg-surface hover:bg-surface-container text-primary font-bold border border-surface-container transition shadow-2xs"
                     title="Use GPS current position"
                   >
-                    📍 GPS
+                    📍
                   </button>
                   <button
                     type="button"
@@ -726,74 +822,31 @@ export function RoutePlanner() {
                       setUseGpsStart(false);
                       setIsPickingLocation(!isPickingLocation);
                     }}
-                    className={`text-[10px] px-1.5 py-0.5 rounded font-medium border transition ${
+                    className={`text-[11px] px-2 py-1.5 rounded-lg font-bold border transition shadow-2xs ${
                       isPickingLocation
                         ? "bg-amber-100 text-amber-900 border-amber-300 font-bold"
-                        : "bg-surface-container hover:bg-surface-container-high text-primary border-surface-container-highest"
+                        : "bg-surface hover:bg-surface-container text-primary border-surface-container"
                     }`}
                     title="Pick origin point on map"
                   >
-                    {isPickingLocation ? "✕ Cancel" : "🎯 Pick"}
+                    {isPickingLocation ? "✕" : "🎯"}
                   </button>
                 </div>
               </div>
 
-              {isPickingLocation ? (
-                <div className="text-xs px-3 py-2 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 flex items-center justify-between animate-pulse">
-                  <span>🎯 Click map to set origin…</span>
-                  <button
-                    type="button"
-                    onClick={() => setIsPickingLocation(false)}
-                    className="text-[11px] font-semibold underline ml-2"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : customStartCoord ? (
-                <div className="flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-900">
-                  <span className="font-medium truncate">📍 Fix: {customStartCoord[1].toFixed(4)}, {customStartCoord[0].toFixed(4)}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCustomStartCoord(null);
-                      setActiveDetour(null);
-                      setRecalculateError(null);
-                      fetchRoutes(MANGALURU_PRESETS[startIndex].coords, activeDest);
-                    }}
-                    className="text-[11px] font-semibold underline ml-2 shrink-0"
-                  >
-                    Reset
-                  </button>
-                </div>
-              ) : useGpsStart && userLocation ? (
-                <div className="flex items-center justify-between text-xs px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900">
-                  <span className="font-medium truncate">GPS: {userLocation[1].toFixed(4)}, {userLocation[0].toFixed(4)}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUseGpsStart(false);
-                      setActiveDetour(null);
-                      setRecalculateError(null);
-                      fetchRoutes(MANGALURU_PRESETS[startIndex].coords, activeDest);
-                    }}
-                    className="text-[11px] font-semibold underline ml-2 shrink-0"
-                  >
-                    Reset
-                  </button>
-                </div>
-              ) : (
+              {/* Destination Row */}
+              <div className="flex items-center gap-1.5 min-w-0">
                 <select
-                  id="start-select"
-                  className="w-full text-xs font-medium rounded-xl border border-surface-container-highest bg-surface-container-lowest px-3 py-2 text-surface-on shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition"
-                  value={startIndex}
+                  id="dest-select"
+                  aria-label="Destination location"
+                  className="w-full text-xs font-semibold rounded-lg border border-surface-container bg-surface px-2.5 py-1.5 text-surface-on shadow-2xs focus:ring-1 focus:ring-primary outline-none transition truncate"
+                  value={destIndex}
                   onChange={(e) => {
                     const newIdx = Number(e.target.value);
-                    setUseGpsStart(false);
-                    setCustomStartCoord(null);
-                    setStartIndex(newIdx);
+                    setDestIndex(newIdx);
                     setActiveDetour(null);
                     setRecalculateError(null);
-                    fetchRoutes(MANGALURU_PRESETS[newIdx].coords, activeDest);
+                    fetchRoutes(activeStart, MANGALURU_PRESETS[newIdx].coords);
                   }}
                 >
                   {MANGALURU_PRESETS.map((p, idx) => (
@@ -802,65 +855,133 @@ export function RoutePlanner() {
                     </option>
                   ))}
                 </select>
-              )}
-              {gpsError && <p className="text-[11px] text-rose-600 m-0">{gpsError}</p>}
+              </div>
             </div>
 
-            {/* Destination selector */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-surface-on flex items-center gap-1.5" htmlFor="dest-select">
-                <span className="w-2 h-2 rounded-full bg-rose-600 inline-block" />
-                Destination (End B)
-              </label>
-              <select
-                id="dest-select"
-                className="w-full text-xs font-medium rounded-xl border border-surface-container-highest bg-surface-container-lowest px-3 py-2 text-surface-on shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition"
-                value={destIndex}
-                onChange={(e) => {
-                  const newIdx = Number(e.target.value);
-                  setDestIndex(newIdx);
-                  setActiveDetour(null);
-                  setRecalculateError(null);
-                  fetchRoutes(activeStart, MANGALURU_PRESETS[newIdx].coords);
-                }}
-              >
-                {MANGALURU_PRESETS.map((p, idx) => (
-                  <option key={p.name} value={idx}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+            {/* Invert / Swap Button */}
+            <button
+              type="button"
+              onClick={handleSwap}
+              className="w-8 h-8 rounded-full border border-surface-container bg-surface hover:bg-surface-container flex items-center justify-center text-xs font-bold text-surface-on shadow-2xs transition shrink-0"
+              title="Swap origin and destination"
+              aria-label="Swap origin and destination"
+            >
+              ⇅
+            </button>
+          </div>
+
+          {/* Quick Filter / Action Pills Bar */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
+            <button
+              type="button"
+              disabled={isPending || isRecalculating}
+              onClick={() => {
+                setActiveDetour(null);
+                setRecalculateError(null);
+                fetchRoutes(activeStart, activeDest);
+              }}
+              className="px-2.5 py-1 rounded-full bg-primary text-white hover:bg-primary-hover font-bold transition whitespace-nowrap text-[11px] flex items-center gap-1 shadow-2xs"
+            >
+              <span>{isPending ? "⏳" : "🔍"}</span>
+              <span>{isPending ? "Calculating…" : "Find Best Route"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowTrafficOverlay((prev) => !prev)}
+              className={`px-2.5 py-1 rounded-full border transition whitespace-nowrap text-[11px] font-semibold flex items-center gap-1 ${
+                showTrafficOverlay
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+                  : "bg-surface-container hover:bg-surface-container-high text-surface-on border-surface-container"
+              }`}
+            >
+              <span>🚦</span>
+              <span>Traffic {showTrafficOverlay ? "On" : "Off"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowReportForm(true)}
+              className="px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-surface-on border border-surface-container transition whitespace-nowrap text-[11px] font-semibold flex items-center gap-1"
+            >
+              <span>📢</span>
+              <span>Report Hazard</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Google Maps Style Expandable Bottom Sheet */}
+      <aside
+        className={`absolute bottom-0 inset-x-0 sm:left-4 sm:bottom-4 sm:inset-x-auto sm:w-[420px] z-20 flex flex-col bg-surface/95 dark:bg-slate-900/95 backdrop-blur-md rounded-t-3xl sm:rounded-2xl border border-surface-container shadow-2xl overflow-hidden pointer-events-auto transition-all duration-300 ease-in-out ${
+          isDrawerExpanded
+            ? "max-h-[75vh] sm:max-h-[calc(100vh-220px)]"
+            : "max-h-[145px]"
+        }`}
+      >
+        {/* Drag Handle & Summary Row (Always Visible) */}
+        <div
+          onClick={() => setIsDrawerExpanded((prev) => !prev)}
+          className="p-3 pb-2.5 border-b border-surface-container/60 cursor-pointer select-none bg-surface-container-low/40 hover:bg-surface-container-low/70 transition"
+        >
+          {/* Visual Drag Handle Bar */}
+          <div className="w-10 h-1.5 rounded-full bg-surface-on-variant/30 mx-auto mb-2" />
+
+          {/* Quick Route Peek View */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-2xl font-black text-primary tracking-tight">
+                  {activeRoute ? formatRouteDuration(activeRoute.duration_s) : "..."}
+                </span>
+                <span className="text-xs font-semibold text-surface-on-variant">
+                  {activeRoute ? formatRouteDistance(activeRoute.distance_m) : ""}
+                </span>
+                {activeRoute?.is_recommended && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                    ★ Recommended
+                  </span>
+                )}
+                {activeRoute?.avoids_incident && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                    Detour Active
+                  </span>
+                )}
+              </div>
+              <p className="text-xs font-medium text-surface-on-variant truncate m-0 mt-0.5">
+                {activeRoute?.name ?? "Calculating best route..."} · free-flow
+              </p>
+            </div>
+
+            {/* Expand / Collapse Control Button */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs font-bold text-primary flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10">
+                <span>{routes.length} options</span>
+                <span>{isDrawerExpanded ? "▼" : "▲"}</span>
+              </span>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
-            <div className="flex items-center gap-2">
+          {/* Compact Hazard Alert Strip in Peek State if route intersects hazard */}
+          {selectedRouteWarnings.length > 0 && !activeRoute?.avoids_incident && !isDrawerExpanded && (
+            <div className="mt-2 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-xs">
+              <div className="flex items-center gap-1.5 truncate">
+                <span>⚠️</span>
+                <span className="truncate font-medium">Passes near {selectedRouteWarnings[0].label} ({selectedRouteWarnings[0].distance_to_route_m}m)</span>
+              </div>
               <button
                 type="button"
-                className="button text-xs px-4 py-2 font-semibold shadow-xs"
-                disabled={isPending || isRecalculating}
-                onClick={() => {
-                  setActiveDetour(null);
-                  setRecalculateError(null);
-                  fetchRoutes(activeStart, activeDest);
+                disabled={isRecalculating}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDynamicReroute(selectedRouteWarnings[0].id);
                 }}
+                className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-rose-700 text-white hover:bg-rose-800 transition"
               >
-                {isPending ? "Calculating paths…" : "Find Best Route"}
-              </button>
-              <button
-                type="button"
-                className="button secondary text-xs px-3 py-2 font-medium flex items-center gap-1.5 border border-surface-container"
-                onClick={() => setShowReportForm(true)}
-              >
-                <span>📢</span>
-                <span>Report Incident</span>
+                {isRecalculating ? "Detouring…" : "Detour"}
               </button>
             </div>
-            <span className="text-[11px] font-medium text-surface-on-variant flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-              <span>{liveIncidents.length} active live incident{liveIncidents.length !== 1 ? "s" : ""}</span>
-            </span>
-          </div>
+          )}
         </div>
 
         {/* Scrollable Drawer Body */}
@@ -1148,7 +1269,7 @@ export function RoutePlanner() {
 
       {/* Floating Selected Incident Card (Bottom-Right) */}
       {selectedIncident && (
-        <section className="absolute bottom-6 right-4 sm:right-6 z-20 w-[calc(100vw-2rem)] sm:w-96 bg-surface/95 backdrop-blur-md rounded-2xl border border-surface-container shadow-2xl p-4 space-y-2.5 pointer-events-auto" aria-labelledby="selected-incident-title">
+        <section className="absolute bottom-40 sm:bottom-6 right-4 sm:right-6 z-20 w-[calc(100vw-2rem)] sm:w-96 bg-surface/95 backdrop-blur-md rounded-2xl border border-surface-container shadow-2xl p-4 space-y-2.5 pointer-events-auto" aria-labelledby="selected-incident-title">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <p className="text-[10px] font-mono text-surface-on-variant">SELECTED MAP INCIDENT</p>
@@ -1213,7 +1334,7 @@ export function RoutePlanner() {
       )}
 
       {/* Floating Bottom-Right Map Controls & Legend */}
-      <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2 pointer-events-auto">
+      <div className="absolute bottom-40 sm:bottom-4 right-4 z-10 flex flex-col items-end gap-2 pointer-events-auto">
         <div className="flex items-center gap-2">
           <button
             type="button"

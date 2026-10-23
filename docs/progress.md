@@ -1306,3 +1306,18 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
 - **Verification:** Confirmed `/authority` and the authority-only Workspace card remain present; the active Traffic screen uses the restored native `MapView` and no longer imports the Leaflet/OpenStreetMap renderer or draggable-sheet helper. `docker compose run --build --rm checks` passed (232/232 tests, web ESLint with zero errors and one `activeCoords` dependency warning, mobile typecheck, Next route type generation, web TypeScript, and production build). `git diff --check` passed. Physical Android verification was not run.
 - **Commit:** `1c28943` — `revert(mobile): restore pre-OSM map screen`.
 - **Push:** Rollback and verification record are on `origin/main`; push confirmed 24 Oct 2026.
+
+## Route Planner Google Maps redesign — verified, 24 Oct 2026
+
+- **Scope:** Complete redesign of the Route Planner interface (`apps/web/src/components/routing/route-planner.tsx`) to match Google Maps navigation architecture. Replaced the single bulky sidebar with a floating top directions card and an expandable bottom sheet.
+- **Implementation:**
+  - **Google Maps Top Search Card:** Floating glassmorphism card with live pulse indicator, connected origin/destination inputs with visual track dots (emerald origin, dotted line, rose destination pin), instant swap button (`⇅`), and quick mode/action pills (Recalculate, Traffic Overlay toggle, Report Hazard).
+  - **Google Maps Expandable Bottom Sheet:** Anchored bottom sheet with drag handle. In collapsed/peek state, highlights recommended route ETA in bold (`27 min`), distance (`16.2 km`), fastest/detour badge, and compact hazard strip with one-tap detour button. In expanded state, displays full list of calculated route cards, incident detour banner, road closure status, road coordinates GeoJSON viewer, and track journey CTA.
+  - **Full-Screen Map Canvas:** Map canvas remains 100% visible and interactive. Floating map controls (recenter, corridor overlay, notices) and selected incident popups float cleanly above the bottom sheet on mobile viewports.
+- **Verification:**
+  - `docker compose exec app pnpm exec tsc --noEmit --project apps/web/tsconfig.json` passed with 0 errors.
+  - `docker compose exec app pnpm test` passed 237/237 tests across all 11 suites with 0 failures.
+  - Container HTTP check: `GET /planner` returned HTTP 200.
+  - `git diff --check` passed with no formatting or whitespace issues.
+- **Commit:** `bae990f` — `feat(planner): redesign route planner with Google Maps floating search and expandable bottom sheet`.
+- **Push:** Confirmed pushed to `origin/main`, 24 Oct 2026.
