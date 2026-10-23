@@ -1015,7 +1015,7 @@ These summarize the old plan's task/verification records without reclassifying t
 - **Implementation:** Removed the nested `just` executable call from `mobile-lan`, inlined its existing startup steps, and kept support for both positional IP input and `host=IP`. Added LF checkout rules for shell scripts and normalized `scripts/local-supabase.sh` so Bash can execute it from Windows.
 - **Verification:** Ran `just mobile-lan 192.168.1.138` successfully. The recipe started and seeded local Supabase, started the app and Expo, and printed `exp://192.168.1.138:8081`. Docker reported app and mobile healthy; Expo `/status`, web `/`, and Supabase REST returned HTTP 200. `git diff --check` passed.
 - **Limitations:** The phone-side Expo Go session was not verified in this run; use the laptop Wi-Fi address and keep phone and laptop on the same network.
-- **Commit:** Pending.
+- **Commit:** `b363ef7` — `fix(dev): repair Windows LAN mobile startup` (local; not pushed).
 
 ## Execution record format
 
