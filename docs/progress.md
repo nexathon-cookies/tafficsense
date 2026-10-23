@@ -1024,7 +1024,7 @@ These summarize the old plan's task/verification records without reclassifying t
 - **Implementation:** Pass Expo CLI's documented `EXPO_PACKAGER_PROXY_URL` through the mobile Compose service and set it from the `mobile-lan` IP argument.
 - **Verification:** Ran `just mobile-lan 10.76.80.104`; the manifest now advertises `http://10.76.80.104:8081` for the bundle and `10.76.80.104:8081` for `hostUri`. Docker reported app and mobile healthy; Expo `/status`, web `/`, and Supabase REST returned HTTP 200; `git diff --check` passed.
 - **Blocked:** Phone-side load remains unverified. The Wi-Fi network is classified Public, so Windows may block unsolicited device connections. A proposed firewall rule limited to this Wi-Fi subnet and TCP ports 3000, 54321, and 8081 was rejected by automatic approval review because it persistently opens Public-profile inbound ports; no firewall change was made.
-- **Commit:** Pending.
+- **Commit:** `b7e02a7` — `fix(mobile): advertise LAN Expo bundle host` (local; not pushed).
 
 ## Execution record format
 
