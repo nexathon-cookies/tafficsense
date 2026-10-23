@@ -1017,6 +1017,15 @@ These summarize the old plan's task/verification records without reclassifying t
 - **Limitations:** The phone-side Expo Go session was not verified in this run; use the laptop Wi-Fi address and keep phone and laptop on the same network.
 - **Commit:** `b363ef7` — `fix(dev): repair Windows LAN mobile startup` (local; not pushed).
 
+## Expo Go LAN bundle address repair — implemented, 23 Oct 2026
+
+- **Goal and scope:** Fix Expo Go loading after a physical phone scanned the LAN QR. Preserve the local Docker/Supabase workflow.
+- **Root cause:** The Expo manifest advertised `127.0.0.1:8081` in `launchAsset.url`, `hostUri`, and `debuggerHost`; on the phone this pointed back to the phone rather than the laptop.
+- **Implementation:** Pass Expo CLI's documented `EXPO_PACKAGER_PROXY_URL` through the mobile Compose service and set it from the `mobile-lan` IP argument.
+- **Verification:** Ran `just mobile-lan 10.76.80.104`; the manifest now advertises `http://10.76.80.104:8081` for the bundle and `10.76.80.104:8081` for `hostUri`. Docker reported app and mobile healthy; Expo `/status`, web `/`, and Supabase REST returned HTTP 200; `git diff --check` passed.
+- **Blocked:** Phone-side load remains unverified. The Wi-Fi network is classified Public, so Windows may block unsolicited device connections. A proposed firewall rule limited to this Wi-Fi subnet and TCP ports 3000, 54321, and 8081 was rejected by automatic approval review because it persistently opens Public-profile inbound ports; no firewall change was made.
+- **Commit:** Pending.
+
 ## Execution record format
 
 For each bounded task, record: goal/source module and exclusions; dependencies and affected routes; planned acceptance checks; actual commands/browser interactions with environment/provenance/outcomes; failures or unverified cases; user review; scoped commit hash after creation. Keep sensitive credentials, personal journeys and full private payloads out of records.
