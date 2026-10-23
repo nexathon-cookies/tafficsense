@@ -1120,4 +1120,4 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
 - **Scope:** Remove the mobile Leaflet/OpenStreetMap Traffic map and draggable sheet changes requested for rollback, restoring the prior React Native Maps screen while retaining the authority dashboard and its Workspace entry.
 - **Verification:** Confirmed `/authority` and the authority-only Workspace card remain present; the active Traffic screen uses the restored native `MapView` and no longer imports the Leaflet/OpenStreetMap renderer or draggable-sheet helper. `docker compose run --build --rm checks` passed (232/232 tests, web ESLint with zero errors and one `activeCoords` dependency warning, mobile typecheck, Next route type generation, web TypeScript, and production build). `git diff --check` passed. Physical Android verification was not run.
 - **Commit:** `1c28943` — `revert(mobile): restore pre-OSM map screen`.
-- **Push:** Pending.
+- **Push:** Rollback and verification record are on `origin/main`; push confirmed 24 Oct 2026.
