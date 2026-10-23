@@ -31,7 +31,7 @@ import {
   SimulatedBadge,
   StatusBadge,
 } from "../src/components/ui";
-import { colors, layout, radius, space, typography } from "../src/theme/tokens";
+import { colors, layout, minTouchTarget, radius, space, typography } from "../src/theme/tokens";
 
 export default function JourneysScreen() {
   const { session, loading: authLoading } = useAuth();

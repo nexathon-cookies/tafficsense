@@ -24,7 +24,7 @@ import {
   SimulatedBadge,
 } from "../src/components/ui";
 import { areIncidentListsEqual } from "../src/lib/traffic-equality";
-import { colors, layout, radius, shadows, space, typography } from "../src/theme/tokens";
+import { colors, layout, minTouchTarget, radius, shadows, space, typography } from "../src/theme/tokens";
 
 export default function HomeScreen() {
   const [incidents, setIncidents] = useState<LiveIncident[]>([]);
