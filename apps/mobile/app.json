@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "TrafficSense",
+    "slug": "trafficsense",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "trafficsense",
+    "ios": {
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "TrafficSense uses your location only when you submit a traffic report. It is not tracked in the background."
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "TrafficSense uses your location only when you submit a traffic report. It is not tracked in the background."
+        }
+      ]
+    ]
+  }
+}

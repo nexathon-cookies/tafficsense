@@ -1,0 +1,39 @@
+{
+  "name": "@trafficsense/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.3",
+    "@trafficsense/shared": "workspace:*",
+    "expo": "57.0.30",
+    "expo-image-picker": "~17.0.11",
+    "expo-linking": "~57.0.13",
+    "expo-location": "~19.0.8",
+    "expo-router": "57.0.28",
+    "expo-secure-store": "~57.0.4",
+    "expo-status-bar": "~57.0.1",
+    "query-string": "7.1.3",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-maps": "1.27.2",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.2",
+    "react-native-url-polyfill": "4.0.0",
+    "react-native-webview": "13.16.1"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.18",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
+    "qrcode-terminal": "0.12.0",
+    "typescript": "~6.0.3"
+  }
+}
