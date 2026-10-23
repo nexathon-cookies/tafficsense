@@ -22,7 +22,7 @@ The following code observations motivate this work; they are hypotheses to confi
 | --- | --- | --- |
 | Refresh work | Home and Traffic fetch on focus and every 30 seconds. Traffic replaces the whole data object on every successful poll. | Avoid unnecessary list/map updates and battery/network work. |
 | Navigation | Bottom navigation uses `router.replace()` for top-level destinations. | Test whether screen teardown/recreation, rather than the route call itself, is causing the perceived delay. |
-| Map | The MapLibre WebView is created after an explicit privacy-aware load action and uses remote map resources. | Its first load may be slow; do not pre-load it or retain it invisibly until memory and privacy impact are measured. |
+| Map | The Leaflet WebView loads OpenStreetMap raster tiles without WebGL and identifies the app in tile requests. | Map tiles reveal the approximate area viewed and network IP; keep attribution visible, avoid bulk/offline requests, and retain a schematic fallback. |
 | Typography | Several shared styles are 10–12 px, and BottomNav overrides its label to 11 px. | Improve legibility at normal phone distance without clipping controls. |
 | Layout | The bottom navigation is absolute while individual screens reserve their own bottom space. | Standardise safe-bottom spacing so controls never disappear behind it. |
 | Rendering | Repeated incident rows, custom `View`-based icons, and large screen components can cause extra layout work. | Optimise only after render/profile evidence identifies a hot path. |

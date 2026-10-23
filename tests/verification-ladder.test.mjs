@@ -80,7 +80,7 @@ test("speed slowdown promotes segment to L4", () => {
   assert.equal(ladder.currentLevel, "L4");
   assert.match(ladder.currentLabel, /L4 Speed Slowdown/);
   assert.equal(ladder.tiers.find(t => t.level === "L4")?.achieved, true);
-  // L5 is now implemented (AI photo verification). L6 is authority confirmation.
+  // Only photo evidence remains a planned tier.
   assert.equal(ladder.tiers.find(t => t.level === "L5")?.achieved, false);
   assert.equal(ladder.tiers.find(t => t.level === "L6")?.achieved, false);
 });

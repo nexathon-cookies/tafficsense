@@ -3,6 +3,8 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useTabBackHandler } from "../src/lib/use-tab-back-handler";
 import {
   ActivityIndicator,
+  Animated,
+  PanResponder,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -50,6 +52,25 @@ export default function TrafficScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [fitKey, setFitKey] = useState(0);
   const hasData = useRef(false);
+  const [sheetTranslateY] = useState(() => new Animated.Value(0));
+
+  const sheetDragResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_event, gesture) => gesture.dy > 8 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+    onPanResponderMove: (_event, gesture) => sheetTranslateY.setValue(Math.max(0, gesture.dy)),
+    onPanResponderRelease: (_event, gesture) => {
+      if (gesture.dy > 84) {
+        Animated.timing(sheetTranslateY, { toValue: 280, duration: 160, useNativeDriver: true }).start(() => {
+          setSelectedId(null);
+          sheetTranslateY.setValue(0);
+        });
+      } else {
+        Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 3 }).start();
+      }
+    },
+    onPanResponderTerminate: () => {
+      Animated.spring(sheetTranslateY, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 3 }).start();
+    },
+  }), [sheetTranslateY]);
 
   const load = useCallback(async () => {
     if (apiConfigurationError) return;
@@ -93,7 +114,7 @@ export default function TrafficScreen() {
 
   const selected = useMemo(() => {
     if (!data) return null;
-    return data.incidents.find((incident) => incident.id === selectedId) ?? data.incidents[0] ?? null;
+    return data.incidents.find((incident) => incident.id === selectedId) ?? null;
   }, [data, selectedId]);
 
   const filteredIncidents = useMemo(() => {
@@ -236,9 +257,15 @@ export default function TrafficScreen() {
 
           {/* Collapsible Inspection Bottom Sheet */}
           {selected ? (
-            <View style={styles.bottomSheet}>
+            <Animated.View style={[styles.bottomSheet, { transform: [{ translateY: sheetTranslateY }] }]}>
               {/* Drag Handle */}
-              <View style={styles.dragHandleWrapper}>
+              <View
+                {...sheetDragResponder.panHandlers}
+                accessible
+                accessibilityLabel="Drag down to close incident details"
+                accessibilityHint="Swipe down to dismiss this report. Select a map marker or list item to open it again."
+                style={styles.dragHandleWrapper}
+              >
                 <View style={styles.dragHandle} />
               </View>
 
@@ -254,7 +281,9 @@ export default function TrafficScreen() {
                     </Text>
                   </View>
                   <Pressable
-                    accessibilityLabel="Close detail"
+                    accessibilityRole="button"
+                    accessibilityLabel="Close incident details"
+                    accessibilityHint="Dismisses this report. Select a map marker or list item to open it again."
                     onPress={() => setSelectedId(null)}
                     style={styles.sheetCloseBtn}
                   >
@@ -326,13 +355,13 @@ export default function TrafficScreen() {
                   <View style={styles.tilePrivacyLeft}>
                     <Icon name="shield" size={16} color={colors.textSecondary} />
                     <Text style={styles.tilePrivacyText} numberOfLines={1}>
-                      Map tiles via OpenFreeMap. No GPS coordinates transmitted.
+                      OpenStreetMap receives tile requests for the viewed area; your GPS fix itself is not sent.
                     </Text>
                   </View>
                   <Text style={styles.detailsLink}>Details</Text>
                 </View>
               </View>
-            </View>
+            </Animated.View>
           ) : null}
         </View>
       ) : (
@@ -625,7 +654,8 @@ const styles = StyleSheet.create({
   },
   dragHandleWrapper: {
     alignItems: "center",
-    paddingVertical: 8,
+    justifyContent: "center",
+    minHeight: minTouchTarget,
   },
   dragHandle: {
     width: 40,
@@ -665,9 +695,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheetCloseBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: minTouchTarget,
+    height: minTouchTarget,
+    borderRadius: minTouchTarget / 2,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildMapPayload, incidentCollection, routeCollection, segmentCollection, SEVERITY_COLOURS, ROUTE_COLOURS } from "../apps/mobile/src/map/map-data.ts";
-import { buildMapHtml, MAPLIBRE_VERSION, OPENFREEMAP_STYLE_URL } from "../apps/mobile/src/map/map-html.ts";
+import { buildMapHtml, LEAFLET_VERSION, OPENSTREETMAP_TILE_URL } from "../apps/mobile/src/map/map-html.ts";
 import { parseTrafficSegmentsResponse } from "../apps/mobile/src/lib/response-parsers.ts";
 import { sharePreviewLines } from "../apps/mobile/src/lib/journeys.ts";
 import { safeReturnPath } from "../apps/mobile/src/lib/auth-rules.ts";
@@ -85,12 +85,13 @@ test("the payload marks on-route reports from the route warnings", () => {
   assert.equal(payload.you, null);
 });
 
-test("the map page loads the pinned MapLibre module, a street style and a schematic fallback", () => {
+test("the map page uses a pinned non-WebGL renderer and OpenStreetMap tile attribution", () => {
   const html = buildMapHtml();
-  assert.ok(html.includes(`@${MAPLIBRE_VERSION}/dist`));
-  assert.ok(html.includes(JSON.stringify(OPENFREEMAP_STYLE_URL)));
+  assert.ok(html.includes(`leaflet@${LEAFLET_VERSION}/dist`));
+  assert.ok(html.includes(JSON.stringify(OPENSTREETMAP_TILE_URL)));
   assert.ok(html.includes("select-incident"));
-  assert.ok(html.includes("Street map unavailable"));
+  assert.ok(html.includes("OpenStreetMap contributors"));
+  assert.ok(!html.includes("webgl"));
   assert.ok(!html.includes("</script><script>"), "no injected script boundary");
 });
 

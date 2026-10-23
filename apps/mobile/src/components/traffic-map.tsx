@@ -1,9 +1,10 @@
 import * as Location from "expo-location";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { Modal, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
-import MapView, { Marker, Polyline, UrlTile, type LatLng, type Region } from "react-native-maps";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from "react-native";
+import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import type { LiveIncident, RouteOption, TrafficSegment } from "@trafficsense/shared";
-import { INCIDENT_COLOUR, ROUTE_COLOURS, SEVERITY_COLOURS } from "../map/map-data";
+import { buildMapPayload, INCIDENT_COLOUR, ROUTE_COLOURS, SEVERITY_COLOURS, type MapPayload } from "../map/map-data";
+import { buildMapHtml } from "../map/map-html";
 import { Card, Icon, SimulatedBadge } from "./ui";
 import { SchematicMap } from "./schematic-map";
 import { colors, minTouchTarget, radius, space, typography } from "../theme/tokens";
@@ -21,175 +22,127 @@ type Props = {
   fitKey: number;
 };
 
-type Coordinate = [number, number];
 type ViewMode = "street" | "schematic";
-
-// Centre of Mangaluru, used before any data arrives.
-const MANGALURU_REGION: Region = {
-  latitude: 12.87,
-  longitude: 74.84,
-  latitudeDelta: 0.09,
-  longitudeDelta: 0.09,
-};
-
-const INACTIVE_ROUTE_COLOUR = "#8a9a92";
-const FIT_PADDING = { top: 40, right: 40, bottom: 40, left: 40 };
-
-function validCoordinate(value: unknown): value is Coordinate {
-  return Array.isArray(value) && value.length === 2 && value.every((part) => typeof part === "number" && Number.isFinite(part));
-}
-
-// GeoJSON stores [longitude, latitude]; react-native-maps expects { latitude, longitude }.
-function toLatLng([longitude, latitude]: Coordinate): LatLng {
-  return { latitude, longitude };
-}
-
-function lineCoordinates(coordinates: unknown[]): LatLng[] {
-  return coordinates.filter(validCoordinate).map(toLatLng);
-}
+const MAP_HTML = buildMapHtml();
 
 function humanise(category: string): string {
   return category.replace(/_/g, " ").replace(/^\w/, (letter) => letter.toUpperCase());
 }
 
-function routeColour(route: RouteOption, selectedRouteId: string | null | undefined, alternativeId: string | null | undefined): string {
-  if (route.id === alternativeId) return ROUTE_COLOURS.alternative;
-  const isSelected = selectedRouteId ? route.id === selectedRouteId : route.is_recommended;
-  return isSelected ? ROUTE_COLOURS.primary : INACTIVE_ROUTE_COLOUR;
-}
-
 type CanvasProps = {
-  mapRef: RefObject<MapView | null>;
+  payload: MapPayload;
+  fitKey: number;
   style: StyleProp<ViewStyle>;
-  segments: TrafficSegment[];
-  incidents: LiveIncident[];
-  routes?: RouteOption[];
-  alternativeId?: string | null;
-  selectedRouteId?: string | null;
-  selectedIncidentId: string | null;
-  you: LatLng | null;
   onReady: () => void;
+  onFailure: (reason: string) => void;
+  onMapIssue: () => void;
   onSelectIncident: (id: string) => void;
   onSelectRoute?: (id: string) => void;
 };
 
-function MapCanvas({
-  mapRef,
-  style,
-  segments,
-  incidents,
-  routes,
-  alternativeId,
-  selectedRouteId,
-  selectedIncidentId,
-  you,
-  onReady,
-  onSelectIncident,
-  onSelectRoute,
-}: CanvasProps) {
+function MapCanvas({ payload, fitKey, style, onReady, onFailure, onMapIssue, onSelectIncident, onSelectRoute }: CanvasProps) {
+  const webViewRef = useRef<WebView>(null);
+  const lastFitKey = useRef<number | null>(null);
+  const lastYou = useRef<string | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!ready) return;
+    const shouldFit = lastFitKey.current !== fitKey;
+    const next = { ...payload, fit: shouldFit };
+    if (shouldFit) lastFitKey.current = fitKey;
+    webViewRef.current?.injectJavaScript(`window.trafficMap?.setData(${JSON.stringify(next)}); true;`);
+  }, [payload, fitKey, ready]);
+
+  useEffect(() => {
+    const coordinates = payload.you?.coordinates;
+    if (!ready || !coordinates) return;
+    const key = coordinates.join(",");
+    if (key === lastYou.current) return;
+    lastYou.current = key;
+    webViewRef.current?.injectJavaScript(`window.trafficMap?.centerOn(${JSON.stringify(coordinates)}); true;`);
+  }, [payload.you, ready]);
+
+  function handleMessage(event: WebViewMessageEvent) {
+    try {
+      const message = JSON.parse(event.nativeEvent.data) as { type?: string; id?: string; reason?: string };
+      if (message.type === "ready") {
+        setReady(true);
+        onReady();
+      } else if (message.type === "failed") {
+        onFailure(message.reason ?? "renderer");
+      } else if (message.type === "map-error") {
+        onMapIssue();
+      } else if (message.type === "select-incident" && message.id) {
+        onSelectIncident(message.id);
+      } else if (message.type === "select-route" && message.id) {
+        onSelectRoute?.(message.id);
+      }
+    } catch {
+      onFailure("message");
+    }
+  }
+
   return (
-    <MapView
-      ref={mapRef}
+    <WebView
+      ref={webViewRef}
       style={style}
-      initialRegion={MANGALURU_REGION}
-      onMapReady={onReady}
-      rotateEnabled={false}
-      pitchEnabled={false}
-      toolbarEnabled={false}
-      accessibilityLabel="Traffic map showing community reports, corridor segments and routes on OpenStreetMap"
-    >
-      {/* OpenStreetMap Tile Layer SDK */}
-      <UrlTile
-        urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maximumZ={19}
-        flipY={false}
-        zIndex={-1}
-      />
-
-      {/* Corridor segments, coloured by the server-provided severity (simulated data). */}
-      {segments.map((segment) => {
-        const coordinates = lineCoordinates(segment.geometry.coordinates);
-        if (coordinates.length < 2) return null;
-        return (
-          <Polyline
-            key={`segment-${segment.id}`}
-            coordinates={coordinates}
-            strokeColor={SEVERITY_COLOURS[segment.severity]}
-            strokeWidth={5}
-          />
-        );
-      })}
-
-      {/* Routes: selected in teal, a chosen alternative in violet, others muted. */}
-      {(routes ?? []).map((route) => {
-        const coordinates = lineCoordinates(route.geometry.coordinates);
-        if (coordinates.length < 2) return null;
-        const colour = routeColour(route, selectedRouteId, alternativeId);
-        const emphasised = colour !== INACTIVE_ROUTE_COLOUR;
-        return (
-          <Polyline
-            key={`route-${route.id}`}
-            coordinates={coordinates}
-            strokeColor={colour}
-            strokeWidth={emphasised ? 7 : 4}
-            tappable
-            onPress={() => onSelectRoute?.(route.id)}
-          />
-        );
-      })}
-
-      {/* Community reports. Each is a tap target that opens the details panel below the map. */}
-      {incidents.map((incident) => (
-        <Marker
-          key={incident.id}
-          coordinate={{ latitude: incident.lat, longitude: incident.lng }}
-          title={humanise(incident.category)}
-          description={incident.level_reason}
-          pinColor={INCIDENT_COLOUR}
-          opacity={incident.id === selectedIncidentId ? 1 : 0.85}
-          onPress={() => onSelectIncident(incident.id)}
-        />
-      ))}
-
-      {you ? <Marker coordinate={you} title="You are here" pinColor="#2563eb" /> : null}
-    </MapView>
+      source={{ html: MAP_HTML }}
+      originWhitelist={["*"]}
+      userAgent="TrafficSenseMobile/0.1 (OpenStreetMap tile client)"
+      cacheEnabled
+      javaScriptEnabled
+      domStorageEnabled
+      onMessage={handleMessage}
+      onError={() => onFailure("webview")}
+      onHttpError={() => onFailure("network")}
+      accessibilityLabel="Interactive OpenStreetMap traffic map"
+    />
   );
 }
 
 export function TrafficMap(props: Props) {
   const [mode, setMode] = useState<ViewMode>("street");
   const [fullScreen, setFullScreen] = useState(false);
-  const [you, setYou] = useState<LatLng | null>(null);
+  const [you, setYou] = useState<[number, number] | null>(null);
   const [locationNote, setLocationNote] = useState<string | null>(null);
-  const mapRef = useRef<MapView>(null);
-  const modalMapRef = useRef<MapView>(null);
-  const pointsRef = useRef<LatLng[]>([]);
-
-  // Every point the view should include when fitting: corridor, routes and reports.
-  const allPoints = useMemo<LatLng[]>(() => {
-    const points: LatLng[] = [];
-    props.segments.forEach((segment) => points.push(...lineCoordinates(segment.geometry.coordinates)));
-    (props.routes ?? []).forEach((route) => points.push(...lineCoordinates(route.geometry.coordinates)));
-    props.incidents.forEach((incident) => points.push({ latitude: incident.lat, longitude: incident.lng }));
-    return points;
-  }, [props.segments, props.routes, props.incidents]);
+  const [fitRequest, setFitRequest] = useState(0);
+  const [mapLoading, setMapLoading] = useState(true);
+  const [mapNote, setMapNote] = useState<string | null>(null);
+  const fitKey = props.fitKey + fitRequest;
+  const payload = useMemo(() => buildMapPayload({
+    segments: props.segments,
+    incidents: props.incidents,
+    routes: props.routes,
+    selectedIncidentId: props.selectedIncidentId,
+    selectedRouteId: props.selectedRouteId,
+    alternativeId: props.alternativeId,
+    you,
+    fit: false,
+  }), [props.segments, props.incidents, props.routes, props.selectedIncidentId, props.selectedRouteId, props.alternativeId, you]);
 
   useEffect(() => {
-    pointsRef.current = allPoints;
-  }, [allPoints]);
-
-  // Fit only when the parent asks (fitKey), so refreshing data does not move the user's view.
-  useEffect(() => {
-    const target = fullScreen ? modalMapRef.current : mapRef.current;
-    const points = pointsRef.current;
-    if (!target || points.length === 0) return;
-    target.fitToCoordinates(points, { edgePadding: FIT_PADDING, animated: true });
-  }, [props.fitKey, fullScreen]);
+    if (mode !== "street" || !mapLoading) return;
+    const timeout = setTimeout(() => {
+      setMapLoading(false);
+      setMapNote("OpenStreetMap is taking too long to load. Showing the traffic schematic.");
+      setMode("schematic");
+    }, 15000);
+    return () => clearTimeout(timeout);
+  }, [mode, mapLoading]);
 
   function fitNow() {
-    const target = fullScreen ? modalMapRef.current : mapRef.current;
-    const points = pointsRef.current;
-    if (target && points.length > 0) target.fitToCoordinates(points, { edgePadding: FIT_PADDING, animated: true });
+    setFitRequest((value) => value + 1);
+  }
+
+  function toggleMapMode() {
+    if (mode === "street") {
+      setMode("schematic");
+      return;
+    }
+    setMapNote(null);
+    setMapLoading(true);
+    setMode("street");
   }
 
   async function centreOnMe() {
@@ -202,12 +155,8 @@ export function TrafficMap(props: Props) {
     }
     try {
       const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const point = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+      const point: [number, number] = [position.coords.longitude, position.coords.latitude];
       setYou(point);
-      (fullScreen ? modalMapRef.current : mapRef.current)?.animateToRegion(
-        { ...point, latitudeDelta: 0.02, longitudeDelta: 0.02 },
-        400,
-      );
     } catch {
       setLocationNote("Your location could not be read right now.");
     }
@@ -232,22 +181,32 @@ export function TrafficMap(props: Props) {
       <View style={styles.mapFrame}>
         {mode === "street" ? (
           <MapCanvas
-            mapRef={mapRef}
+            payload={payload}
+            fitKey={fitKey}
             style={styles.canvas}
-            segments={props.segments}
-            incidents={props.incidents}
-            routes={props.routes}
-            alternativeId={props.alternativeId}
-            selectedRouteId={props.selectedRouteId}
-            selectedIncidentId={props.selectedIncidentId}
-            you={you}
-            onReady={fitNow}
+            onReady={() => setMapLoading(false)}
+            onFailure={(reason) => {
+              setMapLoading(false);
+              setMapNote(`Street map could not start (${reason}). Showing the traffic schematic.`);
+              setMode("schematic");
+            }}
+            onMapIssue={() => {
+              setMapLoading(false);
+              setMapNote("OpenStreetMap tiles are unavailable. Showing the traffic schematic.");
+              setMode("schematic");
+            }}
             onSelectIncident={props.onSelectIncident}
             onSelectRoute={props.onSelectRoute}
           />
         ) : (
           schematic
         )}
+        {mapLoading && mode === "street" ? (
+          <View style={styles.mapLoadingOverlay} accessibilityLiveRegion="polite">
+            <ActivityIndicator color={colors.primary} />
+            <Text style={styles.mapLoadingText}>Loading OpenStreetMap…</Text>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.toolbar}>
@@ -262,7 +221,7 @@ export function TrafficMap(props: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={mode === "street" ? "Switch to schematic view" : "Switch to street map"}
-          onPress={() => setMode((current) => (current === "street" ? "schematic" : "street"))}
+          onPress={toggleMapMode}
           style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}
         >
           <Icon name="layers" size={16} color={colors.primary} />
@@ -275,6 +234,7 @@ export function TrafficMap(props: Props) {
       </View>
 
       {locationNote ? <Text style={styles.notice}>{locationNote}</Text> : null}
+      {mapNote ? <Text style={styles.notice}>{mapNote}</Text> : null}
 
       {props.incidents.length === 0 ? (
         <Text style={styles.notice}>No community reports in the last 3 hours.</Text>
@@ -319,16 +279,21 @@ export function TrafficMap(props: Props) {
           </View>
           {mode === "street" ? (
             <MapCanvas
-              mapRef={modalMapRef}
+              payload={payload}
+              fitKey={fitKey}
               style={styles.flexOne}
-              segments={props.segments}
-              incidents={props.incidents}
-              routes={props.routes}
-              alternativeId={props.alternativeId}
-              selectedRouteId={props.selectedRouteId}
-              selectedIncidentId={props.selectedIncidentId}
-              you={you}
-              onReady={fitNow}
+              onReady={() => setMapLoading(false)}
+              onFailure={(reason) => {
+                setMapLoading(false);
+                setMapNote(`Street map could not start (${reason}). Showing the traffic schematic.`);
+                setMode("schematic");
+                setFullScreen(false);
+              }}
+              onMapIssue={() => {
+                setMapLoading(false);
+                setMapNote("OpenStreetMap tiles are unavailable. Showing the traffic schematic.");
+                setMode("schematic");
+              }}
               onSelectIncident={props.onSelectIncident}
               onSelectRoute={props.onSelectRoute}
             />
@@ -370,6 +335,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceContainerLow,
   },
   canvas: { flex: 1 },
+  mapLoadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: space.sm,
+    backgroundColor: "rgba(250, 248, 255, 0.88)",
+  },
+  mapLoadingText: { ...typography.bodySm, color: colors.textSecondary },
   toolbar: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   toolButton: {
     minHeight: minTouchTarget,
