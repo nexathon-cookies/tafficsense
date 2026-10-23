@@ -1,5 +1,12 @@
 # Project Progress
 
+## Mobile Mini Authority Dashboard — implemented, automated checks passed, Android device review pending, 23 Oct 2026
+
+- **Scope:** Add one authenticated authority-only Expo Router screen that reuses the existing incident list, authority history, and incident review API contracts. Keep existing commuter/guest navigation, map changes, server authorization, verification rules, and database unchanged. Push notifications are out of scope.
+- **Implementation:** The mobile auth provider now reads the current user's role from their own `profiles` row and fails closed when it cannot verify it. Workspace shows a dashboard entry only for the `authority` role. The dashboard shows active incident coordinates, first report time, report count, status, verification level/reason, provenance, and recent authority actions. It supports refresh, loading/empty/error feedback, and confirmed confirm (L6), resolve, and reject actions using the existing bearer-authenticated `PATCH /api/incidents`; history and review authorization remain enforced by the existing server/database functions. No severity field is present in the API response, so none is fabricated. No migration, dependency, notification, or API endpoint was added.
+- **Verification:** Docker mobile TypeScript check passed; ESLint passed on all changed app/helper files; all mobile tests passed (**29/29**); Android Expo export passed (Metro bundled 1,368 modules). Node emitted the existing module-type warning for TS imports in tests. Android Expo Go screen rendering and real authority-account review actions remain pending physical-device verification.
+- **Status:** Implementation complete; device-side interaction review pending.
+
 ## Windows just recipe invocation and LAN mobile launch — verified, 23 Oct 2026
 
 - **Scope:** Changed `web-up` to call the local Supabase scripts directly and moved the LAN startup steps into `mobile-lan`, removing nested `just` invocations that failed from the recipe's Bash shell on Windows. Added LF attributes for `justfile` and shell scripts to prevent CRLF parsing errors.

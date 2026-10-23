@@ -16,7 +16,7 @@ import { useTabBackHandler } from "../src/lib/use-tab-back-handler";
 
 export default function WorkspaceScreen() {
   useTabBackHandler();
-  const { session, loading, signOut } = useAuth();
+  const { session, loading, role, roleLoading, roleError, reloadRole, signOut } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [orgName, setOrgName] = useState<string | null>(null);
@@ -88,6 +88,10 @@ export default function WorkspaceScreen() {
           <FeedbackBox variant="error" message={error} />
         ) : null}
 
+        {roleError ? (
+          <FeedbackBox variant="error" message={roleError} actionText="Retry" onAction={() => void reloadRole()} />
+        ) : null}
+
         {/* Account Details Card */}
         <Card style={styles.card}>
           <View style={styles.cardHeader}>
@@ -113,6 +117,21 @@ export default function WorkspaceScreen() {
         {/* Quick Navigation Cards */}
         <View style={styles.actionsSection}>
           <Text style={styles.sectionHeading}>Commuter Actions</Text>
+
+          {!roleLoading && role === "authority" ? (
+            <Card onPress={() => router.push("/authority")} style={styles.actionCard}>
+              <View style={styles.actionRow}>
+                <View style={[styles.actionIconBg, { backgroundColor: colors.evidenceSurface }]}>
+                  <Icon name="verified" size={20} color={colors.secondary} />
+                </View>
+                <View style={styles.actionTextCol}>
+                  <Text style={styles.actionTitle}>Mini Authority Dashboard</Text>
+                  <Text style={styles.actionSubtitle}>Review active incidents and recent authority actions</Text>
+                </View>
+                <Icon name="chevron_right" size={18} color={colors.textMuted} />
+              </View>
+            </Card>
+          ) : null}
 
           <Card
             onPress={() => router.push("/report")}

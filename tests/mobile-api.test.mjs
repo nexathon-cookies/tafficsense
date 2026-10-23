@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   parseActiveIncidentsResponse,
+  parseAuthorityHistoryResponse,
   parseRouteResponse,
   parseSubmitIncidentResponse,
 } from "../apps/mobile/src/lib/response-parsers.ts";
@@ -29,6 +30,23 @@ test("mobile incident parser accepts a valid response and rejects malformed rows
   assert.throws(
     () => parseActiveIncidentsResponse({ ok: true, incidents: [{ ...incident, lat: "12.87" }] }),
     /invalid response/i,
+  );
+});
+
+test("authority history parser accepts the existing audit response and rejects malformed items", () => {
+  const item = {
+    id: "audit-1",
+    incident_id: "incident-1",
+    action: "confirm_incident",
+    category: "heavy_traffic",
+    created_at: "2026-10-21T09:00:00Z",
+    details: { level: "L6" },
+  };
+  assert.deepEqual(parseAuthorityHistoryResponse({ ok: true, history: [item] }), [item]);
+  assert.deepEqual(parseAuthorityHistoryResponse({ ok: true, history: [] }), []);
+  assert.throws(
+    () => parseAuthorityHistoryResponse({ ok: true, history: [{ ...item, action: "unsupported" }] }),
+    /invalid history response/i,
   );
 });
 
