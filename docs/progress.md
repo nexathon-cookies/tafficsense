@@ -6,6 +6,7 @@
 - **Implementation:** The mobile auth provider now reads the current user's role from their own `profiles` row and fails closed when it cannot verify it. Workspace shows a dashboard entry only for the `authority` role. The dashboard shows active incident coordinates, first report time, report count, status, verification level/reason, provenance, and recent authority actions. It supports refresh, loading/empty/error feedback, and confirmed confirm (L6), resolve, and reject actions using the existing bearer-authenticated `PATCH /api/incidents`; history and review authorization remain enforced by the existing server/database functions. No severity field is present in the API response, so none is fabricated. No migration, dependency, notification, or API endpoint was added.
 - **Verification:** Docker mobile TypeScript check passed; ESLint passed on all changed app/helper files; all mobile tests passed (**29/29**); Android Expo export passed (Metro bundled 1,368 modules). Node emitted the existing module-type warning for TS imports in tests. Android Expo Go screen rendering and real authority-account review actions remain pending physical-device verification.
 - **Status:** Implementation complete; device-side interaction review pending.
+- **Commit:** `1840f77` — `feat(mobile): add authority incident dashboard`.
 
 ## Windows just recipe invocation and LAN mobile launch — verified, 23 Oct 2026
 
