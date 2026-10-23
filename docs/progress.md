@@ -1009,6 +1009,14 @@ These summarize the old plan's task/verification records without reclassifying t
 - **Dependency finding:** the scaffold-era production audit reported no vulnerabilities, while full audit reported high-severity development-only `braces@3.0.3` through ESLint tooling. An update attempt found no patch and the registry lacked the stated `3.0.4`; the issue remained visible rather than suppressed. This is not a current clean-audit claim.
 - **Verification-policy commit:** `23b9e62` — `docs: record scaffold verification and task commit policy`.
 
+## Windows LAN mobile startup repair — implemented, 23 Oct 2026
+
+- **Goal and scope:** Make the existing LAN startup recipe run from Windows with a supplied phone-reachable IPv4 address. No application behavior changed.
+- **Implementation:** Removed the nested `just` executable call from `mobile-lan`, inlined its existing startup steps, and kept support for both positional IP input and `host=IP`. Added LF checkout rules for shell scripts and normalized `scripts/local-supabase.sh` so Bash can execute it from Windows.
+- **Verification:** Ran `just mobile-lan 192.168.1.138` successfully. The recipe started and seeded local Supabase, started the app and Expo, and printed `exp://192.168.1.138:8081`. Docker reported app and mobile healthy; Expo `/status`, web `/`, and Supabase REST returned HTTP 200. `git diff --check` passed.
+- **Limitations:** The phone-side Expo Go session was not verified in this run; use the laptop Wi-Fi address and keep phone and laptop on the same network.
+- **Commit:** Pending.
+
 ## Execution record format
 
 For each bounded task, record: goal/source module and exclusions; dependencies and affected routes; planned acceptance checks; actual commands/browser interactions with environment/provenance/outcomes; failures or unverified cases; user review; scoped commit hash after creation. Keep sensitive credentials, personal journeys and full private payloads out of records.
