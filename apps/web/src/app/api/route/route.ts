@@ -78,9 +78,7 @@ export async function POST(req: NextRequest) {
     const routeResult = await queryRoute(
       [start[0], start[1]],
       [destination[0], destination[1]],
-      incidents,
-      fetch,
-      true
+      incidents
     );
 
     const status = routeResult.ok ? 200 : routeResult.error?.startsWith("Routing unavailable") ? 503 : 400;

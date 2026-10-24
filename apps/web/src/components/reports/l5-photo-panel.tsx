@@ -225,7 +225,8 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
           return;
         }
 
-        const withPhoto: L5VerificationResult = { ...json.result, photoDataUrl };
+        const isMatch = json.result.isGenuineIncident && (json.result.detectedCategory === userSelectedCategory || userSelectedCategory === "unknown");
+        const withPhoto: L5VerificationResult = { ...json.result, categoryMatchesReport: isMatch, photoDataUrl };
         setResult(withPhoto);
         onResult(withPhoto);
         setStatus("done");
@@ -237,18 +238,18 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
     [segmentId, userSelectedCategory, onResult],
   );
 
+  const lastCategoryRef = useRef(userSelectedCategory);
   useEffect(() => {
-    setResult((prev) => {
-      if (!prev || prev.source !== "gemini") return prev;
-      const matches =
-        prev.isGenuineIncident &&
-        (prev.detectedCategory === userSelectedCategory || userSelectedCategory === "unknown");
-      if (prev.categoryMatchesReport === matches) return prev;
-      const updated = { ...prev, categoryMatchesReport: matches };
-      onResult(updated);
-      return updated;
-    });
-  }, [userSelectedCategory, onResult]);
+    if (lastCategoryRef.current !== userSelectedCategory) {
+      lastCategoryRef.current = userSelectedCategory;
+      if (result && result.source === "gemini") {
+        const matches =
+          result.isGenuineIncident &&
+          (result.detectedCategory === userSelectedCategory || userSelectedCategory === "unknown");
+        onResult({ ...result, categoryMatchesReport: matches });
+      }
+    }
+  }, [userSelectedCategory, result, onResult]);
 
   return (
     <div
@@ -402,8 +403,8 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
               <code>{result.detectedCategory}</code>
             </span>
             <span>
-              {result.categoryMatchesReport ? "✅" : "⚠️"}{" "}
-              {result.categoryMatchesReport
+              {result.categoryMatchesReport || result.detectedCategory === userSelectedCategory ? "✅" : "⚠️"}{" "}
+              {result.categoryMatchesReport || result.detectedCategory === userSelectedCategory
                 ? "Matches reported category"
                 : "Category mismatch — review your selection"}
             </span>

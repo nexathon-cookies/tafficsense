@@ -1,5 +1,38 @@
 # Project Progress
 
+## Restoration and Reconciliation of 2-Layer AI Vision Forensics, OSM Hotspot Analytics, Photo Evidence Display, and Routing Clearance — verified, 24 Oct 2026
+
+- **Context:**
+  - Following the merge of PR #17 into `onc-done`, web improvements (2-layer AI vision checks, photo evidence storage, OpenStreetMap hotspot dashboard, and departure clearance) had been clobbered by an earlier branch snapshot.
+  - Reconciled and restored all features from commit `319813e` into the current branch while preserving all mobile authority navigation and notification systems.
+- **Scope & Restorations:**
+  - **2-Layer AI Image Forensic Verification (`apps/web/src/lib/vision/verify-incident-photo.ts`, `l5-photo-panel.tsx`):**
+    - Restored forensic binary/metadata scanner (`detectAiMetadataSignature`) for C2PA, IPTC, XMP, and PNG AI signatures.
+    - Restored Gemini strict forensic verification rules (detecting AI generation artifacts, screen recaptures, warped license plates, and non-road scenes).
+    - Restored multi-model fallback across `gemini-2.5-flash-lite`, `gemini-3.5-flash-lite`, and `gemini-3.5-flash` with 10s timeout.
+    - Restored AI rejection UI badges (*"AI-Generated Image Rejected"*, *"Screen Recapture Detected"*).
+  - **Best Photo Evidence Storage & In-App Display (`supabase/migrations/20261023000100_...sql`, `server.ts`, `api/incidents/route.ts`, `incident-review-panel.tsx`, `traffic-map.tsx`):**
+    - Restored `photo_data_url` and `photo_confidence` database columns and `preserve_l5_incident_level()` trigger.
+    - Restored photo thumbnails and confidence tags inside the Authority Incident Review Panel alongside real-time chime notifications.
+    - Restored best verified photo evidence card in the Web Traffic Map popup drawer.
+  - **Interactive OpenStreetMap Hotspot Analytics Dashboard (`apps/web/src/components/analytics/authority-dashboard.tsx`, `app/authority/page.tsx`):**
+    - Restored Leaflet/OSM `HotspotMap` with tab filters (`all`, `map`, `review`, `diagnostics`, `history`) and fullscreen mode.
+  - **Traffic Map Marker Drift, FlyTo, and Bounds (`traffic-map.tsx`, `traffic.module.css`):**
+    - Restored `.liveIncidentWrapper` to prevent marker coordinate stacking/drift.
+    - Restored smooth `flyTo` animation on incident selection.
+    - Restored expanded bounding box `[[74.70, 12.75], [74.95, 13.05]]` covering Mangalore Airport and outer corridors.
+  - **Route Planner & Web Report Updates (`web-report-screen.tsx`, `presets.ts`, `engine.ts`):**
+    - Restored existing community incident markers on the report map.
+    - Restored 10-junction `MANGALURU_PRESETS` list and L5 avoidance logic in routing engine.
+  - **Tooling & Persistence (`justfile`, `local-supabase.sh`, `package.json`):**
+    - Restored `just db-seed-if-empty` and included `tests/reroute.test.mjs` in `package.json` `"test"`.
+- **Verification Evidence:**
+  - `just test`: Passed all 239 tests (**239/239 passed**, 0 failures).
+  - `just lint`: Passed with 0 errors and 0 warnings.
+  - `docker compose run --rm app sh -c "cd apps/web && pnpm exec tsc --noEmit"`: 0 errors.
+  - `just mobile-typecheck`: 0 errors.
+  - `docker compose run --rm app pnpm lint:mobile`: 0 errors.
+
 ## Authority Real-time Push Notification Engine (Incident Spotted + Photo Evidence Alert) — verified, 24 Oct 2026
 
 - **Scope & Implementation:**

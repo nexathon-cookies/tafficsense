@@ -13,9 +13,8 @@ export type LiveIncident = {
   last_confirmed_at: string;
   provenance: "reported" | "verified" | "authority";
   report_count: number;
-  /** Best AI-verified evidence photo (compressed JPEG data URL), when one was attached. */
   photo_data_url?: string | null;
-  photo_confidence?: "high" | "moderate" | "low" | string | null;
+  photo_confidence?: string | null;
 };
 
 export type AuthorityNotificationItem = {
@@ -82,9 +81,9 @@ export type SubmitIncidentInput = {
   /** True when the client obtained a genuine L5 AI vision result for an attached photo. */
   l5_verified?: boolean;
   l5_summary?: string | null;
-  reporter_email?: string | null;
   l5_photo_data_url?: string | null;
   l5_confidence_tier?: string | null;
+  reporter_email?: string | null;
 };
 
 export type SubmitIncidentResult =

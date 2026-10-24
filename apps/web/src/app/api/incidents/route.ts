@@ -61,7 +61,18 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { category, lat, lng, gps_accuracy_m, gps_fix_at, note, l5_verified, l5_summary, l5_photo_data_url, l5_confidence_tier } = body;
+    const {
+      category,
+      lat,
+      lng,
+      gps_accuracy_m,
+      gps_fix_at,
+      note,
+      l5_verified,
+      l5_summary,
+      l5_photo_data_url,
+      l5_confidence_tier,
+    } = body;
 
     if (
       typeof category !== "string" ||
@@ -86,7 +97,6 @@ export async function POST(req: NextRequest) {
       note: typeof note === "string" ? note.slice(0, 300) : null,
       l5_verified: l5_verified === true,
       l5_summary: typeof l5_summary === "string" ? l5_summary.slice(0, 160) : null,
-      reporter_email: user.email ?? null,
       l5_photo_data_url:
         typeof l5_photo_data_url === "string" &&
         l5_photo_data_url.startsWith("data:image/") &&
@@ -97,6 +107,7 @@ export async function POST(req: NextRequest) {
         l5_confidence_tier === "high" || l5_confidence_tier === "moderate" || l5_confidence_tier === "low"
           ? l5_confidence_tier
           : null,
+      reporter_email: user.email ?? null,
     };
 
     const result = await submitIncidentReport(supabase, input);

@@ -59,7 +59,6 @@ export function RoutePlanner() {
   const isPickingLocationRef = useRef<boolean>(false);
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [useGpsStart, setUseGpsStart] = useState<boolean>(false);
-  const [gpsError, setGpsError] = useState<string | null>(null);
 
   const [routes, setRoutes] = useState<RouteOption[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
@@ -159,9 +158,8 @@ export function RoutePlanner() {
 
   // Request browser GPS position
   function handleRequestGps(target: "start" | "report" = "start") {
-    setGpsError(null);
     if (!navigator.geolocation) {
-      setGpsError("Geolocation is not supported by your browser.");
+      setStatusMessage("Geolocation is not supported by your browser.");
       return;
     }
 
@@ -177,7 +175,7 @@ export function RoutePlanner() {
         }
       },
       (err) => {
-        setGpsError(`Location was not shared (${err.message}). Choose a map location or allow location access to report from your position.`);
+        setStatusMessage(`Location was not shared (${err.message}). Choose a map location or allow location access to report from your position.`);
         if (target === "report") {
           setUseGpsReport(false);
         } else {
