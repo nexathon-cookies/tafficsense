@@ -1,6 +1,20 @@
 # Project Progress
 
-## Mobile UI Rollback to Original Design — verified, 24 Oct 2026
+## Mobile UI Planner Redesign & Quick Demo Sign-In — verified, 24 Oct 2026
+
+- **Scope:**
+  - **Quick Demo Sign-In on Mobile (`apps/mobile/app/auth/login.tsx`):** Implemented 1-click Quick Judge Demo Sign-In mirroring web functionality. Offers 1-click instant authenticated evaluation for Commuter (Primary), Commuter B (Independent Corroborator), Traffic Authority (Control Room), and Employer A (Workplace Coordinator). Fetches seeded accounts from `/api/demo-accounts` dynamically with instant fallback to verified test credentials. Added public "Continue as Guest" explorer button and redesigned the sign-in form following `trafficsense_mangaluru` design tokens.
+  - **Route Planner Redesign & Styling Fixes (`apps/mobile/app/planner.tsx`):** Fixed styling anomalies and layout issues:
+    - Replaced offset hack swap button with a unified, cohesive route card featuring a connected visual route stem (origin dot → vertical dashed track → destination pin) and a cleanly centered circular swap button with active tactile press feedback.
+    - Added popular Mangaluru corridor preset chips ("Hampankatta → Bejai", "Pumpwell → Central Rwy", "Hampankatta → Airport", "Ladyhill → Kadri") for 1-tap route testing.
+    - Replaced hardcoded hex colors in warning containers with semantic theme tokens (`colors.errorSurface`, `colors.successSurface`, `colors.border`).
+    - Added an educational, illustrated empty state card explaining free-flow synthetic baselines and hazard checks.
+    - Added real-time place search filter in the modal picker and wrapped the modal backdrop in a `Pressable` dismissing on outside tap.
+  - **Component & Icon Fixes:** Aligned all icons across `login.tsx`, `planner.tsx`, `traffic.tsx`, `index.tsx`, and `traffic-map.tsx` with supported `IconName` union in `Icon.tsx`.
+- **Verification Evidence:**
+  - `docker compose exec app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec app pnpm test`: Passed all 231 tests across 10 suites (**231/231 passed**).
+
 
 - **Scope:** Completely reverted all mobile UI redesign experiments (`apps/mobile` and `compose.yaml`) to the original working state matching commit `04532d5`. Restored original design folders (`home_trafficsense_mangaluru`, `live_traffic_map_mangaluru`, `plan_route_trafficsense_mangaluru`, `report_a_hazard_trafficsense_mangaluru`, `trafficsense_mangaluru`), removed Plan 1 and Plan 2 prototypes, and restored all original tokens, components, screens, and documentation.
 - **Hook Naming Fix:** Renamed `useCurrentLocation` to `requestCurrentLocation` in `apps/mobile/app/report.tsx` to adhere to `react-hooks/rules-of-hooks` in ESLint while preserving identical behavior.

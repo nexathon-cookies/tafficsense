@@ -1,11 +1,21 @@
 import type { Session } from "@supabase/supabase-js";
-import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import { supabase, supabaseConfigError } from "../lib/supabase";
 import { validateCredentials } from "../lib/auth-rules";
+
+export type ProfileRole = "commuter" | "employer" | "authority" | "admin";
+
+function isProfileRole(value: unknown): value is ProfileRole {
+  return value === "commuter" || value === "employer" || value === "authority" || value === "admin";
+}
 
 type AuthContextValue = {
   session: Session | null;
   loading: boolean;
+  role: ProfileRole | null;
+  roleLoading: boolean;
+  roleError: string | null;
+  reloadRole: () => Promise<void>;
   configurationError: string | null;
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (email: string, password: string) => Promise<{ error: string | null; needsConfirmation: boolean }>;
@@ -21,6 +31,8 @@ function isInvalidCredentials(error: { status?: number; message?: string }) {
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(Boolean(supabase));
+  const [profileRole, setProfileRole] = useState<{ userId: string; role: ProfileRole | null; error: string | null } | null>(null);
+  const userId = session?.user.is_anonymous ? null : session?.user.id ?? null;
   // Never trust a stored session without a sign-in check: restoration failure fails closed.
 
   useEffect(() => {
@@ -63,10 +75,42 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
+  const loadProfileRole = useCallback(async (id: string) => {
+    if (!supabase) {
+      setProfileRole({ userId: id, role: null, error: supabaseConfigError });
+      return;
+    }
+    setProfileRole({ userId: id, role: null, error: null });
+    try {
+      const { data, error } = await supabase.from("profiles").select("role").eq("id", id).maybeSingle();
+      if (error || !data || !isProfileRole(data.role)) {
+        setProfileRole({ userId: id, role: null, error: "Your account role could not be verified." });
+        return;
+      }
+      setProfileRole({ userId: id, role: data.role, error: null });
+    } catch {
+      setProfileRole({ userId: id, role: null, error: "Your account role could not be verified. Check your connection and retry." });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    const timer = setTimeout(() => void loadProfileRole(userId), 0);
+    return () => clearTimeout(timer);
+  }, [loadProfileRole, userId]);
+
+  const reloadRole = useCallback(async () => {
+    if (userId) await loadProfileRole(userId);
+  }, [loadProfileRole, userId]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
       loading,
+      role: userId && profileRole?.userId === userId ? profileRole.role : null,
+      roleLoading: Boolean(userId && profileRole?.userId !== userId),
+      roleError: userId && profileRole?.userId === userId ? profileRole.error : null,
+      reloadRole,
       configurationError: supabaseConfigError,
       async signIn(email, password) {
         const credentials = validateCredentials(email, password);
@@ -101,7 +145,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
       },
     }),
-    [loading, session],
+    [loading, profileRole, reloadRole, session, userId],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

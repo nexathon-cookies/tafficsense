@@ -246,6 +246,9 @@ export default function TrafficScreen() {
             selectedIncidentId={selectedId}
             onSelectIncident={(id) => setSelectedId(id)}
             fitKey={fitKey}
+            fullScreen
+            floatingControls
+            hideDetailsCard
           />
 
           {loading && !data ? (
@@ -362,6 +365,21 @@ export default function TrafficScreen() {
                 </View>
               </View>
             </Animated.View>
+          ) : (data?.incidents.length ?? 0) > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View active reports summary"
+              onPress={() => {
+                if (data?.incidents[0]) setSelectedId(data.incidents[0].id);
+              }}
+              style={styles.floatingSummaryPill}
+            >
+              <View style={styles.floatingSummaryDot} />
+              <Text style={styles.floatingSummaryText}>
+                {data?.incidents.length} community reports active · Tap to inspect
+              </Text>
+              <Icon name="expand_more" size={20} color={colors.primary} />
+            </Pressable>
           ) : null}
         </View>
       ) : (
@@ -638,6 +656,36 @@ const styles = StyleSheet.create({
     ...typography.codeSm,
     fontSize: 9,
     color: colors.textMuted,
+  },
+  floatingSummaryPill: {
+    position: "absolute",
+    bottom: 74,
+    left: space.gutter,
+    right: space.gutter,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sheet,
+    zIndex: 35,
+  },
+  floatingSummaryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
+  floatingSummaryText: {
+    ...typography.labelMd,
+    color: colors.text,
+    fontWeight: "600",
+    flex: 1,
+    marginHorizontal: 10,
   },
   bottomSheet: {
     position: "absolute",

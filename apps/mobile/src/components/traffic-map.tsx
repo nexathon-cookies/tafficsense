@@ -7,7 +7,7 @@ import { buildMapPayload, INCIDENT_COLOUR, ROUTE_COLOURS, SEVERITY_COLOURS, type
 import { buildMapHtml } from "../map/map-html";
 import { Card, Icon, SimulatedBadge } from "./ui";
 import { SchematicMap } from "./schematic-map";
-import { colors, minTouchTarget, radius, space, typography } from "../theme/tokens";
+import { colors, minTouchTarget, radius, shadows, space, typography } from "../theme/tokens";
 
 type Props = {
   segments: TrafficSegment[];
@@ -20,6 +20,14 @@ type Props = {
   onSelectRoute?: (id: string) => void;
   // Increment to refit the view to the data (for example after a refresh or a new route).
   fitKey: number;
+  // Full-screen and floating layout enhancements
+  fullScreen?: boolean;
+  floatingControls?: boolean;
+  hideDetailsCard?: boolean;
+  hideLegend?: boolean;
+  hideAttribution?: boolean;
+  mapHeight?: number;
+  onOpenFullScreen?: () => void;
 };
 
 type ViewMode = "street" | "schematic";
@@ -103,7 +111,7 @@ function MapCanvas({ payload, fitKey, style, onReady, onFailure, onMapIssue, onS
 
 export function TrafficMap(props: Props) {
   const [mode, setMode] = useState<ViewMode>("street");
-  const [fullScreen, setFullScreen] = useState(false);
+  const [fullScreenModal, setFullScreenModal] = useState(false);
   const [you, setYou] = useState<[number, number] | null>(null);
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [fitRequest, setFitRequest] = useState(0);
@@ -147,7 +155,6 @@ export function TrafficMap(props: Props) {
 
   async function centreOnMe() {
     setLocationNote(null);
-    // Location is requested only after this explicit tap, stays on the phone, and is never sent to the server.
     const permission = await Location.requestForegroundPermissionsAsync();
     if (permission.status !== Location.PermissionStatus.GRANTED) {
       setLocationNote("Location permission is off. The map still works without it.");
@@ -173,12 +180,21 @@ export function TrafficMap(props: Props) {
       incidents={props.incidents}
       selectedIncidentId={props.selectedIncidentId}
       onSelectIncident={props.onSelectIncident}
+      fullScreen={props.fullScreen}
     />
   );
 
+  const isFull = Boolean(props.fullScreen);
+  const showFloatingControls = props.floatingControls ?? isFull;
+
   return (
-    <View style={styles.wrapper}>
-      <View style={styles.mapFrame}>
+    <View style={[styles.wrapper, isFull && styles.fullScreenWrapper]}>
+      <View
+        style={[
+          styles.mapFrame,
+          isFull ? styles.mapFrameFullScreen : { height: props.mapHeight ?? 360 },
+        ]}
+      >
         {mode === "street" ? (
           <MapCanvas
             payload={payload}
@@ -201,46 +217,111 @@ export function TrafficMap(props: Props) {
         ) : (
           schematic
         )}
+
         {mapLoading && mode === "street" ? (
           <View style={styles.mapLoadingOverlay} accessibilityLiveRegion="polite">
             <ActivityIndicator color={colors.primary} />
             <Text style={styles.mapLoadingText}>Loading OpenStreetMap…</Text>
           </View>
         ) : null}
+
+        {/* Floating Controls Overlay (Google Maps Style) */}
+        {showFloatingControls ? (
+          <View style={styles.floatingControlsStack}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={you ? "Update my location on map" : "Show my location on map"}
+              onPress={() => void centreOnMe()}
+              style={({ pressed }) => [styles.floatingFab, pressed && styles.floatingFabPressed]}
+            >
+              <Icon name="my_location" size={20} color={colors.primary} />
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Fit map to all reports and corridors"
+              onPress={fitNow}
+              style={({ pressed }) => [styles.floatingFab, pressed && styles.floatingFabPressed]}
+            >
+              <Icon name="crop_free" size={20} color={colors.primary} />
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={mode === "street" ? "Switch to schematic view" : "Switch to street map"}
+              onPress={toggleMapMode}
+              style={({ pressed }) => [styles.floatingFab, pressed && styles.floatingFabPressed]}
+            >
+              <Icon name="layers" size={20} color={colors.primary} />
+            </Pressable>
+
+            {!isFull ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open full-screen map"
+                onPress={props.onOpenFullScreen ?? (() => setFullScreenModal(true))}
+                style={({ pressed }) => [styles.floatingFab, pressed && styles.floatingFabPressed]}
+              >
+                <Icon name="fullscreen" size={20} color={colors.primary} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Floating Notification / Info Banner */}
+        {locationNote || mapNote ? (
+          <View style={styles.floatingNoteToast}>
+            <Icon name="help_center" size={14} color={colors.primary} />
+            <Text style={styles.floatingNoteText}>{locationNote || mapNote}</Text>
+          </View>
+        ) : null}
+
+        {/* Floating Mini Legend if requested */}
+        {!props.hideLegend && isFull && (props.routes?.length || props.incidents.length || props.segments.length) ? (
+          <View style={styles.floatingLegend} accessibilityLabel="Map legend">
+            {props.routes?.length ? <LegendItem colour={ROUTE_COLOURS.primary} label="Route" /> : null}
+            {props.routes && props.routes.length > 1 ? <LegendItem colour={ROUTE_COLOURS.alternative} label="Alt" /> : null}
+            {props.incidents.length ? <LegendItem colour={INCIDENT_COLOUR} label="Report" /> : null}
+            {props.segments.some((segment) => segment.severity === "slowdown") ? <LegendItem colour={SEVERITY_COLOURS.slowdown} label="Slow" /> : null}
+          </View>
+        ) : null}
       </View>
 
-      <View style={styles.toolbar}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Fit map to all reports and corridors" onPress={fitNow} style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}>
-          <Icon name="crop_free" size={16} color={colors.primary} />
-          <Text style={styles.toolText}>Fit map</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={you ? "Update my location on map" : "Show my location on map"} onPress={() => void centreOnMe()} style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}>
-          <Icon name="my_location" size={16} color={colors.primary} />
-          <Text style={styles.toolText}>{you ? "Update location" : "Show my location"}</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={mode === "street" ? "Switch to schematic view" : "Switch to street map"}
-          onPress={toggleMapMode}
-          style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}
-        >
-          <Icon name="layers" size={16} color={colors.primary} />
-          <Text style={styles.toolText}>{mode === "street" ? "Schematic view" : "Street map"}</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open full-screen map" onPress={() => setFullScreen(true)} style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}>
-          <Icon name="fullscreen" size={16} color={colors.primary} />
-          <Text style={styles.toolText}>Full screen</Text>
-        </Pressable>
-      </View>
+      {/* Legacy bottom toolbar when not using floating controls */}
+      {!showFloatingControls ? (
+        <View style={styles.toolbar}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Fit map to all reports and corridors" onPress={fitNow} style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}>
+            <Icon name="crop_free" size={16} color={colors.primary} />
+            <Text style={styles.toolText}>Fit map</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={you ? "Update my location on map" : "Show my location on map"} onPress={() => void centreOnMe()} style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}>
+            <Icon name="my_location" size={16} color={colors.primary} />
+            <Text style={styles.toolText}>{you ? "Update location" : "Show my location"}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={mode === "street" ? "Switch to schematic view" : "Switch to street map"}
+            onPress={toggleMapMode}
+            style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}
+          >
+            <Icon name="layers" size={16} color={colors.primary} />
+            <Text style={styles.toolText}>{mode === "street" ? "Schematic view" : "Street map"}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open full-screen map" onPress={props.onOpenFullScreen ?? (() => setFullScreenModal(true))} style={({ pressed }) => [styles.toolButton, pressed && styles.pressed]}>
+            <Icon name="fullscreen" size={16} color={colors.primary} />
+            <Text style={styles.toolText}>Full screen</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
-      {locationNote ? <Text style={styles.notice}>{locationNote}</Text> : null}
-      {mapNote ? <Text style={styles.notice}>{mapNote}</Text> : null}
+      {!showFloatingControls && locationNote ? <Text style={styles.notice}>{locationNote}</Text> : null}
+      {!showFloatingControls && mapNote ? <Text style={styles.notice}>{mapNote}</Text> : null}
 
-      {props.incidents.length === 0 ? (
+      {!isFull && props.incidents.length === 0 ? (
         <Text style={styles.notice}>No community reports in the last 3 hours.</Text>
       ) : null}
 
-      {selectedIncident ? (
+      {!props.hideDetailsCard && selectedIncident ? (
         <Card style={styles.detailsCard} accessibilityLiveRegion="polite">
           <Text style={styles.detailsEyebrow}>COMMUNITY REPORT</Text>
           <Text style={styles.detailsTitle}>{humanise(selectedIncident.category)}</Text>
@@ -251,7 +332,7 @@ export function TrafficMap(props: Props) {
         </Card>
       ) : null}
 
-      {props.routes?.length || props.incidents.length || props.segments.length ? (
+      {!props.hideLegend && !isFull && (props.routes?.length || props.incidents.length || props.segments.length) ? (
         <View style={styles.legend} accessibilityLabel="Map legend">
           {props.routes?.length ? <LegendItem colour={ROUTE_COLOURS.primary} label="Recommended route" /> : null}
           {props.routes && props.routes.length > 1 ? <LegendItem colour={ROUTE_COLOURS.alternative} label="Your alternative" /> : null}
@@ -261,19 +342,21 @@ export function TrafficMap(props: Props) {
         </View>
       ) : null}
 
-      <View style={styles.attributionRow}>
-        <Text style={styles.attribution}>Map data © OpenStreetMap contributors. Corridor lines are SIMULATED.</Text>
-        <SimulatedBadge label="SIMULATED" />
-      </View>
+      {!props.hideAttribution && !isFull ? (
+        <View style={styles.attributionRow}>
+          <Text style={styles.attribution}>Map data © OpenStreetMap contributors. Corridor lines are SIMULATED.</Text>
+          <SimulatedBadge label="SIMULATED" />
+        </View>
+      ) : null}
 
-      <Modal visible={fullScreen} animationType="slide" onRequestClose={() => setFullScreen(false)}>
+      <Modal visible={fullScreenModal} animationType="slide" onRequestClose={() => setFullScreenModal(false)}>
         <View style={styles.fullScreenModal}>
           <View style={styles.fullScreenHeader}>
             <View style={styles.flexOne}>
               <Text style={styles.detailsTitle}>{mode === "street" ? "Full-screen map" : "Full-screen schematic"}</Text>
               <Text style={styles.detailsText}>{mode === "street" ? "Reports and routes on the street map." : "Reports and routes only; not street navigation."}</Text>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close full-screen map" onPress={() => setFullScreen(false)} style={styles.closeButton}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close full-screen map" onPress={() => setFullScreenModal(false)} style={styles.closeButton}>
               <Icon name="close" size={22} color={colors.text} />
             </Pressable>
           </View>
@@ -287,7 +370,7 @@ export function TrafficMap(props: Props) {
                 setMapLoading(false);
                 setMapNote(`Street map could not start (${reason}). Showing the traffic schematic.`);
                 setMode("schematic");
-                setFullScreen(false);
+                setFullScreenModal(false);
               }}
               onMapIssue={() => {
                 setMapLoading(false);
@@ -325,7 +408,16 @@ function LegendItem({ colour, label }: { colour: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: { gap: space.xs },
+  wrapper: {
+    gap: space.xs,
+    position: "relative",
+  },
+  fullScreenWrapper: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    gap: 0,
+  },
   mapFrame: {
     height: 360,
     borderRadius: radius.card,
@@ -333,6 +425,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surfaceContainerLow,
+    position: "relative",
+  },
+  mapFrameFullScreen: {
+    flex: 1,
+    height: "100%",
+    borderRadius: 0,
+    borderWidth: 0,
   },
   canvas: { flex: 1 },
   mapLoadingOverlay: {
@@ -345,6 +444,66 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(250, 248, 255, 0.88)",
   },
   mapLoadingText: { ...typography.bodySm, color: colors.textSecondary },
+  floatingControlsStack: {
+    position: "absolute",
+    right: 14,
+    top: 14,
+    gap: 10,
+    zIndex: 25,
+  },
+  floatingFab: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sheet,
+  },
+  floatingFabPressed: {
+    backgroundColor: colors.surfaceContainer,
+    transform: [{ scale: 0.94 }],
+  },
+  floatingNoteToast: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    right: 70,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderWidth: 1,
+    borderColor: colors.border,
+    zIndex: 20,
+    ...shadows.card,
+  },
+  floatingNoteText: {
+    ...typography.labelSm,
+    color: colors.textSecondary,
+    flexShrink: 1,
+  },
+  floatingLegend: {
+    position: "absolute",
+    left: 14,
+    bottom: 14,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    borderWidth: 1,
+    borderColor: colors.border,
+    zIndex: 20,
+    ...shadows.card,
+  },
   toolbar: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   toolButton: {
     minHeight: minTouchTarget,
@@ -366,8 +525,8 @@ const styles = StyleSheet.create({
   detailsText: { ...typography.bodySm, color: colors.textSecondary },
   legend: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   legendItem: { flexDirection: "row", alignItems: "center", gap: space.xs },
-  swatch: { width: 12, height: 12, borderRadius: 6 },
-  legendText: { ...typography.labelSm, color: colors.textSecondary },
+  swatch: { width: 10, height: 10, borderRadius: 5 },
+  legendText: { ...typography.labelSm, color: colors.textSecondary, fontSize: 11 },
   attributionRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: space.xs },
   attribution: { ...typography.labelSm, color: colors.textMuted, flexShrink: 1 },
   fullScreenModal: { flex: 1, backgroundColor: colors.background },

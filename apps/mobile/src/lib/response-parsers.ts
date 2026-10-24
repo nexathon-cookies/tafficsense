@@ -12,6 +12,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+export type AuthorityHistoryItem = {
+  id: string;
+  incident_id: string;
+  action: "confirm_incident" | "resolve_incident" | "reject_incident";
+  category: string;
+  created_at: string;
+  details: Record<string, unknown>;
+};
+
+export function parseAuthorityHistoryResponse(value: unknown): AuthorityHistoryItem[] {
+  if (!isRecord(value) || value.ok !== true || !Array.isArray(value.history)) {
+    throw new Error("Authority service returned an invalid history response.");
+  }
+  const actions = ["confirm_incident", "resolve_incident", "reject_incident"];
+  const items = value.history.filter((item): item is AuthorityHistoryItem =>
+    isRecord(item) && typeof item.id === "string" && typeof item.incident_id === "string" &&
+    actions.includes(String(item.action)) && typeof item.category === "string" &&
+    typeof item.created_at === "string" && Number.isFinite(Date.parse(item.created_at)) && isRecord(item.details));
+  if (items.length !== value.history.length) throw new Error("Authority service returned an invalid history response.");
+  return items;
+}
+
 function parseErrorPayload(value: unknown): { ok: false; error: string } | null {
   if (!isRecord(value) || value.ok !== false || typeof value.error !== "string") return null;
   return { ok: false, error: value.error };
