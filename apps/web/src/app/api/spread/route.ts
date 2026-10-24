@@ -1,30 +1,30 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { getActiveLiveIncidents } from "@/lib/incidents/server";
 import { checkSpread } from "@/lib/routing/spread";
 import { MANGALURU_PRESETS } from "@/lib/routing/presets";
 import type { VerifiedIncident } from "@/lib/routing/engine";
+import { authConfig, authCookieOptions, authFetch } from "@/lib/auth/config";
+import { createAuthClient } from "@/lib/auth/server";
 
 async function getSupabase(req: NextRequest) {
-  const cookieStore = await cookies();
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_ANON_KEY!;
-
   const authorization = req.headers.get("authorization");
-  return createServerClient(url, key, {
-    global: authorization ? { headers: { Authorization: authorization } } : undefined,
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
+  if (authorization) {
+    const config = authConfig();
+    if (!config) throw new Error("Authentication is not configured.");
+    return createServerClient(config.url, config.key, {
+      cookieOptions: authCookieOptions,
+      global: {
+        headers: { Authorization: authorization },
+        fetch: authFetch,
       },
-      setAll(cookiesToSet) {
-        for (const { name, value, options } of cookiesToSet) {
-          cookieStore.set(name, value, options);
-        }
+      cookies: {
+        getAll: () => [],
+        setAll: () => {},
       },
-    },
-  });
+    });
+  }
+  return createAuthClient(false);
 }
 
 export async function GET(req: NextRequest) {

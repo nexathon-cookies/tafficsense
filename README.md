@@ -17,7 +17,7 @@ Most traffic apps stop at user-submitted pins on a map. TrafficSense is an **end
    - **L2 (Location Supported)**: Arterial segment snapping and spatial coordinate validation.
    - **L3 (Multi-Source Corroborated)**: $\ge 3$ distinct reporting identities within a 15-minute rolling window.
    - **L4 (Speed Slowdown Supported)**: Quantitative physical slowdown proof ($\le 40\%$ baseline for $\ge 5$ minutes).
-   - **L5 (Multimodal AI Vision Verified)**: Automated image analysis via Google Gemini Vision models verifying real road hazards and filtering out fraudulent photos.
+   - **L5 (Multimodal AI Vision & C2PA Anti-AI Verified)**: Automated image analysis via Google Gemini Vision (`gemini-3.5-flash-lite`) verifying genuine road hazards, client-side EXIF GPS stripping, and 2-layer synthetic/AI-generated fake image rejection.
    - **L6 (Civic Authority Confirmed)**: Official municipal/police confirmation with immutable audit logging.
 2. **Zero Continuous Background Surveillance**:
    - Commuters never surrender 24/7 background geolocation. Reports and journeys bind to arterial segments without persistent location footprints.
@@ -40,9 +40,9 @@ Most traffic apps stop at user-submitted pins on a map. TrafficSense is an **end
 
 - **Web Application**: Next.js 16 (App Router, Turbopack, Tailwind CSS, Leaflet / MapLibre GL)
 - **Mobile Application**: Expo SDK 57 / React Native 0.86 (TypeScript, Vector Icons, Leaflet / Google Maps UX)
-- **AI Vision Engine**: Google Gemini 2.5 Flash / Flash Lite / Pro Multimodal Vision API
+- **AI & Vision Pipeline**: Google Gemini Vision (`gemini-3.5-flash-lite`) with client-side EXIF GPS stripping and 2-layer synthetic/AI-generated image rejection
 - **Data & Security**: PostgreSQL 17 / Supabase with PostGIS, Row-Level Security (RLS), and Security-Definer RPCs
-- **Routing Engine**: Open Source Routing Machine (OSRM) + Mangaluru Arterial Road Network Presets
+- **Routing Engine**: Open Source Routing Machine (OSRM) + Dynamic Detour Routing & Spread Engine + Mangaluru Arterial Road Network Presets
 - **Tooling**: Docker, Docker Compose, `justfile`, pnpm (pinned in root)
 
 ---

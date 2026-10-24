@@ -373,6 +373,20 @@ export function IncidentReviewPanel() {
                   </div>
                   <span className="text-[10px] font-mono rounded bg-surface-container-high px-2 py-0.5 text-surface-on-variant">{incident.level} · {incident.provenance}</span>
                 </div>
+                {incident.photo_data_url && (
+                  <div className="rounded-lg border border-surface-container bg-surface-container-lowest p-2 space-y-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-[10px] font-mono font-bold rounded bg-emerald-950 text-emerald-100 px-2 py-0.5">L5 AI VISION CORROBORATED PHOTO</span>
+                      <span className="text-[10px] font-mono text-surface-on-variant">{(incident.photo_confidence ?? "moderate").toUpperCase()} CONFIDENCE</span>
+                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={incident.photo_data_url}
+                      alt="Citizen-submitted photo evidence for this incident"
+                      className="max-h-40 w-full rounded-lg object-cover border border-surface-container"
+                    />
+                  </div>
+                )}
                 <p className="text-xs text-surface-on-variant">{incident.level_reason} · {incident.report_count} report{incident.report_count === 1 ? "" : "s"} · first reported {formatIncidentTime(incident.first_reported_at)} IST</p>
                 <div className="flex flex-wrap gap-2">
                   {incident.level !== "L6" && <button type="button" className="button text-xs px-3 py-1.5" disabled={isPending} onClick={() => void updateIncident(incident, "confirm")}>{isPending ? "Saving…" : "Confirm (L6)"}</button>}

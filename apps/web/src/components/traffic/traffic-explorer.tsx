@@ -51,13 +51,14 @@ export function TrafficExplorer({ snapshot, slowdownAssessments, incidents, trav
 
   const fixture = snapshot.fixture;
 
-  const [selectedLiveIncidentId, setSelectedLiveIncidentId] = useState<string | null>(null);
+  const initialIncidentId = params.get("incident");
+  const [selectedLiveIncidentId, setSelectedLiveIncidentId] = useState<string | null>(initialIncidentId);
   const [liveIncidents, setLiveIncidents] = useState<LiveIncident[]>([]);
   const [incidentFilter, setIncidentFilter] = useState<"all" | "verified" | "accident" | "hazards">("all");
 
   const filteredIncidents = useMemo(() => {
     return liveIncidents.filter((inc) => {
-      if (incidentFilter === "verified") return ["L3", "L4", "L6"].includes(inc.level);
+      if (incidentFilter === "verified") return ["L3", "L4", "L5", "L6"].includes(inc.level);
       if (incidentFilter === "accident") return inc.category === "accident";
       if (incidentFilter === "hazards") return ["flood", "road_closed", "hazard"].includes(inc.category);
       return true;
@@ -95,14 +96,14 @@ export function TrafficExplorer({ snapshot, slowdownAssessments, incidents, trav
       />
 
       {/* Floating Google Maps Overlay Panel on Top-Left */}
-      <aside className="absolute top-4 left-4 z-20 w-80 sm:w-96 max-h-[calc(100vh-95px)] flex flex-col bg-surface/95 dark:bg-surface-dim/95 backdrop-blur-md rounded-2xl border border-surface-container shadow-2xl overflow-hidden pointer-events-auto">
-        <div className="p-3.5 pb-2.5 border-b border-surface-container bg-surface-container-low/60">
+      <aside className="absolute top-4 left-4 z-20 w-80 sm:w-96 max-h-[calc(100vh-80px)] flex flex-col bg-surface/95 backdrop-blur-md rounded-2xl border border-surface-container shadow-2xl overflow-hidden pointer-events-auto">
+        <div className="p-3.5 pb-2.5 border-b border-surface-container bg-surface-container-low/70">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-bold text-surface-on flex items-center gap-1.5 m-0">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
               Mangaluru Live Traffic
             </h2>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200">
               ● {liveIncidents.length} REAL INCIDENT{liveIncidents.length !== 1 ? "S" : ""}
             </span>
           </div>
@@ -116,7 +117,7 @@ export function TrafficExplorer({ snapshot, slowdownAssessments, incidents, trav
               type="button"
               onClick={() => setIncidentFilter("all")}
               className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition whitespace-nowrap ${
-                incidentFilter === "all" ? "bg-primary text-white" : "bg-surface-container text-surface-on hover:bg-surface-container-high"
+                incidentFilter === "all" ? "bg-primary text-primary-on" : "bg-surface-container text-surface-on hover:bg-surface-container-high"
               }`}
             >
               All ({liveIncidents.length})
@@ -125,16 +126,16 @@ export function TrafficExplorer({ snapshot, slowdownAssessments, incidents, trav
               type="button"
               onClick={() => setIncidentFilter("verified")}
               className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition whitespace-nowrap ${
-                incidentFilter === "verified" ? "bg-primary text-white" : "bg-surface-container text-surface-on hover:bg-surface-container-high"
+                incidentFilter === "verified" ? "bg-primary text-primary-on" : "bg-surface-container text-surface-on hover:bg-surface-container-high"
               }`}
             >
-              L3+ Verified ({liveIncidents.filter(i => ["L3", "L4", "L6"].includes(i.level)).length})
+              L3+ Verified ({liveIncidents.filter(i => ["L3", "L4", "L5", "L6"].includes(i.level)).length})
             </button>
             <button
               type="button"
               onClick={() => setIncidentFilter("accident")}
               className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition whitespace-nowrap ${
-                incidentFilter === "accident" ? "bg-primary text-white" : "bg-surface-container text-surface-on hover:bg-surface-container-high"
+                incidentFilter === "accident" ? "bg-primary text-primary-on" : "bg-surface-container text-surface-on hover:bg-surface-container-high"
               }`}
             >
               Accidents
@@ -143,7 +144,7 @@ export function TrafficExplorer({ snapshot, slowdownAssessments, incidents, trav
               type="button"
               onClick={() => setIncidentFilter("hazards")}
               className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition whitespace-nowrap ${
-                incidentFilter === "hazards" ? "bg-primary text-white" : "bg-surface-container text-surface-on hover:bg-surface-container-high"
+                incidentFilter === "hazards" ? "bg-primary text-primary-on" : "bg-surface-container text-surface-on hover:bg-surface-container-high"
               }`}
             >
               Hazards
@@ -174,10 +175,10 @@ export function TrafficExplorer({ snapshot, slowdownAssessments, incidents, trav
                       <span className="text-xs font-bold text-surface-on truncate">
                         {preset?.name ?? reportCategories[inc.category]}
                       </span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        ["L3", "L4", "L6"].includes(inc.level)
-                          ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
-                          : "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${
+                        ["L3", "L4", "L5", "L6"].includes(inc.level)
+                          ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+                          : "bg-amber-50 text-amber-950 border-amber-200"
                       }`}>
                         {inc.level}
                       </span>
@@ -213,9 +214,9 @@ export function TrafficExplorer({ snapshot, slowdownAssessments, incidents, trav
           </summary>
           <div className="p-2.5 pt-0 space-y-2 max-h-[220px] overflow-y-auto">
             <div className="flex items-center gap-1 text-[11px] pt-1">
-              <button type="button" className={`px-2 py-0.5 rounded text-xs ${directionFilter === "all" ? "bg-primary text-white font-bold" : "bg-surface-container text-surface-on"}`} onClick={() => setDirectionFilter("all")}>All ({fixture.segments.length})</button>
-              <button type="button" className={`px-2 py-0.5 rounded text-xs ${directionFilter === "outbound" ? "bg-primary text-white font-bold" : "bg-surface-container text-surface-on"}`} onClick={() => setDirectionFilter("outbound")}>Outbound</button>
-              <button type="button" className={`px-2 py-0.5 rounded text-xs ${directionFilter === "inbound" ? "bg-primary text-white font-bold" : "bg-surface-container text-surface-on"}`} onClick={() => setDirectionFilter("inbound")}>Inbound</button>
+              <button type="button" className={`px-2 py-0.5 rounded text-xs font-semibold ${directionFilter === "all" ? "bg-primary text-primary-on" : "bg-surface-container text-surface-on"}`} onClick={() => setDirectionFilter("all")}>All ({fixture.segments.length})</button>
+              <button type="button" className={`px-2 py-0.5 rounded text-xs font-semibold ${directionFilter === "outbound" ? "bg-primary text-primary-on" : "bg-surface-container text-surface-on"}`} onClick={() => setDirectionFilter("outbound")}>Outbound</button>
+              <button type="button" className={`px-2 py-0.5 rounded text-xs font-semibold ${directionFilter === "inbound" ? "bg-primary text-primary-on" : "bg-surface-container text-surface-on"}`} onClick={() => setDirectionFilter("inbound")}>Inbound</button>
             </div>
             <ul data-segment-list className="space-y-1">
               {visibleSegments.map(segment => (

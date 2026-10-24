@@ -13,8 +13,9 @@ export type LiveIncident = {
   last_confirmed_at: string;
   provenance: "reported" | "verified" | "authority";
   report_count: number;
+  /** Best AI-verified evidence photo (compressed JPEG data URL), when one was attached. */
   photo_data_url?: string | null;
-  photo_confidence?: string | null;
+  photo_confidence?: "high" | "moderate" | "low" | string | null;
 };
 
 export type AuthorityNotificationItem = {
@@ -82,6 +83,8 @@ export type SubmitIncidentInput = {
   l5_verified?: boolean;
   l5_summary?: string | null;
   reporter_email?: string | null;
+  l5_photo_data_url?: string | null;
+  l5_confidence_tier?: string | null;
 };
 
 export type SubmitIncidentResult =
@@ -131,6 +134,8 @@ export async function submitIncidentReport(
     const { data: promoted, error: promoteError } = await supabase.rpc("apply_incident_photo_verification", {
       p_incident_id: result.incident_id,
       p_summary: input.l5_summary ?? null,
+      p_photo_data_url: input.l5_photo_data_url ?? null,
+      p_confidence_tier: input.l5_confidence_tier ?? "moderate",
     });
     if (!promoteError && promoted?.ok) {
       finalLevel = "L5";
