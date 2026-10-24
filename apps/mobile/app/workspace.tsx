@@ -11,7 +11,7 @@ import {
   FeedbackBox,
   Icon,
 } from "../src/components/ui";
-import { colors, layout, radius, shadows, space, typography } from "../src/theme/tokens";
+import { colors, layout, radius, space, typography } from "../src/theme/tokens";
 import { useTabBackHandler } from "../src/lib/use-tab-back-handler";
 
 export default function WorkspaceScreen() {
@@ -105,23 +105,6 @@ export default function WorkspaceScreen() {
               </View>
             </View>
           </View>
-
-          {/* Commuter Metric Highlights */}
-          <View style={styles.metricsRow}>
-            <View style={styles.metricCol}>
-              <Text style={styles.metricVal}>1,420</Text>
-              <Text style={styles.metricLbl}>Miles Tracked</Text>
-            </View>
-            <View style={[styles.metricCol, styles.metricColHighlight]}>
-              <Text style={styles.metricValHighlight}>18.4 hrs</Text>
-              <Text style={styles.metricLblHighlight}>Saved Rerouting</Text>
-            </View>
-            <View style={styles.metricCol}>
-              <Text style={styles.metricVal}>47</Text>
-              <Text style={styles.metricLbl}>Valid Reports</Text>
-            </View>
-          </View>
-
           <Text style={styles.accountNote}>
             Your reports contribute directly to community verification levels (L1–L6). Your journey corridor updates can be selectively shared with employer organisations.
           </Text>
@@ -235,7 +218,7 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   eyebrow: {
-    ...typography.labelSm,
+    ...typography.codeSm,
     color: colors.primary,
     fontWeight: "700",
     letterSpacing: 0.6,
@@ -266,15 +249,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "rgba(0, 102, 94, 0.08)",
-    borderWidth: 1.5,
+    backgroundColor: colors.primaryFixed,
+    borderWidth: 2,
     borderColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
     ...typography.headlineSm,
-    color: colors.primary,
+    color: colors.onPrimaryFixed,
     fontWeight: "700",
   },
   accountTextGroup: {
@@ -290,53 +273,14 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     backgroundColor: colors.successSurface,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: radius.pill,
   },
   roleBadgeText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
+    fontSize: 9.5,
     color: colors.success,
     fontWeight: "700",
-  },
-  metricsRow: {
-    flexDirection: "row",
-    backgroundColor: colors.surfaceContainerLow,
-    borderRadius: radius.control,
-    padding: 8,
-    gap: 6,
-    marginTop: 4,
-  },
-  metricCol: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 4,
-  },
-  metricColHighlight: {
-    backgroundColor: colors.surfaceContainerLowest,
-    borderRadius: radius.md,
-    ...shadows.card,
-  },
-  metricVal: {
-    ...typography.headlineSm,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  metricValHighlight: {
-    ...typography.headlineSm,
-    fontWeight: "700",
-    color: colors.primary,
-  },
-  metricLbl: {
-    ...typography.labelSm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  metricLblHighlight: {
-    ...typography.labelSm,
-    color: colors.primary,
-    fontWeight: "600",
-    marginTop: 2,
   },
   accountNote: {
     ...typography.bodySm,
@@ -377,7 +321,8 @@ const styles = StyleSheet.create({
   actionSubtitle: {
     ...typography.bodySm,
     color: colors.textSecondary,
-    marginTop: 2,
+    fontSize: 11.5,
+    marginTop: 1,
   },
   signOutSection: {
     paddingTop: 4,

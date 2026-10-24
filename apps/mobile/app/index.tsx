@@ -75,71 +75,68 @@ export default function HomeScreen() {
         }
       >
         {/* Status Bar & Live Greeting */}
-        {/* Top Greeting & Live-Status Indicator */}
         <View style={styles.statusBarSection}>
-          <View style={styles.greetingHeaderRow}>
-            <View style={styles.greetingTextCol}>
-              <Text style={styles.radarEyebrow}>LIVE CORRIDOR RADAR</Text>
-              <Text style={styles.greetingTitle}>Good morning, Commuter</Text>
-            </View>
-
-            <View style={styles.liveStatusPill}>
+          <View style={styles.liveMetaRow}>
+            <View style={styles.liveIndicator}>
               <View style={styles.pulsingDotWrapper}>
                 <View style={styles.pulsingHalo} />
                 <View style={styles.pulsingCore} />
               </View>
-              <Text style={styles.liveStatusPillText}>Live · {lastUpdated}</Text>
+              <Text style={styles.liveTimestampText}>
+                Live · updated {lastUpdated} · 30s auto-refresh
+              </Text>
             </View>
+
+            <View style={styles.simulatedPill}>
+              <Icon name="tune" size={13} color={colors.evidence} />
+              <Text style={styles.simulatedPillText}>SIMULATED DATA</Text>
+            </View>
+          </View>
+
+          <View style={styles.greetingRow}>
+            <View style={styles.greetingTextCol}>
+              <Text style={styles.greetingTitle}>Good morning, Commuter</Text>
+              <Text style={styles.greetingSubtitle}>
+                Coastal coastal skies overcast · Wet tarmac advisory active
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Sync data"
+              onPress={() => {
+                setRefreshing(true);
+                void loadIncidents();
+              }}
+              style={({ pressed }) => [styles.syncButton, pressed && styles.syncButtonPressed]}
+            >
+              <Icon name="sync" size={16} color={colors.primary} />
+              <Text style={styles.syncButtonText}>Sync</Text>
+            </Pressable>
           </View>
         </View>
 
-        {/* Corridor Overview Card: Daily Commute */}
+        {/* Hero Interactive Card: Plan My Route */}
         <Card style={styles.heroCard}>
-          <View style={styles.commuteHeaderRow}>
-            <View style={styles.commuteTitleCol}>
-              <View style={styles.commuteTag}>
-                <Icon name="directions_car" size={16} color={colors.secondary} />
-                <Text style={styles.commuteTagText}>Daily Commute</Text>
+          <View style={styles.heroHeader}>
+            <View style={styles.heroTitleGroup}>
+              <View style={styles.heroIconBox}>
+                <Icon name="alt_route" size={20} color={colors.primary} />
               </View>
-              <Text style={styles.commuteTitle}>NH 66 / KPT Corridor</Text>
-            </View>
-            <View style={styles.commuteEtaCol}>
-              <Text style={styles.commuteEtaValue}>
-                24<Text style={styles.commuteEtaUnit}>min</Text>
-              </Text>
-              <Text style={styles.commuteEtaDelta}>3 min faster than usual</Text>
-            </View>
-          </View>
-
-          {/* Live Density Progress Gauge */}
-          <View style={styles.gaugeContainer}>
-            <View style={styles.gaugeMetaRow}>
-              <Text style={styles.gaugeMetaRoute}>Optimal route via Pumpwell</Text>
-              <Text style={styles.gaugeMetaDist}>18.4 km</Text>
-            </View>
-            <View style={styles.gaugeBar}>
-              <View style={[styles.gaugeSegment, { width: "72%", backgroundColor: colors.primary }]} />
-              <View style={[styles.gaugeSegment, { width: "16%", backgroundColor: colors.warningAccent }]} />
-              <View style={[styles.gaugeSegment, { width: "12%", backgroundColor: colors.surfaceContainerHighest }]} />
-            </View>
-            <View style={styles.gaugeLegendRow}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-                <Text style={styles.legendText}>Free flow (13.2 km)</Text>
+              <View>
+                <Text style={styles.heroTitle}>Plan my route</Text>
+                <Text style={styles.heroSubtitle}>
+                  Mangaluru Central Corridor & Kankanady Bypass
+                </Text>
               </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.warningAccent }]} />
-                <Text style={styles.legendText}>Moderate (2.9 km)</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.surfaceContainerHighest }]} />
-                <Text style={styles.legendText}>City merge</Text>
-              </View>
+            </View>
+            <View style={styles.corridorBadge}>
+              <Text style={styles.corridorBadgeText}>CORRIDOR MODEL</Text>
             </View>
           </View>
 
           {/* Vector Map Schematic Visual */}
           <View style={styles.schematicContainer}>
+            {/* Grid pattern background */}
             <View style={styles.schematicGrid}>
               <View style={styles.gridLineH1} />
               <View style={styles.gridLineH2} />
@@ -147,134 +144,158 @@ export default function HomeScreen() {
               <View style={styles.gridLineV2} />
             </View>
 
+            {/* Simulated Road Paths */}
             <View style={styles.roadNetwork}>
+              {/* Secondary gray road */}
               <View style={styles.roadGray} />
+              {/* Teal primary corridor */}
               <View style={styles.roadTeal} />
+              {/* Congested orange segment */}
               <View style={styles.roadOrange} />
             </View>
 
+            {/* Hampankatta Landmark Pin */}
             <View style={styles.pinHampankatta}>
               <View style={styles.pinDotTeal} />
               <Text style={styles.pinLabel}>Hampankatta</Text>
             </View>
 
+            {/* Kadri Hills Landmark Pin */}
             <View style={styles.pinKadri}>
               <View style={styles.pinDotOrange} />
               <Text style={styles.pinLabel}>Kadri Hills</Text>
             </View>
 
+            {/* Telemetry Bubble */}
             <View style={styles.telemetryBubble}>
               <Icon name="radar" size={13} color={colors.primary} />
-              <Text style={styles.telemetryText}>Clear up to KPT</Text>
+              <Text style={styles.telemetryText}>Avg: 26 km/h</Text>
             </View>
           </View>
 
-          {/* Primary Action Button */}
-          <Button
-            title="Plan my route"
-            onPress={() => router.push("/planner")}
-            variant="primary"
-            icon={<Icon name="alt_route" size={20} color="#ffffff" />}
-          />
+          {/* Quick Route Inputs */}
+          <View style={styles.routeInputsStack}>
+            <View style={styles.inputRow}>
+              <Icon name="trip_origin" size={18} color={colors.primary} />
+              <View style={styles.inputCol}>
+                <Text style={styles.inputLabel}>ORIGIN</Text>
+                <Text style={styles.inputValue}>State Bank / Ladyhill</Text>
+              </View>
+            </View>
+
+            <View style={styles.inputRow}>
+              <Icon name="location_on" size={18} color="#7d4200" />
+              <View style={styles.inputCol}>
+                <Text style={styles.inputLabel}>DESTINATION</Text>
+                <Text style={styles.inputValue}>Pumpwell Circle / Kankanady</Text>
+              </View>
+              <View style={styles.swapIconBtn}>
+                <Icon name="swap_vert" size={18} color={colors.textSecondary} />
+              </View>
+            </View>
+
+            <Button
+              title="Inspect Coastal Routes · ~18 min"
+              onPress={() => router.push("/planner")}
+              variant="primary"
+              icon={<Icon name="directions_car" size={20} color="#ffffff" />}
+            />
+          </View>
         </Card>
 
         {/* 2x2 Quick Action Grid */}
         <View style={styles.actionGrid}>
-          {/* Tile 1: Saved Places */}
+          {/* Action 1: Report issue */}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Saved Places: 3 saved"
-            onPress={() => router.push("/planner")}
+            accessibilityLabel="Report issue: Waterlog, pothole, jam"
+            onPress={() => router.push("/report")}
             style={({ pressed }) => [styles.gridTile, pressed && styles.gridTilePressed]}
           >
             <View style={styles.tileTopRow}>
-              <View style={[styles.tileIconCircle, { backgroundColor: colors.surfaceContainerHigh }]}>
-                <Icon name="location_on" size={20} color={colors.primary} />
+              <View style={[styles.tileIconCircle, { backgroundColor: colors.errorSurface }]}>
+                <Icon name="warning" size={20} color={colors.error} />
               </View>
-              <Text style={styles.tileBadgeGray}>3 saved</Text>
+              <Text style={styles.tileBadgeGray}>1-tap</Text>
             </View>
             <View>
-              <Text style={styles.tileTitle}>Saved Places</Text>
-              <Text style={styles.tileSubtitle}>Office: 24m • Gym: 12m</Text>
+              <Text style={styles.tileTitle}>Report issue</Text>
+              <Text style={styles.tileSubtitle}>Waterlog, pot, jam</Text>
             </View>
           </Pressable>
 
-          {/* Tile 2: Live Incidents */}
+          {/* Action 2: Live map */}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Live Incidents reported nearby"
+            accessibilityLabel="Live map: Pan-city sensors"
             onPress={() => router.push("/traffic")}
             style={({ pressed }) => [styles.gridTile, pressed && styles.gridTilePressed]}
           >
             <View style={styles.tileTopRow}>
-              <View style={[styles.tileIconCircle, { backgroundColor: colors.surfaceContainerHigh }]}>
-                <Icon name="warning" size={20} color={colors.warning} />
-              </View>
-              <Text style={[styles.tileBadgeGray, { color: colors.warning }]}>
-                {incidents.length > 0 ? `${incidents.length} active` : "3 active"}
-              </Text>
-            </View>
-            <View>
-              <Text style={styles.tileTitle}>Incidents</Text>
-              <Text style={styles.tileSubtitle}>Reported nearby</Text>
-            </View>
-          </Pressable>
-
-          {/* Tile 3: Transit Sync */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Transit Sync: City Bus on time"
-            onPress={() => router.push("/planner")}
-            style={({ pressed }) => [styles.gridTile, pressed && styles.gridTilePressed]}
-          >
-            <View style={styles.tileTopRow}>
-              <View style={[styles.tileIconCircle, { backgroundColor: colors.surfaceContainerHigh }]}>
-                <Icon name="directions_bus" size={20} color={colors.secondary} />
-              </View>
-              <Text style={[styles.tileBadgeGray, { color: colors.primary }]}>On time</Text>
-            </View>
-            <View>
-              <Text style={styles.tileTitle}>Transit Sync</Text>
-              <Text style={styles.tileSubtitle}>KSRTC / City Bus</Text>
-            </View>
-          </Pressable>
-
-          {/* Tile 4: Live Map */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Traffic map: Live corridor feed"
-            onPress={() => router.push("/traffic")}
-            style={({ pressed }) => [styles.gridTile, pressed && styles.gridTilePressed]}
-          >
-            <View style={styles.tileTopRow}>
-              <View style={[styles.tileIconCircle, { backgroundColor: colors.surfaceContainerHigh }]}>
+              <View style={[styles.tileIconCircle, { backgroundColor: colors.primaryFixed }]}>
                 <Icon name="explore" size={20} color={colors.primary} />
               </View>
-              <View style={styles.tileDotLive} />
+              <View style={styles.tileBadgeLive}>
+                <Text style={styles.tileBadgeLiveText}>LIVE</Text>
+              </View>
             </View>
             <View>
-              <Text style={styles.tileTitle}>Traffic Map</Text>
-              <Text style={styles.tileSubtitle}>Live corridor map</Text>
+              <Text style={styles.tileTitle}>Live map</Text>
+              <Text style={styles.tileSubtitle}>Pan-city sensors</Text>
+            </View>
+          </Pressable>
+
+          {/* Action 3: Plan route */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Plan route: Monsoon detours"
+            onPress={() => router.push("/planner")}
+            style={({ pressed }) => [styles.gridTile, pressed && styles.gridTilePressed]}
+          >
+            <View style={styles.tileTopRow}>
+              <View style={[styles.tileIconCircle, { backgroundColor: colors.evidenceSurface }]}>
+                <Icon name="alt_route" size={20} color={colors.secondary} />
+              </View>
+              <Icon name="chevron_right" size={18} color={colors.textMuted} />
+            </View>
+            <View>
+              <Text style={styles.tileTitle}>Plan route</Text>
+              <Text style={styles.tileSubtitle}>Monsoon detours</Text>
+            </View>
+          </Pressable>
+
+          {/* Action 4: My journeys */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="My journeys: Saved daily routes"
+            onPress={() => router.push("/journeys")}
+            style={({ pressed }) => [styles.gridTile, pressed && styles.gridTilePressed]}
+          >
+            <View style={styles.tileTopRow}>
+              <View style={[styles.tileIconCircle, { backgroundColor: colors.surfaceContainerHigh }]}>
+                <Icon name="shield" size={20} color={colors.primary} />
+              </View>
+              <Text style={styles.tileBadgeGreen}>Saved</Text>
+            </View>
+            <View>
+              <Text style={styles.tileTitle}>My journeys</Text>
+              <Text style={styles.tileSubtitle}>Saved daily routes</Text>
             </View>
           </Pressable>
         </View>
 
-        {/* Live Corridor Feed Section */}
+        {/* Active Near You Section */}
         <View style={styles.activeSection}>
           <View style={styles.activeSectionHeader}>
             <View style={styles.activeTitleRow}>
-              <Text style={styles.sectionHeading}>Live Corridor Feed</Text>
-              <View style={styles.realtimePill}>
-                <Text style={styles.realtimePillText}>Real-time</Text>
-              </View>
+              <Icon name="radar" size={20} color={colors.primary} />
+              <Text style={styles.sectionHeading}>Active near you</Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="View map"
-              onPress={() => router.push("/traffic")}
-            >
-              <Text style={styles.viewMapLink}>View map</Text>
-            </Pressable>
+            <View style={styles.reportsCountBadge}>
+              <Text style={styles.reportsCountText}>
+                {incidents.length > 0 ? `${incidents.length} reports` : "3 reports"}
+              </Text>
+            </View>
           </View>
 
           {/* Render Active Incident Cards */}
@@ -575,131 +596,61 @@ const styles = StyleSheet.create({
   },
   liveTimestampText: {
     ...typography.labelSm,
-    ...typography.numeric,
     color: colors.textSecondary,
-  },
-  greetingHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 4,
-  },
-  radarEyebrow: {
-    ...typography.labelSm,
-    color: colors.secondary,
-    fontWeight: "600",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-  },
-  liveStatusPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: colors.surfaceContainerHigh,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-  },
-  liveStatusPillText: {
-    ...typography.labelMd,
-    color: colors.primary,
-    fontWeight: "600",
-  },
-  commuteHeaderRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-  },
-  commuteTitleCol: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  commuteTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  commuteTagText: {
-    ...typography.labelMd,
-    color: colors.secondary,
     fontWeight: "500",
   },
-  commuteTitle: {
-    ...typography.headlineMd,
-    color: colors.text,
-    fontWeight: "600",
-    marginTop: 2,
-  },
-  commuteEtaCol: {
-    alignItems: "flex-end",
-  },
-  commuteEtaValue: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.primary,
-    lineHeight: 32,
-    ...typography.numeric,
-  },
-  commuteEtaUnit: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  commuteEtaDelta: {
-    ...typography.labelSm,
-    color: colors.primary,
-    fontWeight: "500",
-    marginTop: 2,
-  },
-  gaugeContainer: {
-    gap: 6,
-  },
-  gaugeMetaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  gaugeMetaRoute: {
-    ...typography.labelSm,
-    color: colors.textMuted,
-  },
-  gaugeMetaDist: {
-    ...typography.labelSm,
-    ...typography.numeric,
-    color: colors.textMuted,
-    fontWeight: "500",
-  },
-  gaugeBar: {
-    width: "100%",
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.surfaceContainerHigh,
-    flexDirection: "row",
-    overflow: "hidden",
-  },
-  gaugeSegment: {
-    height: "100%",
-  },
-  gaugeLegendRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 2,
-  },
-  legendItem: {
+  simulatedPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    backgroundColor: colors.evidenceSurface,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
   },
-  legendDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  simulatedPillText: {
+    ...typography.codeSm,
+    fontSize: 9.5,
+    color: colors.evidence,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
-  legendText: {
-    fontSize: 11,
-    color: colors.textMuted,
-    fontWeight: "500",
+  greetingRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    paddingTop: 2,
+  },
+  greetingTextCol: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  greetingTitle: {
+    ...typography.headlineSm,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  greetingSubtitle: {
+    ...typography.bodySm,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  syncButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: radius.control,
+    backgroundColor: colors.surfaceContainerLow,
+  },
+  syncButtonPressed: {
+    backgroundColor: colors.surfaceContainer,
+  },
+  syncButtonText: {
+    ...typography.labelSm,
+    color: colors.primary,
+    fontWeight: "600",
   },
   heroCard: {
     padding: space.md,
@@ -717,8 +668,8 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   heroIconBox: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     backgroundColor: colors.primaryFixed,
     alignItems: "center",
@@ -740,7 +691,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   corridorBadgeText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
+    fontSize: 9.5,
     color: colors.evidence,
     fontWeight: "700",
   },
@@ -859,7 +811,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#7d4200",
   },
   pinLabel: {
-    ...typography.labelSm,
+    ...typography.codeSm,
+    fontSize: 10,
     fontWeight: "700",
     color: colors.text,
   },
@@ -876,8 +829,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   telemetryText: {
-    ...typography.labelSm,
-    ...typography.numeric,
+    ...typography.codeSm,
+    fontSize: 10,
     color: colors.textSecondary,
     fontWeight: "600",
   },
@@ -890,7 +843,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.surfaceContainerLow,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: radius.control,
     gap: 10,
   },
@@ -899,6 +852,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     ...typography.labelSm,
+    fontSize: 9.5,
     color: colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.6,
@@ -909,8 +863,8 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   swapIconBtn: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: 8,
     backgroundColor: colors.surface,
     alignItems: "center",
@@ -925,12 +879,12 @@ const styles = StyleSheet.create({
   gridTile: {
     width: "48%",
     flexGrow: 1,
-    height: 144,
-    backgroundColor: colors.surfaceContainerLowest,
+    height: 96,
+    backgroundColor: colors.surface,
     borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 16,
+    padding: 12,
     justifyContent: "space-between",
     ...shadows.card,
   },
@@ -946,39 +900,29 @@ const styles = StyleSheet.create({
   tileIconCircle: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },
   tileBadgeGray: {
-    ...typography.labelSm,
+    ...typography.codeSm,
     color: colors.textSecondary,
-    backgroundColor: colors.surfaceContainerHigh,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-    fontWeight: "600",
   },
-  tileDotLive: {
-    width: 8,
-    height: 8,
+  tileBadgeLive: {
+    backgroundColor: colors.primaryFixed,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: colors.primary,
   },
-  realtimePill: {
-    backgroundColor: colors.surfaceContainerHigh,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-  },
-  realtimePillText: {
-    fontSize: 11,
-    color: colors.outline,
-    fontWeight: "600",
-  },
-  viewMapLink: {
-    ...typography.labelMd,
+  tileBadgeLiveText: {
+    ...typography.codeSm,
+    fontSize: 9.5,
     color: colors.primary,
+    fontWeight: "700",
+  },
+  tileBadgeGreen: {
+    ...typography.codeSm,
+    color: colors.success,
     fontWeight: "600",
   },
   tileTitle: {
@@ -989,7 +933,8 @@ const styles = StyleSheet.create({
   tileSubtitle: {
     ...typography.bodySm,
     color: colors.textSecondary,
-    marginTop: 2,
+    fontSize: 11.5,
+    marginTop: -1,
   },
   activeSection: {
     gap: 10,
@@ -1049,6 +994,7 @@ const styles = StyleSheet.create({
   },
   incidentCategoryLabel: {
     ...typography.labelSm,
+    fontSize: 10,
     fontWeight: "700",
     letterSpacing: 0.6,
   },
@@ -1073,30 +1019,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: colors.surfaceContainerLow,
-    padding: 10,
+    padding: 8,
     borderRadius: 8,
   },
   infoLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
     flex: 1,
   },
   infoText: {
     ...typography.bodySm,
+    fontSize: 11.5,
     color: colors.textSecondary,
   },
   gpsAccuracyText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
     color: colors.outline,
   },
   incidentFooter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 8,
+    paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.surfaceContainer,
   },
   stillThereText: {
     ...typography.labelSm,
@@ -1111,13 +1058,11 @@ const styles = StyleSheet.create({
   confirmPill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    minHeight: 40,
-    paddingHorizontal: 14,
+    gap: 4,
+    height: 34,
+    paddingHorizontal: 12,
     borderRadius: radius.pill,
-    backgroundColor: colors.surfaceContainerLow,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceContainer,
   },
   confirmPillText: {
     ...typography.labelSm,
@@ -1125,12 +1070,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   denyPill: {
-    minHeight: 40,
-    minWidth: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surfaceContainerLow,
-    borderWidth: 1,
-    borderColor: colors.border,
+    height: 34,
+    width: 34,
+    borderRadius: 17,
+    backgroundColor: colors.surfaceContainer,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1138,7 +1081,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.surface,
-    padding: 14,
+    padding: 12,
     borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
@@ -1164,20 +1107,19 @@ const styles = StyleSheet.create({
   alertSubtitle: {
     ...typography.bodySm,
     color: colors.textSecondary,
+    fontSize: 11.5,
   },
   alertChevronBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surfaceContainerLow,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceContainer,
     alignItems: "center",
     justifyContent: "center",
   },
   privacyBox: {
     backgroundColor: colors.surfaceContainerLow,
     borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.border,
     padding: 14,
     gap: 10,
   },
@@ -1198,7 +1140,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.surfaceContainer,
   },
   openFreeMapRow: {
     flexDirection: "row",
@@ -1206,7 +1148,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   attributionText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
     color: colors.textSecondary,
+    fontSize: 9.5,
   },
 });

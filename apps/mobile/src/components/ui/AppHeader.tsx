@@ -53,21 +53,26 @@ export function AppHeader({
               onPress={handleBack}
               style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
             >
-              <Icon name="arrow_back" size={24} color={colors.text} />
+              <Icon name="arrow_back" size={22} color={colors.text} />
             </Pressable>
           ) : null}
 
-          <Text numberOfLines={1} style={styles.brandTitle}>
-            TrafficSense
-          </Text>
-        </View>
+          {/* TrafficSense Civic Monogram Logo */}
+          <View style={styles.logoMark}>
+            <View style={styles.logoLinePrimary} />
+            <View style={styles.logoLineSecondary} />
+            <View style={styles.logoDot} />
+          </View>
 
-        {/* Center Screen Title */}
-        {title && title !== "TrafficSense" ? (
-          <Text numberOfLines={1} style={styles.centerTitle}>
-            {title}
-          </Text>
-        ) : null}
+          <View style={styles.titleColumn}>
+            <Text numberOfLines={1} style={styles.brandTitle}>
+              {canGoBack ? title : "TrafficSense"}
+            </Text>
+            <Text numberOfLines={1} style={styles.brandSubtitle}>
+              {canGoBack ? "Mangaluru" : subtitle.toUpperCase()}
+            </Text>
+          </View>
+        </View>
 
         {/* Right Side */}
         <View style={styles.rightGroup}>
@@ -102,18 +107,13 @@ export function AppHeader({
 
 const styles = StyleSheet.create({
   headerContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    shadowColor: "#121e1c",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
     zIndex: 50,
   },
   headerContent: {
-    height: 60,
+    height: 58,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -122,28 +122,54 @@ const styles = StyleSheet.create({
   leftGroup: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
     flexShrink: 1,
   },
   backButton: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radius.pill,
     marginLeft: -8,
   },
-  avatarButton: {
-    width: 48,
-    height: 48,
+  logoMark: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: colors.primaryFixed,
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
-  centerTitle: {
-    ...typography.headlineSm,
-    color: colors.text,
-    fontWeight: "600",
-    textAlign: "center",
+  logoLinePrimary: {
+    position: "absolute",
+    width: 14,
+    height: 2.5,
+    borderRadius: 1.5,
+    backgroundColor: colors.primary,
+    top: 9,
+  },
+  logoLineSecondary: {
+    position: "absolute",
+    width: 14,
+    height: 2.5,
+    borderRadius: 1.5,
+    backgroundColor: colors.secondary,
+    bottom: 9,
+  },
+  logoDot: {
+    position: "absolute",
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.onPrimaryFixed,
+    right: 5,
+    top: 5,
+  },
+  titleColumn: {
+    justifyContent: "center",
+    flexShrink: 1,
   },
   brandTitle: {
     ...typography.headlineSm,
@@ -173,6 +199,12 @@ const styles = StyleSheet.create({
     color: colors.onPrimaryFixed,
     fontWeight: "700",
     letterSpacing: 0.6,
+  },
+  avatarButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   avatarRing: {
     width: 34,

@@ -31,7 +31,7 @@ import {
   SimulatedBadge,
   StatusBadge,
 } from "../src/components/ui";
-import { colors, layout, minTouchTarget, radius, space, typography } from "../src/theme/tokens";
+import { colors, layout, radius, space, typography } from "../src/theme/tokens";
 
 export default function JourneysScreen() {
   const { session, loading: authLoading } = useAuth();
@@ -465,8 +465,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   activeTimestamp: {
-    ...typography.labelSm,
-    ...typography.numeric,
+    ...typography.codeSm,
     color: colors.textSecondary,
   },
   sharesBlock: {
@@ -500,11 +499,11 @@ const styles = StyleSheet.create({
   },
   shareTimestamp: {
     ...typography.bodySm,
-    ...typography.numeric,
+    fontSize: 11,
     color: colors.textSecondary,
   },
   stopShareBtn: {
-    minHeight: minTouchTarget,
+    minHeight: 36,
     paddingHorizontal: 12,
   },
   activeActionsRow: {
@@ -610,7 +609,8 @@ const styles = StyleSheet.create({
   previewLine: {
     ...typography.bodySm,
     color: colors.textSecondary,
-    lineHeight: 18,
+    fontSize: 11.5,
+    lineHeight: 16,
   },
   checkboxRow: {
     flexDirection: "row",
@@ -658,8 +658,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   historyTime: {
-    ...typography.labelSm,
-    ...typography.numeric,
+    ...typography.codeSm,
     color: colors.textMuted,
   },
   centerLoading: {

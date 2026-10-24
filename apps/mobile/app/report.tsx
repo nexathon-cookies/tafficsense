@@ -855,8 +855,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   civicFeedBadgeText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
     color: colors.textSecondary,
+    fontSize: 9.5,
   },
   stepperTrack: {
     flexDirection: "row",
@@ -903,8 +904,8 @@ const styles = StyleSheet.create({
   hazardCard: {
     width: "48%",
     flexGrow: 1,
-    minHeight: 124,
-    backgroundColor: colors.surfaceContainerLowest,
+    height: 128,
+    backgroundColor: colors.surface,
     borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
@@ -913,9 +914,9 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   hazardCardActive: {
-    backgroundColor: "rgba(0, 102, 94, 0.06)",
+    backgroundColor: colors.primaryFixed,
     borderColor: colors.primary,
-    borderWidth: 2,
+    borderWidth: 1.5,
   },
   hazardCardTop: {
     flexDirection: "row",
@@ -923,16 +924,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   hazardIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
   },
   checkBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
@@ -946,14 +947,15 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   hazardCardTitleActive: {
-    color: colors.primary,
+    color: colors.onPrimaryFixed,
   },
   hazardCardSubtitle: {
     ...typography.bodySm,
+    fontSize: 11,
     color: colors.textSecondary,
   },
   hazardCardSubtitleActive: {
-    color: colors.text,
+    color: colors.onPrimaryFixedVariant,
   },
   noteCard: {
     padding: space.md,
@@ -973,12 +975,11 @@ const styles = StyleSheet.create({
   noteSubtitle: {
     ...typography.bodySm,
     color: colors.textSecondary,
+    fontSize: 11.5,
   },
   textInputBox: {
     backgroundColor: colors.surfaceContainerLow,
     borderRadius: radius.control,
-    borderWidth: 1,
-    borderColor: colors.border,
     padding: 10,
     minHeight: 74,
   },
@@ -1000,12 +1001,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   noteFooterText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
     color: colors.textMuted,
   },
   noteFooterCounter: {
-    ...typography.labelSm,
-    ...typography.numeric,
+    ...typography.codeSm,
     color: colors.textMuted,
   },
   trustSection: {
@@ -1049,7 +1049,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   autoDetectedText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
+    fontSize: 9.5,
     color: colors.textSecondary,
     fontWeight: "600",
   },
@@ -1060,13 +1061,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   tierL1BadgeText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
+    fontSize: 9.5,
     color: colors.evidence,
     fontWeight: "700",
   },
   trustCoords: {
-    ...typography.bodySm,
+    ...typography.codeSm,
     color: colors.textSecondary,
+    fontSize: 11,
     marginTop: 2,
   },
   trustNoticePill: {
@@ -1074,14 +1077,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     backgroundColor: colors.surfaceContainerLow,
-    padding: 8,
+    padding: 6,
     borderRadius: radius.control,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   trustNoticePillText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
     color: colors.textSecondary,
+    fontSize: 10.5,
   },
   honestyBanner: {
     flexDirection: "row",
@@ -1107,7 +1109,8 @@ const styles = StyleSheet.create({
   honestyBody: {
     ...typography.bodySm,
     color: colors.textSecondary,
-    lineHeight: 18,
+    fontSize: 11.5,
+    lineHeight: 16,
     marginTop: 2,
   },
   actionsStack: {
@@ -1191,6 +1194,7 @@ photoCard: {
   photoSubtitle: {
     ...typography.bodySm,
     color: colors.textSecondary,
+    fontSize: 11.5,
   },
   photoActions: {
     flexDirection: "row",
@@ -1202,12 +1206,12 @@ photoCard: {
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    minHeight: minTouchTarget,
+    paddingVertical: 14,
     borderWidth: 1.5,
     borderColor: colors.primary,
     borderRadius: radius.control,
     borderStyle: "dashed",
-    backgroundColor: "rgba(0, 102, 94, 0.05)",
+    backgroundColor: colors.primaryFixed,
   },
   photoActionText: {
     ...typography.labelMd,
@@ -1228,9 +1232,9 @@ photoCard: {
     position: "absolute",
     top: 8,
     right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center",
     justifyContent: "center",
@@ -1252,6 +1256,7 @@ photoCard: {
   },
   photoPrivacyText: {
     ...typography.bodySm,
+    fontSize: 10.5,
     color: colors.textMuted,
     flex: 1,
   },
@@ -1282,8 +1287,9 @@ photoCard: {
     borderRadius: radius.pill,
   },
   l5UpgradeBadgeText: {
-    ...typography.labelSm,
+    ...typography.codeSm,
     color: "#ffffff",
+    fontSize: 9.5,
   },
   l5ResultSummary: {
     ...typography.bodySm,

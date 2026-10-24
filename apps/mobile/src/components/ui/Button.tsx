@@ -73,7 +73,6 @@ export function Button({
 const styles = StyleSheet.create({
   base: {
     minHeight: minTouchTarget,
-    minWidth: 120,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -89,26 +88,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   primaryPressed: {
-    backgroundColor: colors.primary,
-    opacity: 0.9,
+    backgroundColor: colors.primaryPressed,
     transform: [{ scale: 0.98 }],
   },
   primaryText: {
     color: colors.onPrimary,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   secondary: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: colors.primary,
   },
   secondaryPressed: {
-    backgroundColor: colors.surfaceContainerLow,
+    backgroundColor: "rgba(0, 92, 85, 0.08)",
     transform: [{ scale: 0.98 }],
   },
   secondaryText: {
-    color: colors.text,
-    fontWeight: "600",
+    color: colors.primary,
+    fontWeight: "700",
   },
   outline: {
     backgroundColor: colors.surface,

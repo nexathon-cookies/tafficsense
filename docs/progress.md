@@ -1,5 +1,15 @@
 # Project Progress
 
+## Mobile UI Rollback to Original Design — verified, 24 Oct 2026
+
+- **Scope:** Completely reverted all mobile UI redesign experiments (`apps/mobile` and `compose.yaml`) to the original working state matching commit `04532d5`. Restored original design folders (`home_trafficsense_mangaluru`, `live_traffic_map_mangaluru`, `plan_route_trafficsense_mangaluru`, `report_a_hazard_trafficsense_mangaluru`, `trafficsense_mangaluru`), removed Plan 1 and Plan 2 prototypes, and restored all original tokens, components, screens, and documentation.
+- **Hook Naming Fix:** Renamed `useCurrentLocation` to `requestCurrentLocation` in `apps/mobile/app/report.tsx` to adhere to `react-hooks/rules-of-hooks` in ESLint while preserving identical behavior.
+- **Verification Evidence:**
+  - `git diff 04532d5 -- apps/mobile`: Only `apps/mobile/app/report.tsx` hook naming fix remains.
+  - `docker compose run --rm app pnpm lint:mobile`: Passed with 0 errors and 0 warnings.
+  - `just test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - Mobile bundler verified running cleanly.
+
 ## Comprehensive Documentation Synchronization & Hackathon Presentation Guide — verified, 24 Oct 2026
 
 - **Scope:** Synchronized all repository `.md` files to the current live state of the project, accurately reflecting that TrafficSense has advanced far beyond a basic reporting tool into a full-stack, verified civic traffic intelligence, multimodal AI vision, dynamic detour routing, consent-guaranteed workplace trust, and municipal analytics platform. Authored `docs/presentation.md` with an end-to-end hackathon pitch deck and demonstration script.

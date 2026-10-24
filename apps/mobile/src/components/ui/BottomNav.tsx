@@ -45,20 +45,20 @@ export function BottomNav({ activeTab }: BottomNavProps) {
         styles.navBar,
         {
           paddingBottom: Math.max(insets.bottom, 8),
-          height: 64 + Math.max(insets.bottom, 8),
+          height: 60 + Math.max(insets.bottom, 8),
         },
       ]}
     >
-      {/* Tab 1: Explore */}
+      {/* Tab 1: Home */}
       <Pressable
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === "home" }}
-        accessibilityLabel="Navigate to Explore"
+        accessibilityLabel="Navigate to Home"
         onPress={() => handleNavigate("home")}
         style={styles.tabItem}
       >
         <Icon
-          name="explore"
+          name="home"
           size={24}
           color={activeTab === "home" ? colors.primary : colors.textSecondary}
         />
@@ -68,20 +68,20 @@ export function BottomNav({ activeTab }: BottomNavProps) {
             activeTab === "home" && styles.tabLabelActive,
           ]}
         >
-          Explore
+          Home
         </Text>
       </Pressable>
 
-      {/* Tab 2: Traffic */}
+      {/* Tab 2: Map */}
       <Pressable
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === "map" }}
-        accessibilityLabel="Navigate to Traffic"
+        accessibilityLabel="Navigate to Live Traffic Map"
         onPress={() => handleNavigate("map")}
         style={styles.tabItem}
       >
         <Icon
-          name="traffic"
+          name="explore"
           size={24}
           color={activeTab === "map" ? colors.primary : colors.textSecondary}
         />
@@ -91,7 +91,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
             activeTab === "map" && styles.tabLabelActive,
           ]}
         >
-          Traffic
+          Map
         </Text>
       </Pressable>
 
@@ -106,7 +106,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
             pressed && styles.centerFabPressed,
           ]}
         >
-          <Icon name="warning" size={26} color="#ffffff" />
+          <Icon name="add" size={28} color="#ffffff" />
         </Pressable>
         <Text style={styles.centerFabLabel}>Report</Text>
       </View>
@@ -115,7 +115,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
       <Pressable
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === "plan" }}
-        accessibilityLabel="Navigate to Plan"
+        accessibilityLabel="Navigate to Route Planner"
         onPress={() => handleNavigate("plan")}
         style={styles.tabItem}
       >
@@ -138,7 +138,7 @@ export function BottomNav({ activeTab }: BottomNavProps) {
       <Pressable
         accessibilityRole="tab"
         accessibilityState={{ selected: activeTab === "me" }}
-        accessibilityLabel="Navigate to Me"
+        accessibilityLabel="Navigate to Account and Journeys"
         onPress={() => handleNavigate("me")}
         style={styles.tabItem}
       >
@@ -166,16 +166,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: "rgba(250, 248, 255, 0.96)",
     borderTopWidth: 1,
     borderTopColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
     paddingHorizontal: 8,
-    shadowColor: "#172321",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 10,
     elevation: 8,
     zIndex: 50,
@@ -199,18 +199,16 @@ const styles = StyleSheet.create({
   centerFabContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -26,
+    marginTop: -22,
     width: 68,
   },
   centerFab: {
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#ffffff",
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
@@ -218,8 +216,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   centerFabPressed: {
-    backgroundColor: colors.primary,
-    opacity: 0.9,
+    backgroundColor: colors.primaryPressed,
     transform: [{ scale: 0.94 }],
   },
   centerFabLabel: {
