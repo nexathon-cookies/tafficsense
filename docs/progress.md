@@ -1,5 +1,21 @@
 # Project Progress
 
+## Mobile Map Defaults to Full Screen & Route Planner Accident Pins Fixed — verified, 24 Oct 2026
+
+- **Scope & Fixes:**
+  - **Full-Screen Map by Default Across Tabs:**
+    - **Live Traffic Map Screen (`apps/mobile/app/traffic.tsx`):** Removed automatic preselection of `incidents[0].id` on load so the map opens completely full-screen edge-to-edge without half the screen obscured by an expanded bottom sheet. Extracted `TrafficControlsBar` component and overlaid it cleanly at the top of the full-screen map in Map mode while preserving accessible layout in List mode.
+    - **Route Planner Screen (`apps/mobile/app/planner.tsx`):** Changed default view mode to `"map"` (`plannerViewMode: "map"` by default) instead of details mode, ensuring the user immediately lands on a full-screen Google Maps route navigation canvas.
+  - **Accident Pins in Route Planner & Map:**
+    - Fixed accident pin visibility in Plan: Route planner now maintains `allIncidents` and `allSegments` state and triggers `checkRoute()` on mount, place swap, and modal selection. Accident pins and corridor segments are now always displayed on the map in Plan.
+    - Added floating incident inspection card in Plan: Tapping any accident pin on the route map displays a floating hazard card with category, verification level, details, and dismiss control.
+    - Upgraded Leaflet map markers in `apps/mobile/src/map/map-html.ts` from generic 8px circle dots to authentic Google Maps teardrop accident pins (`L.divIcon`) featuring white borders, drop shadows, anchor pointers, route prominence weighting, and category emojis (`💥` crash, `🌊` flood, `🚧` construction, `⛔` closure, `⚠️` hazard).
+    - Added `floatingTopOffset` prop to `TrafficMap` in `apps/mobile/src/components/traffic-map.tsx` to prevent floating controls from overlapping top search bars across screens.
+- **Verification Evidence:**
+  - `docker compose exec -T app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec -T app pnpm test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - `docker compose exec -T app node --import ./tests/register-hooks.mjs --test tests/mobile-l5-vision.test.mjs`: Passed (**10/10 passed**).
+
 ## Mobile Full-Screen Google Maps UX & Interactive Home Screen Overhaul — verified, 24 Oct 2026
 
 - **Scope & Fixes:**

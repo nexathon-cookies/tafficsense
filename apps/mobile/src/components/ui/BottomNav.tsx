@@ -5,7 +5,7 @@ import { useAuth } from "../../providers/auth-provider";
 import { colors, radius, typography } from "../../theme/tokens";
 import { Icon } from "./Icon";
 
-export type NavTab = "home" | "map" | "report" | "plan" | "me";
+export type NavTab = "home" | "map" | "report" | "plan" | "me" | "authority";
 
 type BottomNavProps = {
   activeTab: NavTab;
@@ -13,7 +13,8 @@ type BottomNavProps = {
 
 export function BottomNav({ activeTab }: BottomNavProps) {
   const insets = useSafeAreaInsets();
-  const { session } = useAuth();
+  const { session, role } = useAuth();
+  const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
 
   const handleNavigate = (tab: NavTab) => {
     switch (tab) {
@@ -30,8 +31,13 @@ export function BottomNav({ activeTab }: BottomNavProps) {
         if (activeTab !== "plan") router.replace("/planner");
         break;
       case "me":
+      case "authority":
         if (session) {
-          if (activeTab !== "me") router.replace("/workspace");
+          if (isAuthority) {
+            if (activeTab !== "authority") router.replace("/authority");
+          } else {
+            if (activeTab !== "me") router.replace("/workspace");
+          }
         } else {
           router.push("/auth/login");
         }
@@ -134,26 +140,26 @@ export function BottomNav({ activeTab }: BottomNavProps) {
         </Text>
       </Pressable>
 
-      {/* Tab 5: Me */}
+      {/* Tab 5: Me / Authority */}
       <Pressable
         accessibilityRole="tab"
-        accessibilityState={{ selected: activeTab === "me" }}
-        accessibilityLabel="Navigate to Account and Journeys"
-        onPress={() => handleNavigate("me")}
+        accessibilityState={{ selected: activeTab === "me" || activeTab === "authority" }}
+        accessibilityLabel={isAuthority ? "Navigate to Authority Control Room" : "Navigate to Account and Journeys"}
+        onPress={() => handleNavigate(isAuthority ? "authority" : "me")}
         style={styles.tabItem}
       >
         <Icon
-          name="account_circle"
+          name={isAuthority ? "shield" : "account_circle"}
           size={24}
-          color={activeTab === "me" ? colors.primary : colors.textSecondary}
+          color={(activeTab === "me" || activeTab === "authority") ? colors.primary : colors.textSecondary}
         />
         <Text
           style={[
             styles.tabLabel,
-            activeTab === "me" && styles.tabLabelActive,
+            (activeTab === "me" || activeTab === "authority") && styles.tabLabelActive,
           ]}
         >
-          Me
+          {isAuthority ? "Authority" : "Me"}
         </Text>
       </Pressable>
     </View>

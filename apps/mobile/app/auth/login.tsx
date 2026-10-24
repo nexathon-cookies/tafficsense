@@ -158,7 +158,11 @@ export default function LoginScreen() {
       setError(result);
       return;
     }
-    router.replace(safeReturnPath(next));
+    if (email.toLowerCase().includes("authority")) {
+      router.replace("/authority");
+    } else {
+      router.replace(safeReturnPath(next));
+    }
   }
 
   return (

@@ -28,6 +28,7 @@ type Props = {
   hideAttribution?: boolean;
   mapHeight?: number;
   onOpenFullScreen?: () => void;
+  floatingTopOffset?: number;
 };
 
 type ViewMode = "street" | "schematic";
@@ -227,7 +228,7 @@ export function TrafficMap(props: Props) {
 
         {/* Floating Controls Overlay (Google Maps Style) */}
         {showFloatingControls ? (
-          <View style={styles.floatingControlsStack}>
+          <View style={[styles.floatingControlsStack, props.floatingTopOffset !== undefined && { top: props.floatingTopOffset }]}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={you ? "Update my location on map" : "Show my location on map"}

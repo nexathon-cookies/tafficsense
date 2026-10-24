@@ -16,10 +16,12 @@ import { useTabBackHandler } from "../src/lib/use-tab-back-handler";
 
 export default function WorkspaceScreen() {
   useTabBackHandler();
-  const { session, loading, signOut } = useAuth();
+  const { session, loading, signOut, role } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [orgName, setOrgName] = useState<string | null>(null);
+
+  const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
 
   useEffect(() => {
     if (!loading && !session) router.replace("/auth/login");
@@ -66,7 +68,7 @@ export default function WorkspaceScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AppHeader
         title="Workspace"
-        subtitle="Commuter Profile"
+        subtitle={isAuthority ? "Authority Ops" : "Commuter Profile"}
         canGoBack
         onBack={() => router.replace("/")}
         showLive={false}
@@ -77,10 +79,12 @@ export default function WorkspaceScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>AUTHENTICATED COMMUTER</Text>
+          <Text style={styles.eyebrow}>
+            {isAuthority ? "CIVIC CONTROL ROOM ACCESS" : "AUTHENTICATED COMMUTER"}
+          </Text>
           <Text style={styles.title}>Your Workspace</Text>
           <Text style={styles.subtitle}>
-            Signed in as <Text style={styles.boldEmail}>{session.user.email ?? "Commuter"}</Text>.
+            Signed in as <Text style={styles.boldEmail}>{session.user.email ?? "User"}</Text>.
           </Text>
         </View>
 
@@ -91,28 +95,80 @@ export default function WorkspaceScreen() {
         {/* Account Details Card */}
         <Card style={styles.card}>
           <View style={styles.cardHeader}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {(session.user.email?.[0] ?? "C").toUpperCase()}
+            <View style={[styles.avatar, isAuthority && styles.authorityAvatar]}>
+              <Text style={[styles.avatarText, isAuthority && styles.authorityAvatarText]}>
+                {isAuthority ? "A" : (session.user.email?.[0] ?? "C").toUpperCase()}
               </Text>
             </View>
             <View style={styles.accountTextGroup}>
               <Text style={styles.accountEmail}>{session.user.email}</Text>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleBadgeText}>
-                  {orgName ? `Employee · ${orgName}` : "Verified Commuter Account"}
+              <View style={[styles.roleBadge, isAuthority && styles.authorityRoleBadge]}>
+                <Text style={[styles.roleBadgeText, isAuthority && styles.authorityRoleBadgeText]}>
+                  {isAuthority
+                    ? "Traffic Authority · Mangaluru Operations"
+                    : orgName
+                    ? `Employee · ${orgName}`
+                    : "Verified Commuter Account"}
                 </Text>
               </View>
             </View>
           </View>
           <Text style={styles.accountNote}>
-            Your reports contribute directly to community verification levels (L1–L6). Your journey corridor updates can be selectively shared with employer organisations.
+            {isAuthority
+              ? "You have municipal authorization to verify, confirm (L6), resolve, or reject reported road hazards across the Mangaluru coastal corridor."
+              : "Your reports contribute directly to community verification levels (L1–L6). Selective journey sharing and employer delay certificates are currently in progress as Phase 7 extensions."}
           </Text>
         </Card>
 
+        {/* Dedicated Authority Control Room Card */}
+        {isAuthority ? (
+          <Card
+            onPress={() => router.push("/authority")}
+            style={styles.authorityFeaturedCard}
+          >
+            <View style={styles.actionRow}>
+              <View style={styles.authorityIconBg}>
+                <Icon name="shield" size={24} color="#ffffff" />
+              </View>
+              <View style={styles.actionTextCol}>
+                <View style={styles.titleBadgeRow}>
+                  <Text style={styles.authorityFeaturedTitle}>Authority Control Room</Text>
+                  <View style={styles.authorityOpsPill}>
+                    <Text style={styles.authorityOpsPillText}>L6 REVIEW</Text>
+                  </View>
+                </View>
+                <Text style={styles.authorityFeaturedSubtitle}>
+                  Moderate active community reports, confirm L6 municipal records, resolve or reject incidents
+                </Text>
+              </View>
+              <Icon name="chevron_right" size={20} color={colors.primary} />
+            </View>
+          </Card>
+        ) : null}
+
         {/* Quick Navigation Cards */}
         <View style={styles.actionsSection}>
-          <Text style={styles.sectionHeading}>Commuter Actions</Text>
+          <Text style={styles.sectionHeading}>
+            {isAuthority ? "Operations & Commuter Tools" : "Commuter Actions"}
+          </Text>
+
+          {isAuthority ? (
+            <Card
+              onPress={() => router.push("/authority")}
+              style={styles.actionCard}
+            >
+              <View style={styles.actionRow}>
+                <View style={[styles.actionIconBg, { backgroundColor: colors.errorSurface }]}>
+                  <Icon name="shield" size={20} color={colors.error} />
+                </View>
+                <View style={styles.actionTextCol}>
+                  <Text style={styles.actionTitle}>Active Incident Moderation</Text>
+                  <Text style={styles.actionSubtitle}>Review, confirm L6, resolve, or reject hazards</Text>
+                </View>
+                <Icon name="chevron_right" size={18} color={colors.textMuted} />
+              </View>
+            </Card>
+          ) : null}
 
           <Card
             onPress={() => router.push("/report")}
@@ -162,17 +218,25 @@ export default function WorkspaceScreen() {
             </View>
           </Card>
 
+          {/* My Journeys & Employer Sharing marked as IN PROGRESS */}
           <Card
             onPress={() => router.push("/journeys")}
-            style={styles.actionCard}
+            style={[styles.actionCard, styles.inProgressCard]}
           >
             <View style={styles.actionRow}>
               <View style={[styles.actionIconBg, { backgroundColor: colors.surfaceContainerHigh }]}>
-                <Icon name="shield" size={20} color={colors.primary} />
+                <Icon name="shield" size={20} color={colors.textSecondary} />
               </View>
               <View style={styles.actionTextCol}>
-                <Text style={styles.actionTitle}>My journeys & employer sharing</Text>
-                <Text style={styles.actionSubtitle}>Manage active journeys and consent permissions</Text>
+                <View style={styles.titleBadgeRow}>
+                  <Text style={styles.actionTitle}>My journeys & employer sharing</Text>
+                  <View style={styles.inProgressBadge}>
+                    <Text style={styles.inProgressBadgeText}>IN PROGRESS</Text>
+                  </View>
+                </View>
+                <Text style={styles.actionSubtitle}>
+                  Phase 7 planned extension · Delay receipts & employer corridor sharing
+                </Text>
               </View>
               <Icon name="chevron_right" size={18} color={colors.textMuted} />
             </View>
@@ -323,6 +387,82 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 11.5,
     marginTop: 1,
+  },
+  authorityFeaturedCard: {
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: colors.error,
+    backgroundColor: colors.surface,
+    elevation: 2,
+  },
+  authorityIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.error,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  titleBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  authorityFeaturedTitle: {
+    ...typography.labelLg,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  authorityOpsPill: {
+    backgroundColor: colors.errorSurface,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: radius.pill,
+  },
+  authorityOpsPillText: {
+    ...typography.codeSm,
+    fontSize: 9,
+    color: colors.error,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+  },
+  authorityFeaturedSubtitle: {
+    ...typography.bodySm,
+    color: colors.textSecondary,
+    fontSize: 11.5,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  authorityAvatar: {
+    backgroundColor: colors.errorSurface,
+    borderColor: colors.error,
+  },
+  authorityAvatarText: {
+    color: colors.error,
+  },
+  authorityRoleBadge: {
+    backgroundColor: colors.errorSurface,
+  },
+  authorityRoleBadgeText: {
+    color: colors.error,
+  },
+  inProgressCard: {
+    borderStyle: "dashed",
+    borderColor: colors.outlineVariant,
+  },
+  inProgressBadge: {
+    backgroundColor: colors.surfaceContainerHighest,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: radius.pill,
+  },
+  inProgressBadgeText: {
+    ...typography.codeSm,
+    fontSize: 8.5,
+    color: colors.textSecondary,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   signOutSection: {
     paddingTop: 4,

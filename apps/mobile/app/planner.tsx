@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   BackHandler,
   Modal,
   Pressable,
@@ -12,8 +13,8 @@ import {
   View,
 } from "react-native";
 import { useTabBackHandler } from "../src/lib/use-tab-back-handler";
-import type { LiveIncident, RouteOption } from "@trafficsense/shared";
-import { fetchActiveIncidents, fetchRoute } from "../src/lib/api";
+import type { LiveIncident, RouteOption, TrafficSegment } from "@trafficsense/shared";
+import { fetchActiveIncidents, fetchRoute, fetchTrafficSegments } from "../src/lib/api";
 import { mangaluruPlaces } from "../src/lib/places";
 import { categoryLabel, formatDistance, formatEstimatedDuration } from "../src/lib/format";
 import { describeFreshness } from "../src/lib/freshness";
@@ -46,13 +47,15 @@ export default function PlannerScreen() {
   const [destIndex, setDestIndex] = useState(1);
   const [preferBus, setPreferBus] = useState(false);
   const [plan, setPlan] = useState<PlanState>({ kind: "idle" });
+  const [allIncidents, setAllIncidents] = useState<LiveIncident[]>([]);
+  const [allSegments, setAllSegments] = useState<TrafficSegment[]>([]);
   const [showAlternative, setShowAlternative] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [pickerModal, setPickerModal] = useState<"origin" | "dest" | null>(null);
   const [searchFilter, setSearchFilter] = useState("");
   const [fitKey, setFitKey] = useState(0);
-  const [plannerViewMode, setPlannerViewMode] = useState<"map" | "details">("details");
+  const [plannerViewMode, setPlannerViewMode] = useState<"map" | "details">("map");
 
   // Android: hardware back → Home (when no modal open), or closes modal
   useTabBackHandler(pickerModal === null);
@@ -65,45 +68,56 @@ export default function PlannerScreen() {
     return () => sub.remove();
   }, [pickerModal]);
 
-  const swapPlaces = () => {
-    setStartIndex(destIndex);
-    setDestIndex(startIndex);
-  };
-
-  const selectPreset = (from: number, to: number) => {
-    setStartIndex(from);
-    setDestIndex(to);
-  };
-
-  const checkRoute = async () => {
+  const checkRoute = async (start = startIndex, dest = destIndex) => {
     setShowAlternative(false);
     setSelectedIncidentId(null);
     setSelectedRouteId(null);
     setPlan({ kind: "loading" });
     try {
-      const [routes, incidentsResult] = await Promise.all([
-        fetchRoute(mangaluruPlaces[startIndex].coords, mangaluruPlaces[destIndex].coords),
-        fetchActiveIncidents().then(
-          (incidents) => ({ incidents, ok: true }),
-          () => ({ incidents: [] as LiveIncident[], ok: false }),
-        ),
+      const [routes, incidentsResult, segmentsResult] = await Promise.all([
+        fetchRoute(mangaluruPlaces[start].coords, mangaluruPlaces[dest].coords),
+        fetchActiveIncidents().catch(() => [] as LiveIncident[]),
+        fetchTrafficSegments().catch(() => ({ segments: [] as TrafficSegment[] })),
       ]);
+      setAllIncidents(incidentsResult);
+      setAllSegments(segmentsResult.segments);
       setSelectedRouteId(routes.find((route) => route.is_recommended)?.id ?? routes[0]?.id ?? null);
       setFitKey((val) => val + 1);
       setPlan({
         kind: "result",
         routes,
-        incidents: incidentsResult.incidents,
-        incidentsOk: incidentsResult.ok,
+        incidents: incidentsResult,
+        incidentsOk: true,
         checkedAt: new Date(),
       });
-      setPlannerViewMode("map");
     } catch (reason) {
+      try {
+        const fallbackIncs = await fetchActiveIncidents();
+        setAllIncidents(fallbackIncs);
+      } catch {}
       setPlan({
         kind: "error",
         message: reason instanceof Error ? reason.message : "Route service is unavailable.",
       });
     }
+  };
+
+  useEffect(() => {
+    void checkRoute();
+  }, []);
+
+  const swapPlaces = () => {
+    const nextStart = destIndex;
+    const nextDest = startIndex;
+    setStartIndex(nextStart);
+    setDestIndex(nextDest);
+    void checkRoute(nextStart, nextDest);
+  };
+
+  const selectPreset = (from: number, to: number) => {
+    setStartIndex(from);
+    setDestIndex(to);
+    void checkRoute(from, to);
   };
 
   const recommendedRoute =
@@ -123,8 +137,13 @@ export default function PlannerScreen() {
 
   const primaryIncidents =
     plan.kind === "result" && primaryRoute
-      ? plan.incidents.filter((inc) => primaryRoute.incidents_on_route?.some((w) => w.id === inc.id))
+      ? allIncidents.filter((inc) => primaryRoute.incidents_on_route?.some((w) => w.id === inc.id))
       : [];
+
+  const selectedIncident = useMemo(() => {
+    if (!selectedIncidentId) return null;
+    return allIncidents.find((i) => i.id === selectedIncidentId) ?? null;
+  }, [allIncidents, selectedIncidentId]);
 
   const originPlace = mangaluruPlaces[startIndex];
   const destPlace = mangaluruPlaces[destIndex];
@@ -145,25 +164,42 @@ export default function PlannerScreen() {
           {/* Top Floating Route Bar */}
           <View style={styles.floatingRouteTopBar}>
             <View style={styles.topBarPlacesRow}>
-              <View style={styles.topBarDotGreen} />
-              <Text numberOfLines={1} style={styles.topBarPlaceText}>
-                {originPlace.name}
-              </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Origin: ${originPlace.name}. Tap to change.`}
+                onPress={() => {
+                  setSearchFilter("");
+                  setPickerModal("origin");
+                }}
+                style={styles.topBarPlaceTarget}
+              >
+                <View style={styles.topBarDotGreen} />
+                <Text numberOfLines={1} style={styles.topBarPlaceText}>
+                  {originPlace.name}
+                </Text>
+              </Pressable>
               <Icon name="chevron_right" size={14} color={colors.textSecondary} />
-              <View style={styles.topBarDotRed} />
-              <Text numberOfLines={1} style={styles.topBarPlaceText}>
-                {destPlace.name}
-              </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Destination: ${destPlace.name}. Tap to change.`}
+                onPress={() => {
+                  setSearchFilter("");
+                  setPickerModal("dest");
+                }}
+                style={styles.topBarPlaceTarget}
+              >
+                <View style={styles.topBarDotRed} />
+                <Text numberOfLines={1} style={styles.topBarPlaceText}>
+                  {destPlace.name}
+                </Text>
+              </Pressable>
             </View>
 
             <View style={styles.topBarActions}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Swap origin and destination"
-                onPress={() => {
-                  swapPlaces();
-                  void checkRoute();
-                }}
+                onPress={swapPlaces}
                 style={styles.topBarIconBtn}
               >
                 <Icon name="swap_vert" size={18} color={colors.primary} />
@@ -180,23 +216,57 @@ export default function PlannerScreen() {
             </View>
           </View>
 
-          {/* Full-Screen TrafficMap */}
+          {/* Full-Screen TrafficMap with Accident Pins & Corridors */}
           <TrafficMap
-            segments={[]}
+            segments={allSegments}
             routes={plan.kind === "result" ? plan.routes : []}
             selectedRouteId={primaryRoute?.id ?? null}
             alternativeId={showAlternative ? (alternativeRoute?.id ?? null) : null}
-            incidents={plan.kind === "result" ? plan.incidents : []}
+            incidents={allIncidents}
             selectedIncidentId={selectedIncidentId}
             onSelectIncident={(id) => setSelectedIncidentId(id)}
             fitKey={fitKey}
             fullScreen
             floatingControls
+            floatingTopOffset={64}
             hideDetailsCard
           />
 
+          {/* Floating Selected Incident Toast */}
+          {selectedIncident ? (
+            <View style={styles.floatingIncidentAlertCard}>
+              <View style={styles.floatingIncidentAlertHeader}>
+                <View style={styles.floatingIncidentIconBadge}>
+                  <Icon name="warning" size={16} color={colors.error} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.floatingIncidentCategoryText}>
+                    {categoryLabel(selectedIncident.category)} · {selectedIncident.level}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.floatingIncidentReasonText}>
+                    {selectedIncident.level_reason || "Reported on corridor"}
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Close incident banner"
+                  onPress={() => setSelectedIncidentId(null)}
+                  hitSlop={10}
+                  style={styles.floatingIncidentCloseBtn}
+                >
+                  <Icon name="close" size={16} color={colors.textSecondary} />
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+
           {/* Floating Bottom Route Card */}
-          {primaryRoute ? (
+          {plan.kind === "loading" ? (
+            <View style={styles.floatingEmptyPromptPill}>
+              <ActivityIndicator color={colors.primary} size="small" />
+              <Text style={styles.floatingEmptyPromptText}>Calculating fastest corridor route…</Text>
+            </View>
+          ) : primaryRoute ? (
             <Card style={styles.floatingBottomRouteCard}>
               <View style={styles.floatingCardHeader}>
                 <View style={{ flex: 1 }}>
@@ -481,11 +551,11 @@ export default function PlannerScreen() {
         {/* Map Container */}
         <View style={styles.mapCard}>
           <TrafficMap
-            segments={[]}
+            segments={allSegments}
             routes={plan.kind === "result" ? plan.routes : []}
             selectedRouteId={primaryRoute?.id ?? null}
             alternativeId={showAlternative ? (alternativeRoute?.id ?? null) : null}
-            incidents={plan.kind === "result" ? plan.incidents : []}
+            incidents={allIncidents}
             selectedIncidentId={selectedIncidentId}
             onSelectIncident={(id) => setSelectedIncidentId(id)}
             fitKey={fitKey}
@@ -848,12 +918,15 @@ export default function PlannerScreen() {
                     key={place.name}
                     disabled={isDisabled}
                     onPress={() => {
+                      const nextStart = pickerModal === "origin" ? originalIndex : startIndex;
+                      const nextDest = pickerModal === "dest" ? originalIndex : destIndex;
                       if (pickerModal === "origin") {
                         setStartIndex(originalIndex);
                       } else {
                         setDestIndex(originalIndex);
                       }
                       setPickerModal(null);
+                      void checkRoute(nextStart, nextDest);
                     }}
                     style={({ pressed }) => [
                       styles.modalItem,
@@ -1864,5 +1937,55 @@ const styles = StyleSheet.create({
     ...typography.labelSm,
     color: colors.primary,
     fontWeight: "700",
+  },
+  topBarPlaceTarget: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  floatingIncidentAlertCard: {
+    position: "absolute",
+    bottom: 245,
+    left: space.gutter,
+    right: space.gutter,
+    backgroundColor: "rgba(255, 255, 255, 0.98)",
+    borderRadius: radius.card,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.error,
+    zIndex: 26,
+    ...shadows.sheet,
+  },
+  floatingIncidentAlertHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  floatingIncidentIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.errorSurface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  floatingIncidentCategoryText: {
+    ...typography.labelMd,
+    color: colors.error,
+    fontWeight: "700",
+  },
+  floatingIncidentReasonText: {
+    ...typography.bodySm,
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  floatingIncidentCloseBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.surfaceContainer,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

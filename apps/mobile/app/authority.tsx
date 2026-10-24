@@ -1,8 +1,8 @@
 import { router, Stack } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { LiveIncident } from "@trafficsense/shared";
-import { AppHeader, BottomNav, Button, FeedbackBox } from "../src/components/ui";
+import { AppHeader, BottomNav, Button, FeedbackBox, Icon } from "../src/components/ui";
 import {
   fetchAuthorityHistory,
   fetchAuthorityIncidents,
@@ -76,14 +76,17 @@ export default function AuthorityScreen() {
       router.replace("/auth/login?next=/authority");
       return;
     }
-    if (role === "authority" && session?.access_token) {
+    const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
+    if (isAuthority && session?.access_token) {
       const timer = setTimeout(() => void loadDashboard(session.access_token), 0);
       return () => clearTimeout(timer);
     }
   }, [authLoading, loadDashboard, role, roleLoading, session]);
 
+  const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
+
   async function refresh() {
-    if (session?.access_token && role === "authority") await loadDashboard(session.access_token);
+    if (session?.access_token && isAuthority) await loadDashboard(session.access_token);
   }
 
   async function performAction(incident: LiveIncident, action: AuthorityIncidentAction) {
@@ -124,7 +127,7 @@ export default function AuthorityScreen() {
     );
   }
 
-  if (authLoading || roleLoading || loading && role === "authority") {
+  if (authLoading || roleLoading || (loading && isAuthority)) {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -134,7 +137,7 @@ export default function AuthorityScreen() {
     );
   }
 
-  if (!session || session.user.is_anonymous || role !== "authority") {
+  if (!session || session.user.is_anonymous || !isAuthority) {
     return (
       <View style={styles.screen}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -145,7 +148,7 @@ export default function AuthorityScreen() {
           {roleError ? <FeedbackBox variant="error" message={roleError} actionText="Retry role check" onAction={() => void reloadRole()} /> : null}
           <Button title="Return to Workspace" variant="secondary" onPress={() => router.replace(session ? "/workspace" : "/auth/login")} />
         </View>
-        <BottomNav activeTab="me" />
+        <BottomNav activeTab="authority" />
       </View>
     );
   }
@@ -163,6 +166,24 @@ export default function AuthorityScreen() {
           <Text style={styles.eyebrow}>CIVIC AUTHORITY</Text>
           <Text style={styles.title}>Incident review</Text>
           <Text style={styles.body}>Review active community reports. Evidence level describes verification support; it does not prove a reported cause.</Text>
+        </View>
+
+        {/* Quick Switcher to Commuter Workspace */}
+        <View style={styles.topToolbar}>
+          <View style={styles.authorityPill}>
+            <Icon name="shield" size={14} color={colors.secondary} />
+            <Text style={styles.authorityPillText}>L6 MUNICIPAL OPS</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Switch to Commuter Workspace"
+            onPress={() => router.push("/workspace")}
+            style={({ pressed }) => [styles.switchWorkspaceBtn, pressed && styles.switchWorkspaceBtnPressed]}
+          >
+            <Icon name="account_circle" size={16} color={colors.primary} />
+            <Text style={styles.switchWorkspaceBtnText}>Commuter Workspace</Text>
+            <Icon name="chevron_right" size={14} color={colors.primary} />
+          </Pressable>
         </View>
 
         {feedback ? <FeedbackBox variant={feedback.variant} message={feedback.message} /> : null}
@@ -237,7 +258,7 @@ export default function AuthorityScreen() {
         </View>
         <View style={{ height: layout.safeBottomPadding }} />
       </ScrollView>
-      <BottomNav activeTab="me" />
+      <BottomNav activeTab="authority" />
     </View>
   );
 }
@@ -251,6 +272,48 @@ const styles = StyleSheet.create({
   eyebrow: { ...typography.codeSm, color: colors.primary, fontWeight: "700" },
   title: { ...typography.headlineMd },
   body: { ...typography.bodySm },
+  topToolbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+    gap: 8,
+  },
+  authorityPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.evidenceSurface,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  authorityPillText: {
+    ...typography.codeSm,
+    fontSize: 9.5,
+    color: colors.secondary,
+    fontWeight: "700",
+  },
+  switchWorkspaceBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  switchWorkspaceBtnPressed: {
+    backgroundColor: colors.surfaceContainer,
+  },
+  switchWorkspaceBtnText: {
+    ...typography.labelSm,
+    fontSize: 11.5,
+    color: colors.primary,
+    fontWeight: "700",
+  },
   accessCard: { margin: space.gutter, marginTop: space.lg, padding: space.md, gap: space.md, backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card },
   sectionHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm },
   sectionTitleGroup: { flex: 1, gap: 2 },

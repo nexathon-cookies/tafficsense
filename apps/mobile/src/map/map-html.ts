@@ -21,6 +21,7 @@ export function buildMapHtml(options: { baseUrl?: string } = {}): string {
   .leaflet-container { font: 12px system-ui, sans-serif; background: #f1efe9; }
   .leaflet-control-attribution { font-size: 10px !important; }
   .leaflet-control-zoom a { width: 40px !important; height: 40px !important; line-height: 40px !important; }
+  .leaflet-accident-pin { background: transparent !important; border: none !important; }
   #status { position: absolute; z-index: 1000; top: 10px; left: 10px; padding: 7px 10px; border-radius: 8px;
     background: rgba(255,255,255,.95); color: #3e4947; font: 600 12px system-ui, sans-serif; }
 </style>
@@ -88,7 +89,31 @@ export function buildMapHtml(options: { baseUrl?: string } = {}): string {
       L.geoJSON(featureCollection(data.incidents && data.incidents.features), {
         pointToLayer: function (feature, latlng) {
           var selected = feature.properties.selected;
-          return L.circleMarker(latlng, { radius: selected ? 10 : 8, color: "#ffffff", weight: 2, fillColor: feature.properties.colour || "#b91c1c", fillOpacity: 1 });
+          var onRoute = feature.properties.onRoute;
+          var category = (feature.properties.category || "").toLowerCase();
+          var emoji = "⚠️";
+          if (category.indexOf("accident") !== -1 || category.indexOf("crash") !== -1) emoji = "💥";
+          else if (category.indexOf("flood") !== -1 || category.indexOf("water") !== -1) emoji = "🌊";
+          else if (category.indexOf("closure") !== -1 || category.indexOf("block") !== -1) emoji = "⛔";
+          else if (category.indexOf("construction") !== -1 || category.indexOf("work") !== -1) emoji = "🚧";
+          else if (category.indexOf("hazard") !== -1) emoji = "⚠️";
+
+          var pinSize = selected ? 34 : 26;
+          var bg = feature.properties.colour || "#dc2626";
+          var pinHtml = '<div style="position:relative;width:' + pinSize + 'px;height:' + (pinSize + 7) + 'px;display:flex;flex-direction:column;align-items:center;cursor:pointer;">'
+            + '<div style="width:' + pinSize + 'px;height:' + pinSize + 'px;border-radius:' + (pinSize / 2) + 'px;background:' + bg + ';border:2px solid #ffffff;box-shadow:0 3px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:' + (selected ? 16 : 13) + 'px;' + (selected ? 'outline:3px solid rgba(220,38,38,0.55);' : '') + '">'
+            + '<span style="line-height:1;">' + emoji + '</span>'
+            + '</div>'
+            + '<div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid ' + bg + ';margin-top:-1px;"></div>'
+            + '</div>';
+
+          var icon = L.divIcon({
+            className: "leaflet-accident-pin",
+            html: pinHtml,
+            iconSize: [pinSize, pinSize + 7],
+            iconAnchor: [pinSize / 2, pinSize + 7]
+          });
+          return L.marker(latlng, { icon: icon, zIndexOffset: selected ? 1000 : (onRoute ? 800 : 500) });
         },
         onEachFeature: function (feature, layer) { onFeature(layer, feature, "select-incident"); }
       }).addTo(incidents);
