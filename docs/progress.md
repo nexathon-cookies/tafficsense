@@ -1,5 +1,44 @@
 # Project Progress
 
+## Universal Layout Zoom-Stretch Fix, Color Palette Alignment, and Complete Emoji-to-SVG Icon Replacement — verified, 24 Oct 2026
+
+- **Context & User Request:**
+  - Resolve the persistent layout zooming/stretching bug where pages initially zoomed or stretched out full-width before refresh and reset to default width upon hard refresh across routes.
+  - Scan the entire application and replace all emojis with crisp, professional SVG icons.
+  - Correct the color palette according to `docs/design/trafficsense/DESIGN.md` (warm amber warning/secondary tokens, accessible contrast, teal primary).
+  - Strictly preserve all existing application logic, verification pipelines, and routing behavior ("no change in any other ui or logic and etc push to new branch in onc-done repo").
+- **Scope & Fixes:**
+  - **Layout Zoom/Stretch Invalidation Bug (`apps/web/src/app/globals.css`, `app-shell.tsx`, `layout.tsx`):**
+    - Diagnosed root cause: `globals.css` used `body:has([data-fullscreen="true"]) .site-main { width: 100%; margin: 0; padding: 0; }`. In Chromium, unmounting `[data-fullscreen="true"]` during Next.js SPA client-side route transitions (e.g. navigating from `/traffic` or `/planner` to `/report` or `/`) failed to invalidate ancestor `:has()` selectors in the style cache, keeping `.site-main` at 100% width until a hard page reload (F5).
+    - Introduced client-side `<AppShell>` component reading pathname via `usePathname()` to synchronously apply explicit `.site-main--fullscreen` (for `/traffic`, `/planner`) and `.site-main--wide` (for `/authority`), and conditionally render `<footer className="site-footer">`.
+    - Removed `body:has([data-fullscreen="true"])` selector from `globals.css`.
+  - **Color Palette Alignment (`apps/web/src/app/globals.css`):**
+    - Aligned CSS color tokens with `docs/design/trafficsense/DESIGN.md`:
+      - Primary: `#0f766e` (Deep Teal).
+      - Secondary: `#d97706` (Amber Accent replacing muddy brown `#904d00`).
+      - Secondary Container: `#fef3c7` (Soft Light Amber).
+      - Warning / On-Container: High contrast accessible amber tones (`#78350f` / `#d97706`).
+      - Error: `#dc2626` (Accessible Red).
+  - **Universal SVG Icon System (`apps/web/src/components/icons/`):**
+    - `incident-icons.tsx`: Dedicated vector iconography for all 17 incident categories (`IncidentIcon` React component + `getIncidentSvgString` HTML generator for MapLibre/Leaflet marker pins and popups).
+    - `ui-icons.tsx`: High-performance Lucide-styled SVGs (`MapPinIcon`, `CrosshairIcon`, `RefreshIcon`, `ClockIcon`, `RulerIcon`, `RouteIcon`, `StarIcon`, `BanIcon`, `AlertTriangleIcon`, `MegaphoneIcon`, `CheckCircleIcon`, `XCircleIcon`, `CameraIcon`, `SpinnerIcon`, `ZapIcon`, `ShieldCheckIcon`, `TrafficLightIcon`, `MapIcon`, `XIcon`).
+  - **Complete Emoji Removal Across All Screens:**
+    - `rules.ts` & `incident-cause.ts`: String-based category tokens (`accident`, `road_repair`, etc.) preserved contract for tests while components render crisp SVGs.
+    - `route-comparison-bar.tsx`: Replaced `⚡` with `ZapIcon`.
+    - `traffic-explorer.tsx` & `traffic-map.tsx`: Replaced MapLibre marker emojis with inline SVG pins and incident drawer emojis with SVG icons.
+    - `route-planner.tsx`: Replaced emojis in origin/destination pickers, swap button, filter pills, hazard alerts, modal controls, and drawer cards with SVG icons.
+    - `web-report-screen.tsx`: Replaced map pin, category selector, and success state emojis with SVG icons.
+    - `l5-photo-panel.tsx`: Replaced camera, rejection banners, and forensic checkmarks with SVG icons.
+    - `hotspot-map.tsx`: Replaced live incident emojis, map popup emojis, reset view `⟲`, and fullscreen toggle with SVG icons.
+    - `authority-dashboard.tsx`: Replaced toolbar actions, notice icons, tab emojis (`📊`, `🗺️`, `🚨`, `🗓️`, `📜`), KPI card emojis, and layout toggle emojis with SVGs.
+    - `incident-review-panel.tsx`: Replaced real-time spotted alerts, notification titles, camera tags, and category labels with SVGs.
+    - `admin/page.tsx`: Replaced table emojis with `IncidentIcon`, `CheckCircleIcon`, and `ClockIcon`.
+    - `about/page.tsx`: Replaced unicode symbols and search emoji with SVGs.
+- **Verification Evidence:**
+  - Regex emoji scan: Confirmed **0 emojis remaining** across all files in `apps/web/src`.
+  - Node unit tests: Passed all 40 tests across core suites (`analytics.test.mjs`, `reports.test.mjs`, `routing.test.mjs`, `verification-ladder.test.mjs`, `reroute.test.mjs`, `spread.test.mjs`, `incident-cause.test.mjs`).
+  - Strict preservation of all business logic, routing calculations, and Supabase RPC schemas.
+
 ## Restoration and Reconciliation of 2-Layer AI Vision Forensics, OSM Hotspot Analytics, Photo Evidence Display, and Routing Clearance — verified, 24 Oct 2026
 
 - **Context:**
@@ -1318,4 +1357,20 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
   - `docker compose exec app sh -c "cd apps/web && pnpm exec tsc --noEmit"`: 0 TypeScript errors.
   - `git diff --check`: Clean, no whitespace or formatting errors.
 - **Commit:** `2ea2630` — `feat(authority): real-time push notification engine for spotted incidents and photo evidence`.
+
+## Route Planner UI Light Card Theme & High-Contrast Typography — verified, 24 Oct 2026
+
+- **Scope:** In `/planner` (`apps/web/src/components/routing/route-planner.tsx`), updated card colors from dark to clean, high-contrast light theme. Fixed low visibility and contrast issues caused by dark-mode Tailwind classes (`dark:bg-slate-900/95`) rendering dark text against dark cards when OS dark mode was active.
+- **Implementation:**
+  - **Top Floating Search Card:** Switched card surface to `bg-white/95 backdrop-blur-md border-slate-200/90 shadow-xl`. Made title text `text-slate-900 font-bold`, telemetry label `text-slate-600 font-semibold`, telemetry badge `bg-slate-100 text-slate-700 border-slate-200`, and input container `bg-slate-50/90 border-slate-200/80` with dark visible text in select dropdowns and buttons.
+  - **Expandable Bottom Sheet:** Switched container to `bg-white/95 backdrop-blur-md border-slate-200/90 shadow-2xl`. Styled drag header with `bg-slate-50/80 border-slate-200/80` and `bg-slate-300` drag handle. Set active ETA to `text-2xl font-black text-emerald-700` and distance/route name to `text-slate-600 font-semibold`.
+  - **Calculated Route Cards:** Set selected route card to `bg-emerald-50/60 border-2 border-emerald-600` and unselected cards to `bg-white border-slate-200 hover:bg-slate-50`. Set typography to high-contrast dark text (`text-slate-900` duration, `text-slate-600` descriptions and distances). Styled GeoJSON coordinates viewer with `bg-slate-50 border-slate-200` and `text-slate-800`.
+  - **Floating Selected Incident & Controls:** Updated selected incident card to `bg-white/95 border-slate-200/90` with `text-slate-900` headers and `text-slate-600` details. Styled corridor toggle and recenter buttons with `bg-white/95 border-slate-200 text-slate-800 hover:bg-slate-100`.
+- **Verification:**
+  - `docker compose exec -T app sh -c "cd apps/web && pnpm exec tsc --noEmit"`: 0 TypeScript errors.
+  - `docker compose exec -T app pnpm lint`: 0 ESLint errors.
+  - `docker compose exec -T app pnpm test`: All 239 unit tests pass across 11 suites with 0 failures.
+  - Node fetch `GET http://localhost:3000/planner`: Returned HTTP 200.
+  - `git diff --check`: Passed with 0 whitespace or formatting issues.
+
 

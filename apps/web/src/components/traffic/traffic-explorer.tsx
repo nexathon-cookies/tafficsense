@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { reportCategories, reportCategoryIcons } from "@/lib/reports/rules";
+import { IncidentIcon } from "@/components/icons/incident-icons";
 import { useSearchParams } from "next/navigation";
 import type { TrafficSnapshot } from "@/lib/traffic/snapshot";
 import type { PublicIncident, PublicTraversal } from "@/lib/traffic/phase4";
@@ -169,7 +170,9 @@ export function TrafficExplorer({ snapshot, slowdownAssessments, incidents, trav
                     isSelected ? "bg-primary/10 border-l-4 border-primary" : ""
                   }`}
                 >
-                  <span className="text-lg leading-none mt-0.5">{reportCategoryIcons[inc.category] ?? "⚠️"}</span>
+                  <span className="text-primary mt-0.5 shrink-0">
+                    <IncidentIcon category={inc.category} size={18} />
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-xs font-bold text-surface-on truncate">

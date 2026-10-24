@@ -3,6 +3,7 @@
 import type { RouteComparison } from "@/lib/route-alerts/snapshot";
 import type { RouteAlert } from "@/lib/route-alerts/rules";
 import { routeAlertView } from "@/lib/route-alerts/presentation";
+import { ZapIcon } from "@/components/icons/ui-icons";
 import styles from "./route-comparison-bar.module.css";
 
 type RouteComparisonBarProps = {
@@ -43,7 +44,10 @@ export function RouteComparisonBar({
       <div className={styles.headerRow}>
         <h4 className={styles.title}>Route Comparison (Primary vs Alternative)</h4>
         {isAlert ? (
-          <span className={styles.alertBadge}>⚡ ALERT{ savingsMinutes != null ? `: SAVE ~${savingsMinutes} MIN` : "" }</span>
+          <span className={styles.alertBadge}>
+            <ZapIcon size={12} className="inline mr-1" />
+            ALERT{ savingsMinutes != null ? `: SAVE ~${savingsMinutes} MIN` : "" }
+          </span>
         ) : (
           <span className={styles.abstainBadge}>NO ALERT</span>
         )}

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { reportCategories, reportCategoryIcons } from "@/lib/reports/rules";
 import type { AuthorityIncidentHistoryItem, AuthorityNotificationItem, LiveIncident } from "@/lib/incidents/server";
 import type { SpreadResult } from "@/lib/routing/spread";
+import { IncidentIcon } from "@/components/icons/incident-icons";
+import { AlertTriangleIcon, CameraIcon, XIcon } from "@/components/icons/ui-icons";
 
 function formatIncidentTime(value: string): string {
   return new Intl.DateTimeFormat("en-GB", {
@@ -96,7 +98,7 @@ export function IncidentReviewPanel() {
       const perm = await Notification.requestPermission();
       setHasWebNotificationPerm(perm === "granted");
       if (perm === "granted") {
-        new Notification("🚨 TrafficSense Control Room Alerts", {
+        new Notification("TrafficSense Control Room Alerts", {
           body: "Push notifications active for commuter incident sightings with photo evidence.",
           icon: "/favicon.ico",
         });
@@ -132,9 +134,9 @@ export function IncidentReviewPanel() {
 
           // Native OS Notification
           if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-            const photoBadge = newest.has_photo ? " [📸 Photo Verified]" : "";
+            const photoBadge = newest.has_photo ? " [Photo Verified]" : "";
             const cat = reportCategories[newest.category as keyof typeof reportCategories] ?? newest.category;
-            new Notification(`🚨 Road Hazard Spotted: ${cat}`, {
+            new Notification(`Road Hazard Spotted: ${cat}`, {
               body: `${newest.landmark}${photoBadge} • Level ${newest.level}`,
               icon: "/favicon.ico",
             });
@@ -253,15 +255,16 @@ export function IncidentReviewPanel() {
       {latestAlert && (
         <div className="p-4 rounded-xl bg-amber-500/10 border-2 border-amber-500/50 dark:bg-amber-950/30 dark:border-amber-500/60 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse" role="alert">
           <div className="flex items-start gap-3">
-            <span className="text-2xl leading-none">🚨</span>
+            <AlertTriangleIcon size={24} className="text-amber-600 shrink-0 mt-0.5" />
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
                   New Incident Spotted
                 </span>
                 {latestAlert.has_photo && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
-                    📸 Photo Evidence Corroborated
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 inline-flex items-center gap-1">
+                    <CameraIcon size={12} className="inline shrink-0" />
+                    <span>Photo Evidence Corroborated</span>
                   </span>
                 )}
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-container-high text-surface-on-variant">
@@ -292,11 +295,11 @@ export function IncidentReviewPanel() {
             </button>
             <button
               type="button"
-              className="button secondary text-xs px-2.5 py-1.5"
+              className="button secondary text-xs px-2.5 py-1.5 flex items-center justify-center"
               onClick={() => setLatestAlert(null)}
               aria-label="Dismiss alert"
             >
-              ✕
+              <XIcon size={14} />
             </button>
           </div>
         </div>
@@ -318,16 +321,18 @@ export function IncidentReviewPanel() {
           {!hasWebNotificationPerm && (
             <button
               type="button"
-              className="button secondary text-xs px-3 py-1.5 border border-primary/40 text-primary"
+              className="button secondary text-xs px-3 py-1.5 border border-primary/40 text-primary flex items-center gap-1.5"
               onClick={() => void requestNotificationPermission()}
               title="Allow browser notifications for real-time alerts"
             >
-              🔔 Enable Push Alerts
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <span>Enable Push Alerts</span>
             </button>
           )}
           {hasWebNotificationPerm && (
-            <span className="text-[11px] text-emerald-700 dark:text-emerald-300 flex items-center gap-1 font-medium bg-emerald-50 dark:bg-emerald-950/50 px-2 py-1 rounded-md border border-emerald-200 dark:border-emerald-800">
-              🔔 Alerts Active
+            <span className="text-[11px] text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 font-medium bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <span>Alerts Active</span>
             </span>
           )}
           <button type="button" className="button secondary text-xs px-3 py-1.5" onClick={() => void loadIncidents()} disabled={isLoading || pendingIncidentId !== null}>
@@ -364,10 +369,14 @@ export function IncidentReviewPanel() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-surface-on">{reportCategoryIcons[incident.category] ?? "⚠️"} {category}</p>
+                    <p className="text-sm font-semibold text-surface-on flex items-center gap-1.5">
+                      <IncidentIcon category={incident.category} size={16} className="text-primary inline shrink-0" />
+                      <span>{category}</span>
+                    </p>
                     {incident.level === "L5" && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-                        📸 Photo Corroborated
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 inline-flex items-center gap-1">
+                        <CameraIcon size={11} className="inline shrink-0" />
+                        <span>Photo Corroborated</span>
                       </span>
                     )}
                   </div>

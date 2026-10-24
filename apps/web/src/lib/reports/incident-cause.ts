@@ -63,7 +63,7 @@ export function getIncidentCauseBreakdown(
     topCat in reportCategories ? topCat : "unknown"
   ) as ReportCategory;
   const label = reportCategories[validCategory] ?? "Unknown";
-  const icon = reportCategoryIcons[validCategory] ?? "❓";
+  const icon = reportCategoryIcons[validCategory] ?? "unknown";
 
   const summary =
     validCategory === "unknown"

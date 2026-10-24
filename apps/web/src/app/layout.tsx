@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
+import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,17 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
           </div>
         </header>
-        <main id="main" className="site-main" tabIndex={-1}>
-          <Suspense fallback={<p role="status" className="panel">Loading…</p>}>
-            {children}
-          </Suspense>
-        </main>
-        <footer className="site-footer">
-          <div>
-            <strong>TrafficSense Mangaluru</strong> · REPORT → VERIFY → ALERT → ANALYSE
-          </div>
-          <div>Demo with simulated data. Not an official traffic service.</div>
-        </footer>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

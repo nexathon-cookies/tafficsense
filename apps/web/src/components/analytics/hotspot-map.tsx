@@ -6,14 +6,16 @@ import { createFallbackStyle } from "@/lib/traffic/mangaluru-basemap";
 import type { HistoricalIncident } from "@/lib/analytics/history";
 import type { HotspotRanking } from "@/lib/analytics/metrics";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { getIncidentSvgString } from "@/components/icons/incident-icons";
+import { RefreshIcon, XIcon } from "@/components/icons/ui-icons";
 
 function getCauseIcon(cause: string): string {
   switch (cause) {
-    case "accident": return "💥";
-    case "road_repair": return "🚧";
-    case "heavy_volume": return "🚗";
-    case "flood": return "🌊";
-    default: return "⚠️";
+    case "accident": return getIncidentSvgString("accident", 14);
+    case "road_repair": return getIncidentSvgString("road_repair", 14);
+    case "heavy_volume": return getIncidentSvgString("heavy_traffic", 14);
+    case "flood": return getIncidentSvgString("flood", 14);
+    default: return getIncidentSvgString("other", 14);
   }
 }
 
@@ -268,10 +270,19 @@ export function HotspotMap({
               <span class="font-mono text-[10px] text-surface-on-variant">${h.primary_window}</span>
             </div>
             <p class="font-bold text-sm text-surface-on leading-tight">${h.junction_name}</p>
-            <div class="text-[11px] text-surface-on-variant space-y-1">
-              <div>📊 ${delayHtml}</div>
-              <div>🚨 <strong>${h.incident_count}</strong> recorded events (${avgDelayHtml})</div>
-              <div>🔍 Predominant cause: <strong class="capitalize">${h.primary_cause.replace("_", " ")}</strong></div>
+            <div class="text-[11px] text-surface-on-variant space-y-1.5">
+              <div class="flex items-center gap-1.5">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary shrink-0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span>${delayHtml}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-500 shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span><strong>${h.incident_count}</strong> recorded events (${avgDelayHtml})</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-surface-on-variant shrink-0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>Predominant cause: <strong class="capitalize">${h.primary_cause.replace("_", " ")}</strong></span>
+              </div>
             </div>
           </div>
         `;
@@ -404,7 +415,7 @@ export function HotspotMap({
           title="Reset map view to whole Mangaluru corridor"
           aria-label="Reset view"
         >
-          <span>⟲</span>
+          <RefreshIcon size={14} className="shrink-0" />
           <span>Reset Corridor View</span>
         </button>
 
@@ -420,7 +431,13 @@ export function HotspotMap({
           title={isFullscreen ? "Exit Full Screen Mode (Esc)" : "Expand to Full Screen Big Screen Mode"}
           aria-label={isFullscreen ? "Exit full screen" : "Expand to full screen"}
         >
-          <span>{isFullscreen ? "✕" : "⛶"}</span>
+          {isFullscreen ? (
+            <XIcon size={14} className="shrink-0" />
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+            </svg>
+          )}
           <span>{isFullscreen ? "Exit Full Screen" : "Full Screen"}</span>
         </button>
       </div>

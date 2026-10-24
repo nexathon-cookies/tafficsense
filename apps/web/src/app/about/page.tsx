@@ -83,7 +83,7 @@ export default function AboutPage() {
           <div className={styles.provenanceOverviewCard}>
             <h3>
               Simulated Demonstration Data
-              <span className={styles.badgeSimulated}>✦ Synthetic Demo</span>
+              <span className={styles.badgeSimulated}>Synthetic Demo</span>
             </h3>
             <p>
               Pre-computed synthetic fixtures used exclusively to demonstrate multi-month municipal trends and algorithmic
@@ -227,7 +227,7 @@ export default function AboutPage() {
               </tr>
               <tr>
                 <td><strong>4-Month Historical Trends</strong></td>
-                <td><span className={styles.badgeSimulated}>✦ Simulated Demo Baseline</span></td>
+                <td><span className={styles.badgeSimulated}>Simulated Demo Baseline</span></td>
                 <td>
                   Synthetic Fixture
                   <br />
@@ -240,7 +240,7 @@ export default function AboutPage() {
               </tr>
               <tr>
                 <td><strong>Multi-Source Speed Drops</strong></td>
-                <td><span className={styles.badgeSimulated}>✦ Simulated Demo Cohort</span></td>
+                <td><span className={styles.badgeSimulated}>Simulated Demo Cohort</span></td>
                 <td>
                   Deterministic Speed Model
                   <br />
@@ -256,8 +256,9 @@ export default function AboutPage() {
         </div>
 
         <div className={styles.verificationGuideBox}>
-          <h3>
-            <span>🔍</span> How You Can Verify the Proof Yourself
+          <h3 className="flex items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary shrink-0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>How You Can Verify the Proof Yourself</span>
           </h3>
           <ol className={styles.verificationStepsList}>
             <li>

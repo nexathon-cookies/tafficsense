@@ -10,6 +10,7 @@ import {
 import { MANGALURU_JUNCTIONS, HISTORICAL_INCIDENTS, type HistoricalIncident } from "@/lib/analytics/history";
 import { HotspotMap } from "@/components/analytics/hotspot-map";
 import { IncidentReviewPanel } from "@/components/analytics/incident-review-panel";
+import { RefreshIcon, ClockIcon, AlertTriangleIcon, MapIcon } from "@/components/icons/ui-icons";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -393,7 +394,7 @@ export function AuthorityDashboard() {
               onClick={() => void refreshLiveIncidents()}
               title="Refresh live incident records"
             >
-              <span>↻</span>
+              <RefreshIcon size={14} className="shrink-0" />
               <span>Refresh</span>
             </button>
             <button
@@ -403,7 +404,7 @@ export function AuthorityDashboard() {
               title="Download filtered incident data as CSV"
               aria-label="Export CSV"
             >
-              <span>↓</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Export CSV</span>
             </button>
           </div>
@@ -429,7 +430,7 @@ export function AuthorityDashboard() {
 
       {showDemoHistory && (
         <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-100 flex items-start gap-2.5 shadow-sm">
-          <span className="text-base leading-none">ℹ️</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <span>
             <strong>DEMO HISTORY ACTIVE:</strong> Displaying 4 months of synthetic historical incidents for long-term corridor trend evaluation alongside real citizen reports. Off by default per honesty rules so real counts are never inflated.
           </span>
@@ -443,65 +444,70 @@ export function AuthorityDashboard() {
           role="tab"
           aria-selected={activeTab === "all"}
           onClick={() => setActiveTab("all")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
             activeTab === "all"
               ? "bg-primary text-white shadow-sm"
               : "text-surface-on-variant hover:text-surface-on hover:bg-surface-container"
           }`}
         >
-          📊 Executive Dashboard Grid
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          <span>Executive Dashboard Grid</span>
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "map"}
           onClick={() => setActiveTab("map")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
             activeTab === "map"
               ? "bg-primary text-white shadow-sm"
               : "text-surface-on-variant hover:text-surface-on hover:bg-surface-container"
           }`}
         >
-          🗺️ Corridor Hotspot Map &amp; Rankings
+          <MapIcon size={14} className="shrink-0" />
+          <span>Corridor Hotspot Map &amp; Rankings</span>
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "review"}
           onClick={() => setActiveTab("review")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
             activeTab === "review"
               ? "bg-primary text-white shadow-sm"
               : "text-surface-on-variant hover:text-surface-on hover:bg-surface-container"
           }`}
         >
-          🚨 Incident Review &amp; Verification
+          <AlertTriangleIcon size={14} className="shrink-0" />
+          <span>Incident Review &amp; Verification</span>
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "diagnostics"}
           onClick={() => setActiveTab("diagnostics")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
             activeTab === "diagnostics"
               ? "bg-primary text-white shadow-sm"
               : "text-surface-on-variant hover:text-surface-on hover:bg-surface-container"
           }`}
         >
-          🗓️ Recurrence Heatmap &amp; Causes
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Recurrence Heatmap &amp; Causes</span>
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={activeTab === "history"}
           onClick={() => setActiveTab("history")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center gap-1.5 ${
             activeTab === "history"
               ? "bg-primary text-white shadow-sm"
               : "text-surface-on-variant hover:text-surface-on hover:bg-surface-container"
           }`}
         >
-          📜 Incident Audit Log
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>Incident Audit Log</span>
         </button>
       </div>
 
@@ -511,7 +517,7 @@ export function AuthorityDashboard() {
           <div>
             <div className="flex items-center justify-between text-xs text-surface-on-variant">
               <span>Total Incidents</span>
-              <span className="text-base">🚨</span>
+              <AlertTriangleIcon size={16} className="text-surface-on-variant shrink-0" />
             </div>
             <div className="text-2xl sm:text-3xl font-extrabold text-surface-on mt-1 tracking-tight">
               {data.total_incidents}
@@ -526,7 +532,7 @@ export function AuthorityDashboard() {
           <div>
             <div className="flex items-center justify-between text-xs text-surface-on-variant">
               <span>Total Commuter Delay</span>
-              <span className="text-base">⏱️</span>
+              <ClockIcon size={16} className="text-surface-on-variant shrink-0" />
             </div>
             <div className="text-2xl sm:text-3xl font-extrabold text-warning-on-container mt-1 tracking-tight">
               {showDemoHistory ? `${data.total_delay_hours} hrs` : "Not measured"}
@@ -566,7 +572,7 @@ export function AuthorityDashboard() {
           <div>
             <div className="flex items-center justify-between text-xs text-surface-on-variant">
               <span>Primary Trigger Cause</span>
-              <span className="text-base">🔍</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-surface-on-variant shrink-0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
             <div className="text-lg sm:text-xl font-bold text-surface-on mt-1 truncate capitalize" title={data.primary_cause}>
               {data.primary_cause.replace("_", " ")}
@@ -600,24 +606,26 @@ export function AuthorityDashboard() {
                 <button
                   type="button"
                   onClick={() => setMapLayout("hero")}
-                  className={`px-3 py-1 rounded font-semibold transition ${
+                  className={`px-3 py-1 rounded font-semibold transition flex items-center gap-1.5 ${
                     mapLayout === "hero"
                       ? "bg-primary text-white shadow-sm"
                       : "text-surface-on-variant hover:text-surface-on hover:bg-surface-container"
                   }`}
                 >
-                  🖥️ Big Screen Hero
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  <span>Big Screen Hero</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setMapLayout("split")}
-                  className={`px-3 py-1 rounded font-semibold transition ${
+                  className={`px-3 py-1 rounded font-semibold transition flex items-center gap-1.5 ${
                     mapLayout === "split"
                       ? "bg-primary text-white shadow-sm"
                       : "text-surface-on-variant hover:text-surface-on hover:bg-surface-container"
                   }`}
                 >
-                  ◫ Split View
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                  <span>Split View</span>
                 </button>
               </div>
             </div>
