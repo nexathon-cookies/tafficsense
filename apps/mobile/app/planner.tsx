@@ -52,6 +52,7 @@ export default function PlannerScreen() {
   const [pickerModal, setPickerModal] = useState<"origin" | "dest" | null>(null);
   const [searchFilter, setSearchFilter] = useState("");
   const [fitKey, setFitKey] = useState(0);
+  const [plannerViewMode, setPlannerViewMode] = useState<"map" | "details">("details");
 
   // Android: hardware back → Home (when no modal open), or closes modal
   useTabBackHandler(pickerModal === null);
@@ -96,6 +97,7 @@ export default function PlannerScreen() {
         incidentsOk: incidentsResult.ok,
         checkedAt: new Date(),
       });
+      setPlannerViewMode("map");
     } catch (reason) {
       setPlan({
         kind: "error",
@@ -138,11 +140,158 @@ export default function PlannerScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AppHeader subtitle="Mangaluru · Route Planner" showLive />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      {plannerViewMode === "map" ? (
+        <View style={styles.fullScreenMapContainer}>
+          {/* Top Floating Route Bar */}
+          <View style={styles.floatingRouteTopBar}>
+            <View style={styles.topBarPlacesRow}>
+              <View style={styles.topBarDotGreen} />
+              <Text numberOfLines={1} style={styles.topBarPlaceText}>
+                {originPlace.name}
+              </Text>
+              <Icon name="chevron_right" size={14} color={colors.textSecondary} />
+              <View style={styles.topBarDotRed} />
+              <Text numberOfLines={1} style={styles.topBarPlaceText}>
+                {destPlace.name}
+              </Text>
+            </View>
+
+            <View style={styles.topBarActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Swap origin and destination"
+                onPress={() => {
+                  swapPlaces();
+                  void checkRoute();
+                }}
+                style={styles.topBarIconBtn}
+              >
+                <Icon name="swap_vert" size={18} color={colors.primary} />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Switch to Route Details view"
+                onPress={() => setPlannerViewMode("details")}
+                style={styles.topBarDetailsBtn}
+              >
+                <Icon name="edit_note" size={15} color={colors.primary} />
+                <Text style={styles.topBarDetailsBtnText}>Details</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Full-Screen TrafficMap */}
+          <TrafficMap
+            segments={[]}
+            routes={plan.kind === "result" ? plan.routes : []}
+            selectedRouteId={primaryRoute?.id ?? null}
+            alternativeId={showAlternative ? (alternativeRoute?.id ?? null) : null}
+            incidents={plan.kind === "result" ? plan.incidents : []}
+            selectedIncidentId={selectedIncidentId}
+            onSelectIncident={(id) => setSelectedIncidentId(id)}
+            fitKey={fitKey}
+            fullScreen
+            floatingControls
+            hideDetailsCard
+          />
+
+          {/* Floating Bottom Route Card */}
+          {primaryRoute ? (
+            <Card style={styles.floatingBottomRouteCard}>
+              <View style={styles.floatingCardHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.floatingCardEyebrow}>
+                    {showAlternative && alternativeRoute ? "ALTERNATIVE DETOUR" : "PRIMARY RECOMMENDED ROUTE"}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.floatingCardTitle}>
+                    {showAlternative && alternativeRoute ? alternativeRoute.name : primaryRoute.name}
+                  </Text>
+                </View>
+                <View style={styles.floatingCardDurationBadge}>
+                  <Text style={styles.floatingCardDurationText}>
+                    ~{formatEstimatedDuration(showAlternative && alternativeRoute ? alternativeRoute.duration_s : primaryRoute.duration_s)}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.floatingCardMetaRow}>
+                <View style={styles.floatingCardMetaItem}>
+                  <Icon name="directions_car" size={14} color={colors.textSecondary} />
+                  <Text style={styles.floatingCardMetaText}>
+                    {formatDistance(showAlternative && alternativeRoute ? alternativeRoute.distance_m : primaryRoute.distance_m)}
+                  </Text>
+                </View>
+                <View style={styles.floatingCardMetaItem}>
+                  <Icon
+                    name={primaryIncidents.length ? "warning" : "verified"}
+                    size={14}
+                    color={primaryIncidents.length ? colors.warning : colors.success}
+                  />
+                  <Text
+                    style={[
+                      styles.floatingCardMetaText,
+                      { color: primaryIncidents.length ? colors.warning : colors.success, fontWeight: "600" },
+                    ]}
+                  >
+                    {primaryIncidents.length ? `${primaryIncidents.length} hazard report(s)` : "Free-flow baseline"}
+                  </Text>
+                </View>
+              </View>
+
+              {alternativeRoute ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={showAlternative ? "Show recommended route" : "Inspect incident-avoiding alternative"}
+                  onPress={() => setShowAlternative((prev) => !prev)}
+                  style={[
+                    styles.floatingAltToggleBtn,
+                    showAlternative && styles.floatingAltToggleBtnActive,
+                  ]}
+                >
+                  <Icon
+                    name="alt_route"
+                    size={16}
+                    color={showAlternative ? "#ffffff" : colors.secondary}
+                  />
+                  <Text
+                    style={[
+                      styles.floatingAltToggleText,
+                      showAlternative && styles.floatingAltToggleTextActive,
+                    ]}
+                  >
+                    {showAlternative ? "Viewing Alternative Detour" : "Inspect Alternative Detour"}
+                  </Text>
+                </Pressable>
+              ) : null}
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="View full turn-by-turn and corridor details"
+                onPress={() => setPlannerViewMode("details")}
+                style={styles.floatingViewDetailsBtn}
+              >
+                <Text style={styles.floatingViewDetailsText}>View full turn-by-turn & monsoon advisory</Text>
+                <Icon name="chevron_right" size={16} color={colors.primary} />
+              </Pressable>
+            </Card>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Switch to Route Details"
+              onPress={() => setPlannerViewMode("details")}
+              style={styles.floatingEmptyPromptPill}
+            >
+              <Text style={styles.floatingEmptyPromptText}>Tap to choose places and calculate route</Text>
+              <Icon name="chevron_right" size={16} color={colors.primary} />
+            </Pressable>
+          )}
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         {/* Corridor Context & Title Header */}
         <View style={styles.corridorHeader}>
           <View style={styles.corridorTitleCol}>
@@ -340,7 +489,20 @@ export default function PlannerScreen() {
             selectedIncidentId={selectedIncidentId}
             onSelectIncident={(id) => setSelectedIncidentId(id)}
             fitKey={fitKey}
+            floatingControls
+            mapHeight={280}
+            onOpenFullScreen={() => setPlannerViewMode("map")}
           />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Switch to full-screen map view"
+            onPress={() => setPlannerViewMode("map")}
+            style={styles.fullScreenExpandPrompt}
+          >
+            <Icon name="fullscreen" size={16} color={colors.primary} />
+            <Text style={styles.fullScreenExpandPromptText}>Full-Screen Google Map View</Text>
+            <Icon name="chevron_right" size={14} color={colors.primary} />
+          </Pressable>
         </View>
 
         {/* Idle / Educational Empty State */}
@@ -620,6 +782,7 @@ export default function PlannerScreen() {
 
         <View style={{ height: layout.safeBottomPadding }} />
       </ScrollView>
+      )}
 
       {/* Place Picker Modal with Tap-Outside Backdrop & Search Filter */}
       <Modal
@@ -1497,5 +1660,209 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
+  },
+  fullScreenMapContainer: {
+    flex: 1,
+    position: "relative",
+    width: "100%",
+    height: "100%",
+  },
+  floatingRouteTopBar: {
+    position: "absolute",
+    top: 10,
+    left: space.gutter,
+    right: space.gutter,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    zIndex: 25,
+    ...shadows.sheet,
+  },
+  topBarPlacesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
+  },
+  topBarDotGreen: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
+  topBarDotRed: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.error,
+  },
+  topBarPlaceText: {
+    ...typography.labelSm,
+    color: colors.text,
+    fontWeight: "700",
+    maxWidth: 90,
+  },
+  topBarActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  topBarIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surfaceContainer,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  topBarDetailsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.primaryFixed,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  topBarDetailsBtnText: {
+    ...typography.labelSm,
+    fontSize: 11,
+    color: colors.primary,
+    fontWeight: "700",
+  },
+  floatingBottomRouteCard: {
+    position: "absolute",
+    bottom: 70,
+    left: space.gutter,
+    right: space.gutter,
+    backgroundColor: "rgba(255, 255, 255, 0.97)",
+    borderRadius: radius.card,
+    padding: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    zIndex: 25,
+    ...shadows.sheet,
+  },
+  floatingCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  floatingCardEyebrow: {
+    ...typography.codeSm,
+    fontSize: 9.5,
+    color: colors.secondary,
+    fontWeight: "700",
+  },
+  floatingCardTitle: {
+    ...typography.titleSm,
+    fontWeight: "700",
+    color: colors.text,
+    marginTop: 2,
+  },
+  floatingCardDurationBadge: {
+    backgroundColor: colors.primaryFixed,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  floatingCardDurationText: {
+    ...typography.labelSm,
+    color: colors.primary,
+    fontWeight: "800",
+  },
+  floatingCardMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  floatingCardMetaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  floatingCardMetaText: {
+    ...typography.bodySm,
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
+  floatingAltToggleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: colors.evidenceSurface,
+    paddingVertical: 8,
+    borderRadius: radius.control,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+  },
+  floatingAltToggleBtnActive: {
+    backgroundColor: colors.secondary,
+  },
+  floatingAltToggleText: {
+    ...typography.labelSm,
+    color: colors.secondary,
+    fontWeight: "700",
+  },
+  floatingAltToggleTextActive: {
+    color: "#ffffff",
+  },
+  floatingViewDetailsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 4,
+  },
+  floatingViewDetailsText: {
+    ...typography.bodySm,
+    color: colors.primary,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  floatingEmptyPromptPill: {
+    position: "absolute",
+    bottom: 74,
+    left: space.gutter,
+    right: space.gutter,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    zIndex: 25,
+    ...shadows.sheet,
+  },
+  floatingEmptyPromptText: {
+    ...typography.labelMd,
+    color: colors.text,
+    fontWeight: "600",
+  },
+  fullScreenExpandPrompt: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: radius.control,
+    marginTop: 8,
+  },
+  fullScreenExpandPromptText: {
+    ...typography.labelSm,
+    color: colors.primary,
+    fontWeight: "700",
   },
 });

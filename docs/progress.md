@@ -1,5 +1,28 @@
 # Project Progress
 
+## Mobile Full-Screen Google Maps UX & Interactive Home Screen Overhaul — verified, 24 Oct 2026
+
+- **Scope & Fixes:**
+  - **Home Screen Map & Interactivity (`apps/mobile/app/index.tsx`):**
+    - Eliminated fake static vector schematic grid lines simulating a map (`schematicContainer`, mock road lines, and static pins).
+    - Embedded a live interactive `<TrafficMap>` preview with real-time incident pins, floating action controls, and an "Explore Full Map" floating pill button.
+    - Converted static origin and destination rows into interactive `<Pressable>` targets linking directly to `/planner`.
+    - Transformed the swap button into an interactive `<Pressable>` with tactile visual feedback that dynamically swaps selected places.
+    - Wrapped community incident cards (both live feed and fallback demo items) in `<Pressable>` containers navigating to `/traffic`.
+    - Made community corroboration pills (`confirmPill`, `denyPill`) interactive with dynamic checkmark indicators, active color fills, and count updates.
+    - Made the monsoon/coastal high tide alert banner clickable, navigating to the live traffic screen.
+  - **Full-Screen Google Maps Experience (`apps/mobile/src/components/traffic-map.tsx`, `apps/mobile/app/traffic.tsx`, `apps/mobile/app/planner.tsx`):**
+    - **`traffic-map.tsx`:** Upgraded component with `fullScreen?: boolean`, `floatingControls?: boolean`, `hideDetailsCard?: boolean`, `hideLegend?: boolean`, `hideAttribution?: boolean`, `mapHeight?: number`, and `onOpenFullScreen?: () => void`. Overlaid Google Maps-style floating circular FABs (My Location, Fit Map, Layers/Schematic toggle, Full-screen expand) directly on the Leaflet OpenStreetMap canvas. In `fullScreen` mode, the map expands to fill 100% of available screen real estate (`flex: 1`, `height: "100%"`).
+    - **`traffic.tsx`:** Enabled edge-to-edge full-screen map mode with floating controls. Overlaid an interactive floating incident summary pill above the bottom navigation bar.
+    - **`planner.tsx`:** Added Google Maps Route mode (`plannerViewMode: "map" | "details"`). Full-screen mode features a floating top route bar (`From ➔ To` with instant swap and view toggle), floating map FABs, and an elevated floating bottom route card displaying travel duration, distance, incident warnings, alternative detour inspect button, and turn-by-turn drawer trigger.
+  - **Auth Provider & Parser Fixes (`auth-provider.tsx`, `response-parsers.ts`):**
+    - Restored `AuthorityHistoryItem` and `parseAuthorityHistoryResponse` in `src/lib/response-parsers.ts`.
+    - Restored profile role resolution (`role`, `roleLoading`, `roleError`, `reloadRole`) in `src/providers/auth-provider.tsx` to fix broken types left by a previous rollback.
+- **Verification Evidence:**
+  - `docker compose exec -T app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec -T app pnpm test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - `docker compose exec -T app node --import ./tests/register-hooks.mjs --test tests/mobile-l5-vision.test.mjs`: Passed (**10/10 passed**).
+
 ## Mobile UI Planner Redesign & Quick Demo Sign-In — verified, 24 Oct 2026
 
 - **Scope:**
