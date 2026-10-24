@@ -11,7 +11,7 @@ import {
   FeedbackBox,
   Icon,
 } from "../src/components/ui";
-import { colors, layout, radius, space, typography } from "../src/theme/tokens";
+import { colors, layout, radius, shadows, space, typography } from "../src/theme/tokens";
 import { useTabBackHandler } from "../src/lib/use-tab-back-handler";
 
 export default function WorkspaceScreen() {

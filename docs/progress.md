@@ -46,11 +46,12 @@
   - `docker compose run --rm app pnpm lint:mobile`: Passed with 0 errors and 0 warnings.
   - `just test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
   - `git diff --check apps/mobile`: Clean (0 whitespace errors or trailing spaces).
-  - **Runtime Bundle Resolution:** Resolved `ReferenceError: Property 'minTouchTarget' doesn't exist` by importing `minTouchTarget` from `../src/theme/tokens` in `apps/mobile/app/index.tsx` and `apps/mobile/app/journeys.tsx`. Metro bundling (`node_modules/expo-router/entry.js`) compiled cleanly with 1535 modules (HTTP 200, 0 runtime reference errors, 0 missing default export warnings).
+  - **Runtime Bundle Resolution:** Resolved `ReferenceError: Property 'minTouchTarget' doesn't exist` and `ReferenceError: Property 'shadows' doesn't exist` by importing missing tokens in `app/index.tsx`, `app/journeys.tsx`, and `app/workspace.tsx`. Metro bundling (`node_modules/expo-router/entry.js`) compiled cleanly with 1535 modules (HTTP 200, 0 runtime reference errors, 0 missing default export warnings).
 - **Commits:**
   - `fcd15c7` — `feat(mobile): implement Premium UI redesign across tokens, primitives, and commuter screens`.
   - `df9f38f` — `fix(mobile): import minTouchTarget in index and journeys screens to fix Metro bundling`.
-  - `8b52494` — `feat(mobile): align UI tokens, Explore layout, BottomNav, and screens with Plan 2 prototype`.
+  - `66334ee` — `feat(mobile): align UI tokens, Explore layout, BottomNav, and screens with Plan 2 prototype`.
+  - `71739f5` — `fix(mobile): import shadows token in workspace screen to resolve Metro ReferenceError`.
 
 
 - **Issue:** Pressing the incident sheet's X set `selectedId` to null, but the derived selection immediately fell back to the first incident, leaving the sheet open. The visual drag handle had no gesture handler.
