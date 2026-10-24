@@ -10,6 +10,7 @@ import {
   type AuthorityIncidentAction,
   updateAuthorityIncident,
 } from "../src/lib/authority";
+import { configureNotificationsAsync, dispatchLocalAuthorityNotification } from "../src/lib/notifications";
 import { categoryLabel } from "../src/lib/format";
 import { evidenceLabel } from "../src/lib/evidence";
 import type { AuthorityHistoryItem } from "../src/lib/response-parsers";
@@ -91,6 +92,13 @@ export default function AuthorityScreen() {
     }
   }, [authLoading, loadDashboard, role, roleLoading, session]);
 
+  // Request OS Notification Permissions for Authority
+  useEffect(() => {
+    if (isAuthority) {
+      void configureNotificationsAsync();
+    }
+  }, [isAuthority]);
+
   // Heartbeat Poller for Real-time Authority Notifications
   useEffect(() => {
     const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
@@ -113,6 +121,8 @@ export default function AuthorityScreen() {
         if (!isFirstPoll.current && newItems.length > 0) {
           const newest = newItems[0];
           setLatestAlert(newest);
+          // Dispatch OS system notification (sounds & shows in Android/iOS notification drawer)
+          void dispatchLocalAuthorityNotification(newest);
           // Auto-reload active incidents to show the new report in real time
           void fetchAuthorityIncidents(token).then((incidents) => {
             if (mounted) {

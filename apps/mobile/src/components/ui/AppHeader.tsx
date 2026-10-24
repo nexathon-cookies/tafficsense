@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../providers/auth-provider";
 import { colors, radius, typography } from "../../theme/tokens";
@@ -57,12 +57,12 @@ export function AppHeader({
             </Pressable>
           ) : null}
 
-          {/* TrafficSense Civic Monogram Logo */}
-          <View style={styles.logoMark}>
-            <View style={styles.logoLinePrimary} />
-            <View style={styles.logoLineSecondary} />
-            <View style={styles.logoDot} />
-          </View>
+          {/* TrafficSense Brand Logo */}
+          <Image
+            source={require("../../../assets/icon.png")}
+            style={styles.logoImage}
+            accessibilityLabel="TrafficSense logo"
+          />
 
           <View style={styles.titleColumn}>
             <Text numberOfLines={1} style={styles.brandTitle}>
@@ -133,39 +133,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     marginLeft: -8,
   },
-  logoMark: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.primaryFixed,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  logoLinePrimary: {
-    position: "absolute",
-    width: 14,
-    height: 2.5,
-    borderRadius: 1.5,
-    backgroundColor: colors.primary,
-    top: 9,
-  },
-  logoLineSecondary: {
-    position: "absolute",
-    width: 14,
-    height: 2.5,
-    borderRadius: 1.5,
-    backgroundColor: colors.secondary,
-    bottom: 9,
-  },
-  logoDot: {
-    position: "absolute",
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.onPrimaryFixed,
-    right: 5,
-    top: 5,
+  logoImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 7,
   },
   titleColumn: {
     justifyContent: "center",
