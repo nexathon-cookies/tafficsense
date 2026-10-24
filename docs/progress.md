@@ -1,5 +1,30 @@
 # Project Progress
 
+## Official Mobile and Web App Brand Logo Integration — verified, 24 Oct 2026
+
+- **Context & User Request:**
+  - Integrated official brand logos provided in user design reference into both the Mobile app and Web app platforms.
+  - Extracted squircle mobile app icon and horizontal web app logo (emblem + "TrafficSense" brand text + "SAFER ROADS SMARTER COMMUTES" tagline).
+- **Assets & Implementations:**
+  - **Mobile Platform (`apps/mobile/assets/`, `app.json`, `AppHeader.tsx`):**
+    - `icon.png`: 1024x1024 high-resolution squircle app icon.
+    - `adaptive-icon.png`: 1024x1024 Android adaptive icon with centered safe-zone foreground.
+    - `splash.png`: 1242x2436 dark navy splash screen with centered logo.
+    - `favicon.png`: 48x48 web preview icon.
+    - Configured `icon`, `splash`, and `adaptiveIcon` in `apps/mobile/app.json`.
+    - Integrated brand logo image directly into [`AppHeader.tsx`](file:///home/nithinkr06/Documents/hackathon%20(Copy)/apps/mobile/src/components/ui/AppHeader.tsx) replacing CSS monogram.
+  - **Web Platform (`apps/web/public/`, `layout.tsx`, `globals.css`):**
+    - `logo.png` & `logo-transparent.png`: High-resolution transparent horizontal brand logo (emblem + "TrafficSense SAFER ROADS SMARTER COMMUTES").
+    - `logo-dark.png`: Native dark navy background horizontal logo.
+    - `logo-emblem.png`: 256x256 standalone road & pin emblem.
+    - `icon.png`: 512x512 PWA web icon.
+    - `apple-touch-icon.png`: 180x180 iOS Safari touch icon.
+    - `favicon.ico`: Multi-size favicon (16x16, 32x32, 48x48).
+    - Integrated `logo-emblem.png` inside `<Link className="brand" href="/">` in [`layout.tsx`](file:///home/nithinkr06/Documents/hackathon%20(Copy)/apps/web/src/app/layout.tsx).
+- **Verification Evidence:**
+  - Verified all generated assets at standard resolutions and aspect ratios.
+  - Verified unit test suite pass with 0 regressions.
+
 ## Universal Layout Zoom-Stretch Fix, Color Palette Alignment, and Complete Emoji-to-SVG Icon Replacement — verified, 24 Oct 2026
 
 - **Context & User Request:**
@@ -1372,5 +1397,20 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
   - `docker compose exec -T app pnpm test`: All 239 unit tests pass across 11 suites with 0 failures.
   - Node fetch `GET http://localhost:3000/planner`: Returned HTTP 200.
   - `git diff --check`: Passed with 0 whitespace or formatting issues.
+
+## Mobile OS Push Notifications with expo-notifications — verified, 24 Oct 2026
+
+- **Scope:** Added phone system tray and lockscreen OS notifications to `@trafficsense/mobile` using `expo-notifications`. When logged in as Traffic Authority, newly spotted incidents and verified photo evidence ring the phone and display actionable notifications in the Android/iOS notification drawer.
+- **Implementation:**
+  - Installed `expo-notifications` (`^58.1.6`) in `@trafficsense/mobile` via Docker pnpm.
+  - `apps/mobile/src/lib/notifications.ts`: Configured global foreground notification behavior (`shouldShowBanner: true`, `shouldShowList: true`, `shouldPlaySound: true`, `shouldSetBadge: true`). Added Android channel configuration (`importance: AndroidImportance.MAX`, vibration pattern, sound, badge). Added `dispatchLocalAuthorityNotification(item)` scheduling immediate heads-up alerts with incident category, landmark, and photo evidence indicators. Added `setupNotificationResponseListener` to handle notification taps.
+  - `apps/mobile/app/authority.tsx`: Integrated notification permission request on authority session mount and wired `dispatchLocalAuthorityNotification(newest)` into the 4-second heartbeat poller.
+- **Verification:**
+  - `docker compose exec -T app pnpm --filter @trafficsense/mobile typecheck`: 0 TypeScript errors.
+  - `docker compose exec -T app pnpm lint:mobile`: 0 ESLint errors.
+  - `docker compose exec -T app sh -c "cd apps/web && pnpm exec tsc --noEmit"`: 0 TypeScript errors.
+  - `docker compose exec -T app pnpm test`: All 239 unit tests pass across 11 suites with 0 failures.
+  - `git diff --check`: Clean formatting, 0 errors.
+
 
 

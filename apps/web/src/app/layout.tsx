@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { AppShell } from "@/components/layout/app-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "TrafficSense Mangaluru — Traffic project preview",
   description: "Explore a traffic project for Mangaluru: planned reporting, evidence, route alerts and analysis. Public preview with optional accounts; no live traffic or location collection.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +22,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="header-inner">
             <div className="brand-group">
               <Link className="brand" href="/">
+                <Image
+                  src="/logo-emblem.png"
+                  alt="TrafficSense logo"
+                  width={26}
+                  height={26}
+                  className="brand-logo"
+                  priority
+                />
                 <span>TrafficSense</span>
                 <span className="brand-badge">Mangaluru</span>
               </Link>

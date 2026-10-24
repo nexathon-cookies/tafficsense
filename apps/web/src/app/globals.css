@@ -167,6 +167,13 @@ button {
   gap: 0.5rem;
 }
 
+.brand-logo {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .brand-badge {
   font-size: 0.68rem;
   font-weight: 700;
