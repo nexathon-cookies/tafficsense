@@ -139,6 +139,14 @@ function MapAttempt({
   }, [assessments, slowdowns, episodeCounts, lifecycleLabels, traversalViews, alertViews, fixture, reports, state]);
 
   useEffect(() => {
+    if (!effectiveSelectedIncidentId || !mapRef.current) return;
+    const target = liveIncidents.find(i => i.id === effectiveSelectedIncidentId);
+    if (target) {
+      mapRef.current.flyTo({ center: [target.lng, target.lat], zoom: 15.5, duration: 800 });
+    }
+  }, [effectiveSelectedIncidentId, liveIncidents]);
+
+  useEffect(() => {
     const map = mapRef.current;
     if (!map || state !== "ready") return;
     let disposed = false;
@@ -148,6 +156,9 @@ function MapAttempt({
     void import("maplibre-gl").then(({ Marker }) => {
       if (disposed || !mapRef.current) return;
       for (const incident of liveIncidents) {
+        const wrapper = document.createElement("div");
+        wrapper.className = styles.liveIncidentWrapper;
+
         const button = document.createElement("button");
         button.type = "button";
         button.className = styles.liveIncidentMarker;
@@ -157,11 +168,15 @@ function MapAttempt({
         const label = `${category}. ${liveIncidentLevelLabel(incident)}. Reported ${formatLiveIncidentTime(incident.first_reported_at)}.`;
         button.setAttribute("aria-label", `Show report details: ${label}`);
         button.title = label;
-        button.addEventListener("click", () => {
+        button.addEventListener("click", (e) => {
+          e.stopPropagation();
           setIncidentSelection(incident.id);
-          map?.flyTo({ center: [incident.lng, incident.lat], zoom: 15, duration: 600 });
+          map?.flyTo({ center: [incident.lng, incident.lat], zoom: 15.5, duration: 600 });
         });
-        const marker = new Marker({ element: button, anchor: "bottom" })
+
+        wrapper.appendChild(button);
+
+        const marker = new Marker({ element: wrapper, anchor: "center" })
           .setLngLat([incident.lng, incident.lat])
           .addTo(map);
         liveMarkers.current.push(marker);
@@ -174,6 +189,18 @@ function MapAttempt({
       liveMarkers.current = [];
     };
   }, [liveIncidents, state, setIncidentSelection]);
+
+  useEffect(() => {
+    for (const marker of liveMarkers.current) {
+      const wrapper = marker.getElement();
+      const button = wrapper.querySelector<HTMLButtonElement>("button");
+      if (button) {
+        const isSelected = button.dataset.liveIncidentMarker === effectiveSelectedIncidentId;
+        button.dataset.selected = isSelected ? "true" : "false";
+        wrapper.style.zIndex = isSelected ? "30" : "";
+      }
+    }
+  }, [effectiveSelectedIncidentId, liveIncidents]);
 
   useEffect(() => {
     const segments = JSON.parse(geometryKey) as Pick<TrafficFixture["segments"][number], "id" | "name" | "direction" | "geometry">[];
@@ -281,7 +308,7 @@ function MapAttempt({
           style: "https://tiles.openfreemap.org/styles/liberty",
           center: [74.85, 12.88], zoom: 13,
           minZoom: 11, maxZoom: 17,
-          maxBounds: [[74.79, 12.82], [74.92, 12.94]],
+          maxBounds: [[74.70, 12.75], [74.95, 13.05]],
           attributionControl: false, dragRotate: false, pitchWithRotate: false,
           touchPitch: false, cooperativeGestures: true,
         });
@@ -421,6 +448,21 @@ function MapAttempt({
               </span>
             )}
           </div>
+
+          {selectedLiveIncident.photo_data_url && (
+            <div className="my-2 rounded-lg overflow-hidden border border-surface-container bg-surface-container-low">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedLiveIncident.photo_data_url}
+                alt="Verified road incident evidence"
+                className="w-full h-32 object-cover block"
+              />
+              <div className="px-2 py-1 text-[10px] font-mono bg-emerald-950 text-emerald-100 flex items-center justify-between">
+                <span>📷 BEST VERIFIED PHOTO</span>
+                <span>{(selectedLiveIncident.photo_confidence ?? "moderate").toUpperCase()} CONFIDENCE</span>
+              </div>
+            </div>
+          )}
 
           <p><strong>{liveIncidentLevelLabel(selectedLiveIncident)}.</strong></p>
           <p>Reported <time dateTime={selectedLiveIncident.first_reported_at}>{formatLiveIncidentTime(selectedLiveIncident.first_reported_at)}</time>. This is a reported incident, not a measured traffic delay.</p>

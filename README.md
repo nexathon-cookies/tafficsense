@@ -10,18 +10,20 @@ TrafficSense is a privacy-first civic traffic intelligence engine. It replaces u
 ## Key Highlights
 
 - **Zero Continuous Tracking**: Commuters never surrender 24/7 background geolocation. Reports and journeys bind to arterial segments without persistent location footprints.
-- **Deterministic Corroboration (L1–L4)**: Multi-source incident clustering and quantitative speed slowdown proofs ensure only verified incidents trigger alerts.
+- **Deterministic Corroboration (L1–L6)**: Multi-source 50m incident clustering (`L3`), speed slowdown proof (`L4`), **Gemini Vision + C2PA Anti-AI Photo Corroboration (`L5`)**, and Civic Authority confirmation (`L6`) ensure only verified incidents trigger route avoidance.
 - **Conservative Alert Discipline**: Alerts trigger only for fixed arterial alternatives with verified savings $\ge 5$ minutes (300s); the system strictly abstains when evidence is stale or hazard-blocked.
 - **Consent-Guaranteed Sharing**: Employees can share verified commute delay summaries with employers without exposing real-time GPS coordinates.
-- **Civic Analytics**: Longitudinal hotspot ranking, delay-hour aggregation, and CSV export for municipal planning.
+- **Civic Analytics & Hotspot Mapping**: OpenStreetMap corridor ranking, delay-hour aggregation, recurrence heatmaps, and CSV export for municipal planning.
 
 ---
 
 ## Tech Stack
 
 - **Web Application**: Next.js 16 (App Router, Turbopack, Tailwind CSS)
+- **Mobile Application**: Expo / React Native (`apps/mobile`) with commuter & civic authority workflows
+- **AI & Vision Pipeline**: Google Gemini Vision (`gemini-3.5-flash-lite`) with client-side EXIF GPS stripping and 2-layer synthetic/AI-generated image rejection
 - **Data & Security**: PostgreSQL 17 / Supabase with Row-Level Security (RLS)
-- **Mapping**: OpenStreetMap / MapLibre GL
+- **Mapping & Routing**: OpenStreetMap / MapLibre GL, OSRM dynamic detour routing & spread engine
 - **Tooling**: Docker, Docker Compose, `justfile`, pnpm
 
 ---
