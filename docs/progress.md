@@ -1412,5 +1412,28 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
   - `docker compose exec -T app pnpm test`: All 239 unit tests pass across 11 suites with 0 failures.
   - `git diff --check`: Clean formatting, 0 errors.
 
+## Commuter Employer Sharing Access, Secure RPC & Empty State — verified, 24 Oct 2026
+
+- **Scope:** Enabled commuters to discover their affiliated employer organisation(s), consent and share active journey summaries, and view empty state guidance when unlinked to any employer.
+- **Root Cause Addressed:**
+  - `organisations` table RLS restricted row selection to employers holding memberships, causing commuter queries via raw table `SELECT` to evaluate to empty (`[]`).
+  - The demo seed script had synthetic commuter accounts (`commuter`, `commuter-b`, `commuter-c`) without assigned employer memberships.
+  - The UI hid the sharing form entirely when `organisations` was empty without presenting an explanatory empty state.
+- **Implementation:**
+  - **Database Migration (`supabase/migrations/20261024000200_commuter_organisation_sharing.sql`):** Created security-definer RPC `public.get_commuter_organisations()` allowing commuters to query only organisations where they hold active membership in `public.memberships`.
+  - **Server Journeys Helper (`apps/web/src/lib/journeys/server.ts`):** Updated `getAvailableOrganisations` to invoke `get_commuter_organisations` RPC with fallback to table select. Updated `getCommuterJourneys` to resolve organisation names via `getAvailableOrganisations`.
+  - **Journey Manager UI (`apps/web/src/components/journeys/journey-manager.tsx`):** Rendered clean empty-state notice (`"No affiliated employer found to share with."` with an `"Unlinked account"` badge) when organisations list is empty.
+  - **Mobile Journey Client (`apps/mobile/src/lib/journeys.ts`, `apps/mobile/app/workspace.tsx`):** Updated mobile workspace and journeys loader to retrieve organisations via `get_commuter_organisations` RPC.
+  - **Demo Seeding (`scripts/seed-demo.mjs`, `scripts/local-supabase.sh`):** Linked demo commuter (`commuter@demo.trafficsense.test`) to `SIMULATED · Junction employer` and `commuter-b` to `SIMULATED · Harbour employer` while preserving `commuter-c` as an unlinked commuter for negative/empty-state checks.
+  - **Tests (`tests/journeys.test.mjs`):** Added unit test coverage verifying `getAvailableOrganisations` calls `get_commuter_organisations` RPC and handles fallback.
+- **Verification:**
+  - `docker compose exec app pnpm test`: All 240 unit tests pass across 11 suites (0 failures).
+  - `docker compose exec app node --test tests/auth.integration.test.mjs`: All 7 auth security integration tests pass (0 failures).
+  - `docker compose exec app pnpm lint`: 0 ESLint errors.
+  - `docker compose exec app sh -c "cd apps/web && pnpm exec tsc --noEmit"`: 0 TypeScript errors.
+  - `docker compose exec app pnpm --filter @trafficsense/mobile typecheck`: 0 TypeScript errors.
+  - End-to-end simulation: Commuter started journey, shared with Junction employer, verified active share with resolved employer name, verified employer read access via `read_employer_shared_journeys`, stopped sharing, and ended journey. Commuter C confirmed 0 orgs and empty state.
+  - `git diff --check`: 0 whitespace issues.
+
 
 

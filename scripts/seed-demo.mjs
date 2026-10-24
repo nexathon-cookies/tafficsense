@@ -25,8 +25,8 @@ if (organisations.error) throw new Error("Could not seed local organisations; ap
 const existing = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
 if (existing.error) throw new Error("Could not inspect synthetic accounts.");
 const definitions = [
-  { label: "commuter", role: "commuter" },
-  { label: "commuter-b", role: "commuter" },
+  { label: "commuter", role: "commuter", orgId: orgB },
+  { label: "commuter-b", role: "commuter", orgId: orgA },
   { label: "commuter-c", role: "commuter" },
   { label: "employer-a", role: "employer", orgId: orgA },
   { label: "employer-b", role: "employer", orgId: orgB },

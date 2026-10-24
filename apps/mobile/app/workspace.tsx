@@ -29,6 +29,11 @@ export default function WorkspaceScreen() {
       const sb = supabase;
       void (async () => {
         try {
+          const { data: rpcData, error: rpcError } = await sb.rpc("get_commuter_organisations");
+          if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0 && typeof rpcData[0]?.name === "string") {
+            setOrgName(rpcData[0].name);
+            return;
+          }
           const { data } = await sb.from("organisations").select("id, name");
           if (data && data.length > 0 && typeof data[0]?.name === "string") {
             setOrgName(data[0].name);

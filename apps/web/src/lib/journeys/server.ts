@@ -23,7 +23,7 @@ export async function getCommuterJourneys(supabase: SupabaseClient): Promise<Com
     .from("journey_employer_shares")
     .select("id, journey_id, org_id, status, shared_at, stopped_at, provenance");
 
-  const { data: orgs } = await supabase.from("organisations").select("id, name");
+  const orgs = await getAvailableOrganisations(supabase);
   const orgMap = new Map((orgs ?? []).map((o) => [o.id, o.name]));
 
   return journeys.map((j) => ({
@@ -108,6 +108,10 @@ export async function getEmployerSharedJourneys(
 export async function getAvailableOrganisations(
   supabase: SupabaseClient
 ): Promise<Array<{ id: string; name: string }>> {
-  const { data } = await supabase.from("organisations").select("id, name").order("name");
-  return data ?? [];
+  const { data, error } = await supabase.rpc("get_commuter_organisations");
+  if (!error && Array.isArray(data)) {
+    return data as Array<{ id: string; name: string }>;
+  }
+  const { data: fallbackData } = await supabase.from("organisations").select("id, name").order("name");
+  return fallbackData ?? [];
 }

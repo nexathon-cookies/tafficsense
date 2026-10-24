@@ -44,16 +44,28 @@ function isJourneyRow(value: unknown): value is JourneyRow {
 
 export async function loadJourneyWorkspace(client: SupabaseClient | null): Promise<JourneyWorkspace> {
   const supabase = requireClient(client);
-  const [journeysResult, sharesResult, orgsResult] = await Promise.all([
+  const [journeysResult, sharesResult, orgsRpcResult] = await Promise.all([
     supabase.from("commuter_journeys").select("id, corridor_name, status, started_at, ended_at, provenance").order("started_at", { ascending: false }),
     supabase.from("journey_employer_shares").select("id, journey_id, org_id, status, shared_at, stopped_at"),
-    supabase.from("organisations").select("id, name").order("name"),
+    supabase.rpc("get_commuter_organisations"),
   ]);
   if (journeysResult.error) throw new Error("Your journeys could not be loaded. Try again.");
 
-  const orgs: OrganisationRow[] = (orgsResult.data ?? []).filter(
-    (org): org is OrganisationRow => typeof org?.id === "string" && typeof org?.name === "string",
-  );
+  let orgs: OrganisationRow[] = [];
+  if (!orgsRpcResult.error && Array.isArray(orgsRpcResult.data)) {
+    orgs = (orgsRpcResult.data as unknown[]).filter(
+      (org): org is OrganisationRow =>
+        typeof org === "object" &&
+        org !== null &&
+        typeof (org as Record<string, unknown>).id === "string" &&
+        typeof (org as Record<string, unknown>).name === "string"
+    );
+  } else {
+    const orgsResult = await supabase.from("organisations").select("id, name").order("name");
+    orgs = (orgsResult.data ?? []).filter(
+      (org): org is OrganisationRow => typeof org?.id === "string" && typeof org?.name === "string"
+    );
+  }
   const orgNames = new Map(orgs.map((org) => [org.id, org.name]));
   const shareRows = (sharesResult.data ?? []) as Omit<ShareRow, "org_name">[];
 

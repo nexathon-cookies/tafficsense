@@ -152,8 +152,8 @@ export function JourneyManager({
                     </div>
                   )}
 
-                  {/* New share form */}
-                  {organisations.length > 0 && (
+                  {/* New share form or empty state */}
+                  {organisations.length > 0 ? (
                     <form
                       action={handleShareJourney}
                       className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1"
@@ -179,6 +179,11 @@ export function JourneyManager({
                         Consent & Share
                       </button>
                     </form>
+                  ) : (
+                    <div className="p-3 rounded-lg bg-surface-container border border-surface-container-high text-xs text-surface-on-variant flex items-center justify-between gap-2">
+                      <span>No affiliated employer found to share with.</span>
+                      <span className="text-[10px] uppercase font-semibold text-surface-on-variant">Unlinked account</span>
+                    </div>
                   )}
                   <p className="text-[11px] text-surface-on-variant">
                     Privacy Guarantee: Only corridor and current journey status are shared. Delay is not measured. Exact coordinates, GPS, route history, and device identity are NEVER disclosed.

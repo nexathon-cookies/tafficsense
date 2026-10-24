@@ -93,4 +93,33 @@ describe("Phase 6 — Journeys and consent-based employer sharing", () => {
     assert.equal(rpcCalls[3].params.p_journey_id, "test-journey-1");
     assert.equal(rpcCalls[3].params.p_org_id, "org-uuid-1");
   });
+
+  it("getAvailableOrganisations queries get_commuter_organisations RPC with fallback", async () => {
+    const { getAvailableOrganisations } = await import("../apps/web/src/lib/journeys/server.ts");
+
+    // Case 1: RPC returns organizations
+    const rpcMock = {
+      rpc: async (name) => {
+        assert.equal(name, "get_commuter_organisations");
+        return { data: [{ id: "org-1", name: "Junction Employer" }], error: null };
+      },
+    };
+    const orgs = await getAvailableOrganisations(rpcMock);
+    assert.deepEqual(orgs, [{ id: "org-1", name: "Junction Employer" }]);
+
+    // Case 2: RPC fails, fallback to table select
+    const fallbackMock = {
+      rpc: async () => ({ data: null, error: new Error("RPC missing") }),
+      from: (table) => {
+        assert.equal(table, "organisations");
+        return {
+          select: () => ({
+            order: () => Promise.resolve({ data: [{ id: "org-2", name: "Fallback Employer" }] }),
+          }),
+        };
+      },
+    };
+    const fallbackOrgs = await getAvailableOrganisations(fallbackMock);
+    assert.deepEqual(fallbackOrgs, [{ id: "org-2", name: "Fallback Employer" }]);
+  });
 });
