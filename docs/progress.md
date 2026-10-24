@@ -1,6 +1,168 @@
 # Project Progress
 
-## Mobile traffic detail sheet dismissal — in progress, 23 Oct 2026
+## Authority Real-time Push Notification Engine (Incident Spotted + Photo Evidence Alert) — verified, 24 Oct 2026
+
+- **Scope & Implementation:**
+  - **Database Migration (`supabase/migrations/20261024000100_authority_notifications.sql`):**
+    - Created `authority_notifications` table storing `incident_id`, `category`, `landmark`, `lat`, `lng`, `has_photo`, `photo_summary`, `level`, `reporter_email`, `is_read`, and timestamps.
+    - Added RLS policies restricting reads and updates strictly to authenticated authority sessions.
+    - Implemented secure definer RPC functions: `dispatch_authority_notification`, `read_authority_notifications`, and `mark_authority_notification_read`.
+  - **Automatic Dispatch on Citizen Submission (`apps/web/src/lib/incidents/server.ts`, `apps/web/src/app/api/incidents/route.ts`):**
+    - Integrated nearest landmark proximity engine resolving Mangaluru corridor landmarks (*Hampankatta*, *Lalbagh*, *Bejai*, *Ladyhill*, *Pumpwell*, *Nanthoor*, etc.).
+    - In `submitIncidentReport`, every commuter hazard report automatically dispatches an authority notification. If the user attached a genuine photo verified via L5 AI Vision, `has_photo: true` and the visual summary are attached to the dispatch.
+  - **Authority Notifications Endpoint (`apps/web/src/app/api/authority/notifications/route.ts`):**
+    - Added `GET` endpoint supporting heartbeat polling (`?since=<ISO>`) and `PATCH` endpoint for read tracking.
+  - **Web Control Room Alerts (`apps/web/src/components/analytics/incident-review-panel.tsx`):**
+    - Integrated native Web Notifications API (`Notification.requestPermission()`) with "🔔 Enable Push Alerts" toggle.
+    - Synthesized custom two-tone audio alert chime (880Hz $\rightarrow$ 1174Hz) via Web Audio API.
+    - Added elevated animated floating dispatch banner: `🚨 New Incident Spotted: [Category] at [Landmark] • 📸 Photo Evidence Corroborated [Inspect & Review]`.
+    - Automatically reloads the active incident queue and highlights the newly spotted incident.
+  - **Mobile Authority Real-Time Dispatch (`apps/mobile/app/authority.tsx`, `BottomNav.tsx`, `authority.ts`):**
+    - Added 4-second heartbeat poller in `authority.tsx` for active authority sessions.
+    - Added live floating alert banner with photo evidence indicators and unread count badge.
+    - Added notification badge dot (`badgeDot`) to the 5th Authority tab in `BottomNav.tsx`.
+- **Verification Evidence:**
+  - `docker compose exec app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec app sh -c "cd apps/web && pnpm exec tsc --noEmit"`: Passed with 0 errors.
+  - `docker compose exec app pnpm test`: Passed all 233 tests across 10 test suites (**233/233 passed**, including new notification dispatch and photo evidence tests).
+
+## Mobile Authority Navigation & Workspace Journeys In-Progress Status — verified, 24 Oct 2026
+
+- **Scope & Fixes:**
+  - **Authority Role Dynamic Navigation (`apps/mobile/src/components/ui/BottomNav.tsx`):**
+    - Enhanced `BottomNav` with an `"authority"` navigation tab.
+    - When the logged-in user has the `authority` role (or an authority email handle), the fifth tab dynamically shifts from "Me" (`person` icon $\rightarrow$ `/workspace`) to "Authority" (`shield` icon $\rightarrow$ `/authority`), providing direct 1-tap navigation to the Authority Incident Control Room from any mobile screen.
+  - **Workspace Screen Role Integration (`apps/mobile/app/workspace.tsx`):**
+    - Displayed an elevated, high-priority "Authority Incident Control Room" card at the top of the Workspace screen when logged in as an authority user, linking directly to `/authority`.
+    - Updated user role badge to accurately state "Traffic Authority (Active Session)" for authority users.
+    - Marked "My journeys & employer sharing" with an explicit `IN PROGRESS` pill and explanatory text noting Phase 7 extension status.
+  - **Journeys Screen (`apps/mobile/app/journeys.tsx`):**
+    - Added an prominent "IN PROGRESS" status alert banner explaining that automated employer delay receipts and journey logging are planned Phase 7 extensions.
+  - **Authority Dashboard Screen (`apps/mobile/app/authority.tsx`):**
+    - Added role fallback logic checking user profile role and email.
+    - Added a quick-switch link button allowing authorities to seamlessly jump between the Control Room and Commuter Workspace.
+    - Set `activeTab="authority"` in `BottomNav`.
+- **Verification Evidence:**
+  - `docker compose exec app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec app pnpm test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - Browser/UI inspection: Verified authority tab appears in bottom nav for authority users and workspace prominently marks journeys as In Progress.
+
+## Mobile Map Defaults to Full Screen & Route Planner Accident Pins Fixed — verified, 24 Oct 2026
+
+- **Scope & Fixes:**
+  - **Full-Screen Map by Default Across Tabs:**
+    - **Live Traffic Map Screen (`apps/mobile/app/traffic.tsx`):** Removed automatic preselection of `incidents[0].id` on load so the map opens completely full-screen edge-to-edge without half the screen obscured by an expanded bottom sheet. Extracted `TrafficControlsBar` component and overlaid it cleanly at the top of the full-screen map in Map mode while preserving accessible layout in List mode.
+    - **Route Planner Screen (`apps/mobile/app/planner.tsx`):** Changed default view mode to `"map"` (`plannerViewMode: "map"` by default) instead of details mode, ensuring the user immediately lands on a full-screen Google Maps route navigation canvas.
+  - **Accident Pins in Route Planner & Map:**
+    - Fixed accident pin visibility in Plan: Route planner now maintains `allIncidents` and `allSegments` state and triggers `checkRoute()` on mount, place swap, and modal selection. Accident pins and corridor segments are now always displayed on the map in Plan.
+    - Added floating incident inspection card in Plan: Tapping any accident pin on the route map displays a floating hazard card with category, verification level, details, and dismiss control.
+    - Upgraded Leaflet map markers in `apps/mobile/src/map/map-html.ts` from generic 8px circle dots to authentic Google Maps teardrop accident pins (`L.divIcon`) featuring white borders, drop shadows, anchor pointers, route prominence weighting, and category emojis (`💥` crash, `🌊` flood, `🚧` construction, `⛔` closure, `⚠️` hazard).
+    - Added `floatingTopOffset` prop to `TrafficMap` in `apps/mobile/src/components/traffic-map.tsx` to prevent floating controls from overlapping top search bars across screens.
+- **Verification Evidence:**
+  - `docker compose exec -T app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec -T app pnpm test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - `docker compose exec -T app node --import ./tests/register-hooks.mjs --test tests/mobile-l5-vision.test.mjs`: Passed (**10/10 passed**).
+
+## Mobile Full-Screen Google Maps UX & Interactive Home Screen Overhaul — verified, 24 Oct 2026
+
+- **Scope & Fixes:**
+  - **Home Screen Map & Interactivity (`apps/mobile/app/index.tsx`):**
+    - Eliminated fake static vector schematic grid lines simulating a map (`schematicContainer`, mock road lines, and static pins).
+    - Embedded a live interactive `<TrafficMap>` preview with real-time incident pins, floating action controls, and an "Explore Full Map" floating pill button.
+    - Converted static origin and destination rows into interactive `<Pressable>` targets linking directly to `/planner`.
+    - Transformed the swap button into an interactive `<Pressable>` with tactile visual feedback that dynamically swaps selected places.
+    - Wrapped community incident cards (both live feed and fallback demo items) in `<Pressable>` containers navigating to `/traffic`.
+    - Made community corroboration pills (`confirmPill`, `denyPill`) interactive with dynamic checkmark indicators, active color fills, and count updates.
+    - Made the monsoon/coastal high tide alert banner clickable, navigating to the live traffic screen.
+  - **Full-Screen Google Maps Experience (`apps/mobile/src/components/traffic-map.tsx`, `apps/mobile/app/traffic.tsx`, `apps/mobile/app/planner.tsx`):**
+    - **`traffic-map.tsx`:** Upgraded component with `fullScreen?: boolean`, `floatingControls?: boolean`, `hideDetailsCard?: boolean`, `hideLegend?: boolean`, `hideAttribution?: boolean`, `mapHeight?: number`, and `onOpenFullScreen?: () => void`. Overlaid Google Maps-style floating circular FABs (My Location, Fit Map, Layers/Schematic toggle, Full-screen expand) directly on the Leaflet OpenStreetMap canvas. In `fullScreen` mode, the map expands to fill 100% of available screen real estate (`flex: 1`, `height: "100%"`).
+    - **`traffic.tsx`:** Enabled edge-to-edge full-screen map mode with floating controls. Overlaid an interactive floating incident summary pill above the bottom navigation bar.
+    - **`planner.tsx`:** Added Google Maps Route mode (`plannerViewMode: "map" | "details"`). Full-screen mode features a floating top route bar (`From ➔ To` with instant swap and view toggle), floating map FABs, and an elevated floating bottom route card displaying travel duration, distance, incident warnings, alternative detour inspect button, and turn-by-turn drawer trigger.
+  - **Auth Provider & Parser Fixes (`auth-provider.tsx`, `response-parsers.ts`):**
+    - Restored `AuthorityHistoryItem` and `parseAuthorityHistoryResponse` in `src/lib/response-parsers.ts`.
+    - Restored profile role resolution (`role`, `roleLoading`, `roleError`, `reloadRole`) in `src/providers/auth-provider.tsx` to fix broken types left by a previous rollback.
+- **Verification Evidence:**
+  - `docker compose exec -T app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec -T app pnpm test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - `docker compose exec -T app node --import ./tests/register-hooks.mjs --test tests/mobile-l5-vision.test.mjs`: Passed (**10/10 passed**).
+
+## Mobile UI Planner Redesign & Quick Demo Sign-In — verified, 24 Oct 2026
+
+- **Scope:**
+  - **Quick Demo Sign-In on Mobile (`apps/mobile/app/auth/login.tsx`):** Implemented 1-click Quick Judge Demo Sign-In mirroring web functionality. Offers 1-click instant authenticated evaluation for Commuter (Primary), Commuter B (Independent Corroborator), Traffic Authority (Control Room), and Employer A (Workplace Coordinator). Fetches seeded accounts from `/api/demo-accounts` dynamically with instant fallback to verified test credentials. Added public "Continue as Guest" explorer button and redesigned the sign-in form following `trafficsense_mangaluru` design tokens.
+  - **Route Planner Redesign & Styling Fixes (`apps/mobile/app/planner.tsx`):** Fixed styling anomalies and layout issues:
+    - Replaced offset hack swap button with a unified, cohesive route card featuring a connected visual route stem (origin dot → vertical dashed track → destination pin) and a cleanly centered circular swap button with active tactile press feedback.
+    - Added popular Mangaluru corridor preset chips ("Hampankatta → Bejai", "Pumpwell → Central Rwy", "Hampankatta → Airport", "Ladyhill → Kadri") for 1-tap route testing.
+    - Replaced hardcoded hex colors in warning containers with semantic theme tokens (`colors.errorSurface`, `colors.successSurface`, `colors.border`).
+    - Added an educational, illustrated empty state card explaining free-flow synthetic baselines and hazard checks.
+    - Added real-time place search filter in the modal picker and wrapped the modal backdrop in a `Pressable` dismissing on outside tap.
+  - **Component & Icon Fixes:** Aligned all icons across `login.tsx`, `planner.tsx`, `traffic.tsx`, `index.tsx`, and `traffic-map.tsx` with supported `IconName` union in `Icon.tsx`.
+- **Verification Evidence:**
+  - `docker compose exec app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec app pnpm test`: Passed all 231 tests across 10 suites (**231/231 passed**).
+
+
+- **Scope:** Completely reverted all mobile UI redesign experiments (`apps/mobile` and `compose.yaml`) to the original working state matching commit `04532d5`. Restored original design folders (`home_trafficsense_mangaluru`, `live_traffic_map_mangaluru`, `plan_route_trafficsense_mangaluru`, `report_a_hazard_trafficsense_mangaluru`, `trafficsense_mangaluru`), removed Plan 1 and Plan 2 prototypes, and restored all original tokens, components, screens, and documentation.
+- **Hook Naming Fix:** Renamed `useCurrentLocation` to `requestCurrentLocation` in `apps/mobile/app/report.tsx` to adhere to `react-hooks/rules-of-hooks` in ESLint while preserving identical behavior.
+- **Verification Evidence:**
+  - `git diff 04532d5 -- apps/mobile`: Only `apps/mobile/app/report.tsx` hook naming fix remains.
+  - `docker compose run --rm app pnpm lint:mobile`: Passed with 0 errors and 0 warnings.
+  - `just test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - Mobile bundler verified running cleanly.
+
+## Comprehensive Documentation Synchronization & Hackathon Presentation Guide — verified, 24 Oct 2026
+
+- **Scope:** Synchronized all repository `.md` files to the current live state of the project, accurately reflecting that TrafficSense has advanced far beyond a basic reporting tool into a full-stack, verified civic traffic intelligence, multimodal AI vision, dynamic detour routing, consent-guaranteed workplace trust, and municipal analytics platform. Authored `docs/presentation.md` with an end-to-end hackathon pitch deck and demonstration script.
+- **Documentation Updates:**
+  - `README.md`: Highlighted full platform depth—L1–L6 verification ladder, Google Gemini 2.5 Vision AI, dynamic OSRM routing and detours, spread analysis, civic authority heatmap, Ed25519 delay certificates, and mobile app.
+  - `docs/README.md`: Updated module traceability table to mark L5 AI Vision and L6 Authority Confirmation as implemented, and documented mobile/routing extensions.
+  - `docs/plan.md`: Updated verification evidence ladder table to show L5 (Gemini Multimodal Vision) and L6 (Authority Confirmation) as active/implemented.
+  - `docs/implementation.md`: Aligned Phase 4, Phase 5, and Phase 7 with current implemented reality (L5 vision, OSRM detours, authority heatmap).
+  - `docs/whatthis.md`: Updated Modules 4, 5, and 7 to detail the full L1–L6 hierarchy, dynamic OSRM engine, spread analysis, and interactive Leaflet heatmap with incident review.
+  - `docs/system-specification.md`: Synchronized architecture diagrams, corroboration hierarchy (L1–L6), module feature matrix, and comparative evaluation table.
+  - `docs/traffic.md`: Updated verification ladder section to define L5 and L6 as active implemented tiers.
+  - `docs/reports.md`: Updated reporting overview to document exact GPS coordinates, Mangaluru landmark snapping, L5 photo upload, and the route planner modal dialog.
+  - `apps/web/docs/plan.md` & `apps/web/docs/progress.md`: Expanded web architecture and recorded verified milestones.
+  - `apps/mobile/docs/plan.md`: Updated design specification references to Plan 2 Precision Mobility.
+  - `packages/shared/docs/plan.md` & `packages/shared/docs/progress.md`: Documented shared L1–L6 types, detour contracts, and incident models.
+  - `docs/presentation.md`: Created master presentation guide featuring executive elevator pitch, comparison matrix against Google Maps/Waze, 5-minute live demonstration script, and bulletproof Q&A rebuttals.
+- **Verification Evidence:**
+  - `just test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - Scoped diff review confirmed clean updates without breaking any test or build contracts.
+
+## Mobile Premium UI Redesign (Plan 2: Precision Mobility) — verified, 24 Oct 2026
+
+- **Scope:** Aligned the Expo mobile client (`apps/mobile`) with the Premium UI specification detailed in `apps/mobile/docs/IMPLEMENTATION_INSTRUCTIONS_premium_ui.md` and documented under `apps/mobile/design/plan2/`. Pure styling and presentation overhaul without touching any login, authentication, Supabase client, API, data model, routing logic, or backend contracts.
+- **Decisions Confirmed:**
+  - D1 (Primary Teal): `#00665E` with pressed overlay.
+  - D2 (Canvas): Neutral mint `#F8FAF9` replacing pale lavender `#FAF8FF`.
+  - D3 (Evidence & Simulation): Preserved `#6616D7` (`#F3EDFF` surface) exclusively for L0–L3 verification badges and simulation pills. Used slate (`#94A3B8`) for secondary detour corridors.
+  - D4 (Typography): System font with Inter-equivalent weights/line heights and `fontVariant: ["tabular-nums"]` on metrics.
+  - D5 (Readability): Strict 12px minimum font size enforced across all badges, chips, labels, and metadata.
+  - D6 (BottomNav Labels): Updated to **Explore**, **Traffic**, **Report**, **Plan**, **Me**; routes remain `/`, `/traffic`, `/report`, `/planner`, `/workspace`.
+  - D7 (Center FAB): 56px circle in `#00665E` with `warning` triangle icon and 1px white border.
+  - D8 (Header): Pure text wordmark (`headlineSm`) with 48px touch targets for back and avatar controls.
+- **Implementation Slices:**
+  - `apps/mobile/design/plan2/`: Verified full visual source package including `explore/`, `live_traffic_map/`, `me_workspace/`, `report_hazard/`, `route_planner/`, and `trafficsense_precision_mobility/DESIGN.md`.
+  - `src/theme/tokens.ts`: Aligned exact token values with `trafficsense_precision_mobility/DESIGN.md` (mint canvas `#EFFCF9`, surfaceContainerLowest `#FFFFFF`, surfaceContainerLow `#E9F7F3`, surfaceContainer `#E3F1ED`, surfaceContainerHigh `#DDEBE7`, primary `#00665E`, primaryDark `#004C46`, secondary `#516072`, secondaryContainer `#D2E1F7`, text `#121E1C`, warning `#8B4A00`, error `#BA1A1A`).
+  - `src/components/ui/`: Restyled `AppHeader` (frosted white `#FFFFFF/95%`, centered screen title, `TrafficSense` wordmark), `BottomNav` (`explore` and `traffic` icons, raised warning FAB `-mt-5`, frosted white bar), and `Card` (`#FFFFFF` background on `#EFFCF9` canvas).
+  - `app/index.tsx` (Explore): Faithfully implemented `explore/code.html` layout with `LIVE CORRIDOR RADAR` eyebrow, Daily Commute card with 3-segment density gauge (free-flow teal, moderate amber, city-merge gray), 144px equal-height 2×2 quick-action grid (Saved Places, Incidents, Transit Sync, Traffic Map), and Live Corridor Feed header.
+  - `app/traffic.tsx` (Traffic): Restyled rounded-full pill search bar, white floating action buttons, clean bottom sheet with Level-3 shadow.
+  - `app/planner.tsx` (Planner): Upgraded origin/destination card, swap FAB, recommended route with 2px teal border, and alternative detour card with slate accent.
+  - `app/report.tsx` (Report): Restyled category cards (2-column equal-height grid with 48px touch cells), location card, photo upload area with dashed accent, and 3-step indicator.
+  - `app/workspace.tsx` (Me): Added Commuter Metric Highlights (Miles Tracked, Saved Rerouting, Valid Reports) inside profile card, action tiles, and stop-sharing section.
+- **Verification Evidence:**
+  - `git diff -- apps/mobile/src/lib apps/mobile/src/providers apps/mobile/src/map`: Verified completely empty (0 lines changed in logic/providers/map).
+  - `docker compose run --rm app pnpm lint:mobile`: Passed with 0 errors and 0 warnings.
+  - `just test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - `git diff --check apps/mobile`: Clean (0 whitespace errors or trailing spaces).
+  - **Runtime Bundle Resolution:** Resolved `ReferenceError: Property 'minTouchTarget' doesn't exist` and `ReferenceError: Property 'shadows' doesn't exist` by importing missing tokens in `app/index.tsx`, `app/journeys.tsx`, and `app/workspace.tsx`. Metro bundling (`node_modules/expo-router/entry.js`) compiled cleanly with 1535 modules (HTTP 200, 0 runtime reference errors, 0 missing default export warnings).
+- **Commits:**
+  - `fcd15c7` — `feat(mobile): implement Premium UI redesign across tokens, primitives, and commuter screens`.
+  - `df9f38f` — `fix(mobile): import minTouchTarget in index and journeys screens to fix Metro bundling`.
+  - `66334ee` — `feat(mobile): align UI tokens, Explore layout, BottomNav, and screens with Plan 2 prototype`.
+  - `71739f5` — `fix(mobile): import shadows token in workspace screen to resolve Metro ReferenceError`.
+
 
 - **Issue:** Pressing the incident sheet's X set `selectedId` to null, but the derived selection immediately fell back to the first incident, leaving the sheet open. The visual drag handle had no gesture handler.
 - **Implementation:** The selected report now follows only the explicitly selected incident ID; the initial fetch still opens the first report once. The X clears selection, and dragging the handle downward animates the sheet away and clears selection. The X has a 48px touch target and accessible dismissal hint.
@@ -1105,3 +1267,22 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
   - `git diff --check` passed with no formatting or whitespace issues.
 - **Commit:** `bae990f` — `feat(planner): redesign route planner with Google Maps floating search and expandable bottom sheet`.
 - **Push:** Confirmed pushed to `origin/main`, 24 Oct 2026.
+
+## Real-Time Authority Push Notifications for Spotted Hazards & Photo Evidence — verified, 24 Oct 2026
+
+- **Scope:** Push instant real-time alerts to Traffic Authority on Web (`/authority`) and Mobile (`apps/mobile/app/authority.tsx`) whenever a citizen or automated sensor spots a road hazard/incident, including proximity landmark resolution (e.g. Lalbagh, Hampankatta, Ladyhill, Bejai, Kadri, Pumpwell, etc.) and visual photo evidence verification corroboration (`has_photo: true`, L5 verification summary).
+- **Implementation:**
+  - **Database Migration (`supabase/migrations/20261024000100_authority_notifications.sql`):** Created `authority_notifications` table, RLS policies, index on `(created_at desc)`, and RPCs (`dispatch_authority_notification`, `read_authority_notifications`, `mark_authority_notification_read`).
+  - **Landmark Geofence & Dispatch Engine (`apps/web/src/lib/incidents/server.ts`, `apps/web/src/app/api/incidents/route.ts`):** Added `resolveNearestLandmark` with coordinate bounding boxes across Mangaluru's primary arterial corridors. Automated dispatch in `submitIncidentReport` on every valid incident submission.
+  - **Authority Notifications Endpoint (`apps/web/src/app/api/authority/notifications/route.ts`):** `GET` with `?since=<ISO>` heartbeat query and `PATCH` for read acknowledgments.
+  - **Web Control Room (`apps/web/src/components/analytics/incident-review-panel.tsx`):** Web Notifications API browser push alerts with permission toggle button, Web Audio API synthetic two-tone alert chime (880Hz $\rightarrow$ 1174Hz), live floating alert toast with photo badge and 1-click inspection scroll.
+  - **Mobile Authority Screen & Navigation (`apps/mobile/app/authority.tsx`, `BottomNav.tsx`, `authority.ts`):** Heartbeat poller for authority sessions, floating alert banner with photo corroboration badges, and unread notification badge dot indicator on bottom navigation bar.
+- **Verification:**
+  - `docker compose exec app pnpm test`: All 233 unit tests pass across all test suites.
+  - `docker compose exec app pnpm lint`: 0 ESLint errors.
+  - `docker compose exec app pnpm lint:mobile`: 0 ESLint errors.
+  - `docker compose exec app pnpm --filter @trafficsense/mobile typecheck`: 0 TypeScript errors.
+  - `docker compose exec app sh -c "cd apps/web && pnpm exec tsc --noEmit"`: 0 TypeScript errors.
+  - `git diff --check`: Clean, no whitespace or formatting errors.
+- **Commit:** `2ea2630` — `feat(authority): real-time push notification engine for spotted incidents and photo evidence`.
+

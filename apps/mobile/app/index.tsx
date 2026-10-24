@@ -23,6 +23,7 @@ import {
   Icon,
   SimulatedBadge,
 } from "../src/components/ui";
+import { TrafficMap } from "../src/components/traffic-map";
 import { areIncidentListsEqual } from "../src/lib/traffic-equality";
 import { colors, layout, radius, shadows, space, typography } from "../src/theme/tokens";
 
@@ -30,6 +31,41 @@ export default function HomeScreen() {
   const [incidents, setIncidents] = useState<LiveIncident[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>("09:42");
+  const [originName, setOriginName] = useState("State Bank / Ladyhill");
+  const [destName, setDestName] = useState("Pumpwell Circle / Kankanady");
+  const [confirmedMap, setConfirmedMap] = useState<Record<string, number>>({});
+  const [clearedMap, setClearedMap] = useState<Record<string, boolean>>({});
+
+  const handleSwap = () => {
+    setOriginName((prev) => (prev === "State Bank / Ladyhill" ? "Pumpwell Circle / Kankanady" : "State Bank / Ladyhill"));
+    setDestName((prev) => (prev === "Pumpwell Circle / Kankanady" ? "State Bank / Ladyhill" : "Pumpwell Circle / Kankanady"));
+  };
+
+  const toggleConfirm = (id: string, initialCount = 1) => {
+    setConfirmedMap((prev) => {
+      const current = prev[id];
+      if (current !== undefined) {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      }
+      return { ...prev, [id]: initialCount + 1 };
+    });
+    setClearedMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const toggleClear = (id: string) => {
+    setClearedMap((prev) => ({ ...prev, [id]: !prev[id] }));
+    setConfirmedMap((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
 
   const loadIncidents = useCallback(async () => {
     try {
@@ -134,65 +170,74 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Vector Map Schematic Visual */}
-          <View style={styles.schematicContainer}>
-            {/* Grid pattern background */}
-            <View style={styles.schematicGrid}>
-              <View style={styles.gridLineH1} />
-              <View style={styles.gridLineH2} />
-              <View style={styles.gridLineV1} />
-              <View style={styles.gridLineV2} />
-            </View>
-
-            {/* Simulated Road Paths */}
-            <View style={styles.roadNetwork}>
-              {/* Secondary gray road */}
-              <View style={styles.roadGray} />
-              {/* Teal primary corridor */}
-              <View style={styles.roadTeal} />
-              {/* Congested orange segment */}
-              <View style={styles.roadOrange} />
-            </View>
-
-            {/* Hampankatta Landmark Pin */}
-            <View style={styles.pinHampankatta}>
-              <View style={styles.pinDotTeal} />
-              <Text style={styles.pinLabel}>Hampankatta</Text>
-            </View>
-
-            {/* Kadri Hills Landmark Pin */}
-            <View style={styles.pinKadri}>
-              <View style={styles.pinDotOrange} />
-              <Text style={styles.pinLabel}>Kadri Hills</Text>
-            </View>
-
-            {/* Telemetry Bubble */}
-            <View style={styles.telemetryBubble}>
-              <Icon name="radar" size={13} color={colors.primary} />
-              <Text style={styles.telemetryText}>Avg: 26 km/h</Text>
-            </View>
+          {/* Real Leaflet OpenStreetMap live canvas replacing the faux CSS schematic */}
+          <View style={styles.homeMapWrapper}>
+            <TrafficMap
+              incidents={incidents}
+              segments={[]}
+              selectedIncidentId={null}
+              onSelectIncident={() => router.push("/traffic")}
+              fitKey={1}
+              mapHeight={180}
+              floatingControls
+              hideDetailsCard
+              hideLegend
+              hideAttribution
+              onOpenFullScreen={() => router.push("/traffic")}
+            />
+            {/* Quick overlay to jump straight into Google Maps full-screen view */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Explore full-screen live map"
+              onPress={() => router.push("/traffic")}
+              style={({ pressed }) => [styles.mapOverlayExpandBtn, pressed && styles.mapOverlayExpandBtnPressed]}
+            >
+              <Icon name="explore" size={14} color={colors.primary} />
+              <Text style={styles.mapOverlayExpandText}>Explore Full Map</Text>
+              <Icon name="chevron_right" size={13} color={colors.primary} />
+            </Pressable>
           </View>
 
-          {/* Quick Route Inputs */}
+          {/* Quick Route Inputs - Interactive and clickable */}
           <View style={styles.routeInputsStack}>
-            <View style={styles.inputRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Select origin, currently ${originName}`}
+              onPress={() => router.push("/planner")}
+              style={({ pressed }) => [styles.inputRow, pressed && styles.inputRowPressed]}
+            >
               <Icon name="trip_origin" size={18} color={colors.primary} />
               <View style={styles.inputCol}>
-                <Text style={styles.inputLabel}>ORIGIN</Text>
-                <Text style={styles.inputValue}>State Bank / Ladyhill</Text>
+                <Text style={styles.inputLabel}>ORIGIN (TAP TO SELECT)</Text>
+                <Text style={styles.inputValue}>{originName}</Text>
               </View>
-            </View>
+              <Icon name="chevron_right" size={18} color={colors.textMuted} />
+            </Pressable>
 
-            <View style={styles.inputRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Select destination, currently ${destName}`}
+              onPress={() => router.push("/planner")}
+              style={({ pressed }) => [styles.inputRow, pressed && styles.inputRowPressed]}
+            >
               <Icon name="location_on" size={18} color="#7d4200" />
               <View style={styles.inputCol}>
-                <Text style={styles.inputLabel}>DESTINATION</Text>
-                <Text style={styles.inputValue}>Pumpwell Circle / Kankanady</Text>
+                <Text style={styles.inputLabel}>DESTINATION (TAP TO SELECT)</Text>
+                <Text style={styles.inputValue}>{destName}</Text>
               </View>
-              <View style={styles.swapIconBtn}>
-                <Icon name="swap_vert" size={18} color={colors.textSecondary} />
-              </View>
-            </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Swap origin and destination places"
+                hitSlop={8}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleSwap();
+                }}
+                style={({ pressed }) => [styles.swapIconBtn, pressed && styles.swapIconBtnPressed]}
+              >
+                <Icon name="swap_vert" size={20} color={colors.primary} />
+              </Pressable>
+            </Pressable>
 
             <Button
               title="Inspect Coastal Routes · ~18 min"
@@ -303,41 +348,137 @@ export default function HomeScreen() {
             incidents.slice(0, 4).map((incident) => {
               const freshness = describeFreshness(incident.last_confirmed_at);
               const label = evidenceLabel(incident.level);
+              const isConfirmed = confirmedMap[incident.id] !== undefined;
+              const isCleared = clearedMap[incident.id];
+              const count = confirmedMap[incident.id] ?? incident.report_count;
+
               return (
-                <Card key={incident.id} style={styles.incidentCard}>
+                <Pressable
+                  key={incident.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Inspect ${incident.category} report on live map`}
+                  onPress={() => router.push("/traffic")}
+                >
+                  <Card style={styles.incidentCard}>
+                    <View style={styles.incidentHeader}>
+                      <View style={styles.incidentIconAndTitle}>
+                        <View style={[styles.incidentCategoryIconBox, { backgroundColor: colors.errorSurface }]}>
+                          <Icon name="flood" size={22} color={colors.error} />
+                        </View>
+                        <View style={styles.incidentTitleCol}>
+                          <Text style={styles.incidentCategoryLabel}>
+                            {incident.category.toUpperCase()}
+                          </Text>
+                          <Text style={styles.incidentTitle} numberOfLines={1}>
+                            {categoryLabel(incident.category)}
+                          </Text>
+                        </View>
+                      </View>
+                      <FreshnessChip label={freshness.label} stale={freshness.stale} />
+                    </View>
+
+                    <Text style={styles.incidentDesc}>
+                      {incident.level_reason || "Reported obstacle affecting corridor passage."}
+                    </Text>
+
+                    <View style={styles.badgeRow}>
+                      <EvidenceBadge
+                        level={incident.level}
+                        label={label}
+                      />
+                      <SimulatedBadge label="SIMULATED FLOW" />
+                    </View>
+
+                    <View style={styles.infoStrip}>
+                      <View style={styles.infoLeft}>
+                        <Icon name="help_center" size={14} color={colors.textMuted} />
+                        <Text style={styles.infoText}>Free-flow estimate · Tap to inspect on map</Text>
+                      </View>
+                      <Text style={styles.gpsAccuracyText}>GPS ±12m</Text>
+                    </View>
+
+                    <View style={styles.incidentFooter}>
+                      <Text style={styles.stillThereText}>Still there?</Text>
+                      <View style={styles.actionPillsRow}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Confirm incident is still present"
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            toggleConfirm(incident.id, incident.report_count);
+                          }}
+                          style={[styles.confirmPill, isConfirmed && styles.confirmPillActive]}
+                        >
+                          <Icon
+                            name={isConfirmed ? "check" : "thumb_up"}
+                            size={14}
+                            color={isConfirmed ? "#ffffff" : colors.primary}
+                          />
+                          <Text style={[styles.confirmPillText, isConfirmed && styles.confirmPillTextActive]}>
+                            {isConfirmed ? `Confirmed (${count})` : `Confirm (${count})`}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Mark incident as cleared"
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            toggleClear(incident.id);
+                          }}
+                          style={[styles.denyPill, isCleared && styles.denyPillActive]}
+                        >
+                          <Icon
+                            name="thumb_down"
+                            size={14}
+                            color={isCleared ? colors.error : colors.textSecondary}
+                          />
+                        </Pressable>
+                      </View>
+                    </View>
+                  </Card>
+                </Pressable>
+              );
+            })
+          ) : (
+            // Default 3 demo incidents matching DESIGN.md prototype
+            <>
+              {/* Card 1: Waterlogging near Jyothi Circle */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Inspect Waterlogging report on live map"
+                onPress={() => router.push("/traffic")}
+              >
+                <Card style={styles.incidentCard}>
                   <View style={styles.incidentHeader}>
                     <View style={styles.incidentIconAndTitle}>
-                      <View style={[styles.incidentCategoryIconBox, { backgroundColor: colors.errorSurface }]}>
-                        <Icon name="flood" size={22} color={colors.error} />
+                      <View style={[styles.incidentCategoryIconBox, { backgroundColor: colors.successSurface }]}>
+                        <Icon name="flood" size={22} color={colors.success} />
                       </View>
                       <View style={styles.incidentTitleCol}>
-                        <Text style={styles.incidentCategoryLabel}>
-                          {incident.category.toUpperCase()}
+                        <Text style={[styles.incidentCategoryLabel, { color: colors.error }]}>
+                          WATERLOGGING
                         </Text>
                         <Text style={styles.incidentTitle} numberOfLines={1}>
-                          {categoryLabel(incident.category)}
+                          Jyothi Circle to Ambedkar Circle
                         </Text>
                       </View>
                     </View>
-                    <FreshnessChip label={freshness.label} stale={freshness.stale} />
+                    <FreshnessChip label="4m ago" stale={false} />
                   </View>
 
                   <Text style={styles.incidentDesc}>
-                    {incident.level_reason || "Reported obstacle affecting corridor passage."}
+                    Accumulated rainwater along curbside lanes. 2-wheelers diverting to central flyover ramp.
                   </Text>
 
                   <View style={styles.badgeRow}>
-                    <EvidenceBadge
-                      level={incident.level}
-                      label={label}
-                    />
+                    <EvidenceBadge level="L3" label="Multiple independent reports" />
                     <SimulatedBadge label="SIMULATED FLOW" />
                   </View>
 
                   <View style={styles.infoStrip}>
                     <View style={styles.infoLeft}>
                       <Icon name="help_center" size={14} color={colors.textMuted} />
-                      <Text style={styles.infoText}>Free-flow estimate · No guaranteed delay</Text>
+                      <Text style={styles.infoText}>Free-flow estimate · Tap to inspect on map</Text>
                     </View>
                     <Text style={styles.gpsAccuracyText}>GPS ±12m</Text>
                   </View>
@@ -345,169 +486,252 @@ export default function HomeScreen() {
                   <View style={styles.incidentFooter}>
                     <Text style={styles.stillThereText}>Still there?</Text>
                     <View style={styles.actionPillsRow}>
-                      <Pressable style={styles.confirmPill}>
-                        <Icon name="thumb_up" size={14} color={colors.primary} />
-                        <Text style={styles.confirmPillText}>Confirmed</Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Confirm incident is still present"
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          toggleConfirm("demo-1", 7);
+                        }}
+                        style={[
+                          styles.confirmPill,
+                          confirmedMap["demo-1"] !== undefined && styles.confirmPillActive,
+                        ]}
+                      >
+                        <Icon
+                          name={confirmedMap["demo-1"] !== undefined ? "check" : "thumb_up"}
+                          size={14}
+                          color={confirmedMap["demo-1"] !== undefined ? "#ffffff" : colors.primary}
+                        />
+                        <Text
+                          style={[
+                            styles.confirmPillText,
+                            confirmedMap["demo-1"] !== undefined && styles.confirmPillTextActive,
+                          ]}
+                        >
+                          {confirmedMap["demo-1"] !== undefined
+                            ? `Confirmed (${confirmedMap["demo-1"]})`
+                            : "Confirmed (7)"}
+                        </Text>
                       </Pressable>
-                      <Pressable style={styles.denyPill}>
-                        <Icon name="thumb_down" size={14} color={colors.textSecondary} />
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Mark incident cleared"
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          toggleClear("demo-1");
+                        }}
+                        style={[
+                          styles.denyPill,
+                          clearedMap["demo-1"] && styles.denyPillActive,
+                        ]}
+                      >
+                        <Icon
+                          name="thumb_down"
+                          size={14}
+                          color={clearedMap["demo-1"] ? colors.error : colors.textSecondary}
+                        />
                       </Pressable>
                     </View>
                   </View>
                 </Card>
-              );
-            })
-          ) : (
-            // Default 3 demo incidents matching DESIGN.md prototype
-            <>
-              {/* Card 1: Waterlogging near Jyothi Circle */}
-              <Card style={styles.incidentCard}>
-                <View style={styles.incidentHeader}>
-                  <View style={styles.incidentIconAndTitle}>
-                    <View style={[styles.incidentCategoryIconBox, { backgroundColor: colors.successSurface }]}>
-                      <Icon name="flood" size={22} color={colors.success} />
-                    </View>
-                    <View style={styles.incidentTitleCol}>
-                      <Text style={[styles.incidentCategoryLabel, { color: colors.error }]}>
-                        WATERLOGGING
-                      </Text>
-                      <Text style={styles.incidentTitle} numberOfLines={1}>
-                        Jyothi Circle to Ambedkar Circle
-                      </Text>
-                    </View>
-                  </View>
-                  <FreshnessChip label="4m ago" stale={false} />
-                </View>
-
-                <Text style={styles.incidentDesc}>
-                  Accumulated rainwater along curbside lanes. 2-wheelers diverting to central flyover ramp.
-                </Text>
-
-                <View style={styles.badgeRow}>
-                  <EvidenceBadge level="L3" label="Multiple independent reports" />
-                  <SimulatedBadge label="SIMULATED FLOW" />
-                </View>
-
-                <View style={styles.infoStrip}>
-                  <View style={styles.infoLeft}>
-                    <Icon name="help_center" size={14} color={colors.textMuted} />
-                    <Text style={styles.infoText}>Free-flow estimate · No guaranteed delay</Text>
-                  </View>
-                  <Text style={styles.gpsAccuracyText}>GPS ±12m</Text>
-                </View>
-
-                <View style={styles.incidentFooter}>
-                  <Text style={styles.stillThereText}>Still there?</Text>
-                  <View style={styles.actionPillsRow}>
-                    <Pressable style={styles.confirmPill}>
-                      <Icon name="thumb_up" size={14} color={colors.primary} />
-                      <Text style={styles.confirmPillText}>Confirmed (7)</Text>
-                    </Pressable>
-                    <Pressable style={styles.denyPill}>
-                      <Icon name="thumb_down" size={14} color={colors.textSecondary} />
-                    </Pressable>
-                  </View>
-                </View>
-              </Card>
+              </Pressable>
 
               {/* Card 2: Heavy Volume at Bunts Hostel Junction */}
-              <Card style={styles.incidentCard}>
-                <View style={styles.incidentHeader}>
-                  <View style={styles.incidentIconAndTitle}>
-                    <View style={[styles.incidentCategoryIconBox, { backgroundColor: colors.warningSurface }]}>
-                      <Icon name="traffic" size={22} color={colors.warning} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Inspect Heavy Volume report on live map"
+                onPress={() => router.push("/traffic")}
+              >
+                <Card style={styles.incidentCard}>
+                  <View style={styles.incidentHeader}>
+                    <View style={styles.incidentIconAndTitle}>
+                      <View style={[styles.incidentCategoryIconBox, { backgroundColor: colors.warningSurface }]}>
+                        <Icon name="traffic" size={22} color={colors.warning} />
+                      </View>
+                      <View style={styles.incidentTitleCol}>
+                        <Text style={[styles.incidentCategoryLabel, { color: colors.warning }]}>
+                          HEAVY VOLUME
+                        </Text>
+                        <Text style={styles.incidentTitle} numberOfLines={1}>
+                          Bunts Hostel Junction
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.incidentTitleCol}>
-                      <Text style={[styles.incidentCategoryLabel, { color: colors.warning }]}>
-                        HEAVY VOLUME
-                      </Text>
-                      <Text style={styles.incidentTitle} numberOfLines={1}>
-                        Bunts Hostel Junction
-                      </Text>
-                    </View>
+                    <FreshnessChip label="28m ago" stale />
                   </View>
-                  <FreshnessChip label="28m ago" stale />
-                </View>
 
-                <Text style={styles.incidentDesc}>
-                  Slow moving traffic approaching Kadri bypass signal. Queue tailing 180 meters back.
-                </Text>
-
-                <View style={styles.badgeRow}>
-                  <EvidenceBadge level="L2" label="Corroborated observation" />
-                </View>
-
-                <View style={styles.infoStrip}>
-                  <View style={styles.infoLeft}>
-                    <Icon name="group" size={14} color={colors.textMuted} />
-                    <Text style={styles.infoText}>Reported by 2 commuters</Text>
-                  </View>
-                  <Text style={[styles.gpsAccuracyText, { color: colors.warning, fontWeight: "600" }]}>
-                    Verify
+                  <Text style={styles.incidentDesc}>
+                    Slow moving traffic approaching Kadri bypass signal. Queue tailing 180 meters back.
                   </Text>
-                </View>
 
-                <View style={styles.incidentFooter}>
-                  <Text style={styles.stillThereText}>Still there?</Text>
-                  <View style={styles.actionPillsRow}>
-                    <Pressable style={styles.confirmPill}>
-                      <Icon name="thumb_up" size={14} color={colors.primary} />
-                      <Text style={styles.confirmPillText}>Yes (3)</Text>
-                    </Pressable>
-                    <Pressable style={styles.confirmPill}>
-                      <Icon name="check" size={14} color={colors.primary} />
-                      <Text style={styles.confirmPillText}>Cleared</Text>
-                    </Pressable>
+                  <View style={styles.badgeRow}>
+                    <EvidenceBadge level="L2" label="Corroborated observation" />
                   </View>
-                </View>
-              </Card>
+
+                  <View style={styles.infoStrip}>
+                    <View style={styles.infoLeft}>
+                      <Icon name="group" size={14} color={colors.textMuted} />
+                      <Text style={styles.infoText}>Reported by 2 commuters · Tap to inspect</Text>
+                    </View>
+                    <Text style={[styles.gpsAccuracyText, { color: colors.warning, fontWeight: "600" }]}>
+                      Verify
+                    </Text>
+                  </View>
+
+                  <View style={styles.incidentFooter}>
+                    <Text style={styles.stillThereText}>Still there?</Text>
+                    <View style={styles.actionPillsRow}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Confirm traffic is still slow"
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          toggleConfirm("demo-2", 3);
+                        }}
+                        style={[
+                          styles.confirmPill,
+                          confirmedMap["demo-2"] !== undefined && styles.confirmPillActive,
+                        ]}
+                      >
+                        <Icon
+                          name={confirmedMap["demo-2"] !== undefined ? "check" : "thumb_up"}
+                          size={14}
+                          color={confirmedMap["demo-2"] !== undefined ? "#ffffff" : colors.primary}
+                        />
+                        <Text
+                          style={[
+                            styles.confirmPillText,
+                            confirmedMap["demo-2"] !== undefined && styles.confirmPillTextActive,
+                          ]}
+                        >
+                          {confirmedMap["demo-2"] !== undefined
+                            ? `Yes (${confirmedMap["demo-2"]})`
+                            : "Yes (3)"}
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Mark cleared"
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          toggleClear("demo-2");
+                        }}
+                        style={[
+                          styles.confirmPill,
+                          clearedMap["demo-2"] && styles.denyPillActive,
+                        ]}
+                      >
+                        <Icon
+                          name="check"
+                          size={14}
+                          color={clearedMap["demo-2"] ? colors.error : colors.primary}
+                        />
+                        <Text style={styles.confirmPillText}>
+                          {clearedMap["demo-2"] ? "Marked Clear" : "Cleared"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </Card>
+              </Pressable>
 
               {/* Card 3: Road Repair near Bejai Church */}
-              <Card style={styles.incidentCard}>
-                <View style={styles.incidentHeader}>
-                  <View style={styles.incidentIconAndTitle}>
-                    <View style={[styles.incidentCategoryIconBox, { backgroundColor: colors.surfaceContainerHigh }]}>
-                      <Icon name="construction" size={22} color={colors.text} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Inspect Road Repair report on live map"
+                onPress={() => router.push("/traffic")}
+              >
+                <Card style={styles.incidentCard}>
+                  <View style={styles.incidentHeader}>
+                    <View style={styles.incidentIconAndTitle}>
+                      <View style={[styles.incidentCategoryIconBox, { backgroundColor: colors.surfaceContainerHigh }]}>
+                        <Icon name="construction" size={22} color={colors.text} />
+                      </View>
+                      <View style={styles.incidentTitleCol}>
+                        <Text style={[styles.incidentCategoryLabel, { color: colors.outline }]}>
+                          ROAD WORKS
+                        </Text>
+                        <Text style={styles.incidentTitle} numberOfLines={1}>
+                          Road Repair near Bejai Church
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.incidentTitleCol}>
-                      <Text style={[styles.incidentCategoryLabel, { color: colors.outline }]}>
-                        ROAD WORKS
-                      </Text>
-                      <Text style={styles.incidentTitle} numberOfLines={1}>
-                        Road Repair near Bejai Church
-                      </Text>
+                    <FreshnessChip label="12m ago" stale={false} />
+                  </View>
+
+                  <Text style={styles.incidentDesc}>
+                    Pavement patching work on north-bound lane. Narrow passage, cautious passing needed.
+                  </Text>
+
+                  <View style={styles.badgeRow}>
+                    <EvidenceBadge level="L1" label="Single observation" />
+                  </View>
+
+                  <View style={styles.incidentFooter}>
+                    <Text style={styles.stillThereText}>Still there?</Text>
+                    <View style={styles.actionPillsRow}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Confirm road works"
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          toggleConfirm("demo-3", 1);
+                        }}
+                        style={[
+                          styles.confirmPill,
+                          confirmedMap["demo-3"] !== undefined && styles.confirmPillActive,
+                        ]}
+                      >
+                        <Icon
+                          name={confirmedMap["demo-3"] !== undefined ? "check" : "thumb_up"}
+                          size={14}
+                          color={confirmedMap["demo-3"] !== undefined ? "#ffffff" : colors.primary}
+                        />
+                        <Text
+                          style={[
+                            styles.confirmPillText,
+                            confirmedMap["demo-3"] !== undefined && styles.confirmPillTextActive,
+                          ]}
+                        >
+                          {confirmedMap["demo-3"] !== undefined
+                            ? `Confirm (${confirmedMap["demo-3"]})`
+                            : "Confirm (1)"}
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Mark cleared"
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          toggleClear("demo-3");
+                        }}
+                        style={[
+                          styles.denyPill,
+                          clearedMap["demo-3"] && styles.denyPillActive,
+                        ]}
+                      >
+                        <Icon
+                          name="thumb_down"
+                          size={14}
+                          color={clearedMap["demo-3"] ? colors.error : colors.textSecondary}
+                        />
+                      </Pressable>
                     </View>
                   </View>
-                  <FreshnessChip label="12m ago" stale={false} />
-                </View>
-
-                <Text style={styles.incidentDesc}>
-                  Pavement patching work on north-bound lane. Narrow passage, cautious passing needed.
-                </Text>
-
-                <View style={styles.badgeRow}>
-                  <EvidenceBadge level="L1" label="Single observation" />
-                </View>
-
-                <View style={styles.incidentFooter}>
-                  <Text style={styles.stillThereText}>Still there?</Text>
-                  <View style={styles.actionPillsRow}>
-                    <Pressable style={styles.confirmPill}>
-                      <Icon name="thumb_up" size={14} color={colors.primary} />
-                      <Text style={styles.confirmPillText}>Confirm (1)</Text>
-                    </Pressable>
-                    <Pressable style={styles.denyPill}>
-                      <Icon name="thumb_down" size={14} color={colors.textSecondary} />
-                    </Pressable>
-                  </View>
-                </View>
-              </Card>
+                </Card>
+              </Pressable>
             </>
           )}
         </View>
 
-        {/* Mangaluru Monsoon & Coastal Driving Guide Banner */}
-        <View style={styles.alertBanner}>
+        {/* Mangaluru Monsoon & Coastal Driving Guide Banner - Clickable */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="High tide alert for Ullal and Bengre. Tap to open live traffic map."
+          onPress={() => router.push("/traffic")}
+          style={({ pressed }) => [styles.alertBanner, pressed && styles.alertBannerPressed]}
+        >
           <View style={styles.alertIconCircle}>
             <Icon name="beach_access" size={20} color="#ffffff" />
           </View>
@@ -522,7 +746,7 @@ export default function HomeScreen() {
           <View style={styles.alertChevronBtn}>
             <Icon name="chevron_right" size={18} color={colors.primary} />
           </View>
-        </View>
+        </Pressable>
 
         {/* Bottom Privacy & Transparency Note */}
         <View style={styles.privacyBox}>
@@ -1077,6 +1301,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  confirmPillActive: {
+    backgroundColor: colors.primary,
+  },
+  confirmPillTextActive: {
+    color: "#ffffff",
+  },
+  denyPillActive: {
+    backgroundColor: colors.errorSurface,
+    borderWidth: 1,
+    borderColor: colors.error,
+  },
   alertBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -1087,6 +1322,53 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     gap: 12,
     ...shadows.card,
+  },
+  alertBannerPressed: {
+    backgroundColor: colors.surfaceContainer,
+    transform: [{ scale: 0.98 }],
+  },
+  homeMapWrapper: {
+    width: "100%",
+    height: 180,
+    borderRadius: radius.card,
+    overflow: "hidden",
+    position: "relative",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  mapOverlayExpandBtn: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    zIndex: 20,
+    ...shadows.card,
+  },
+  mapOverlayExpandBtnPressed: {
+    backgroundColor: colors.surfaceContainer,
+    transform: [{ scale: 0.96 }],
+  },
+  mapOverlayExpandText: {
+    ...typography.labelSm,
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  inputRowPressed: {
+    backgroundColor: colors.surfaceContainer,
+    borderColor: colors.border,
+  },
+  swapIconBtnPressed: {
+    backgroundColor: colors.primaryFixed,
+    transform: [{ scale: 0.9 }],
   },
   alertIconCircle: {
     width: 40,

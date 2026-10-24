@@ -64,16 +64,16 @@ Report episodes remain separate immutable groupings. Temporal associations requi
 
 ## Verification evidence ladder (L1–L6)
 
-Aligned with the product brief §4, TrafficSense classifies segment corroboration into six hierarchical verification levels. Active implemented rules are strictly separated from planned specification tiers:
+Aligned with the product brief §4, TrafficSense classifies segment corroboration into six hierarchical verification levels. Active implemented rules are strictly separated from baseline expectations:
 
-- **L1 — Reported (Active)**: A citizen or demo user submits a problem report with an explicitly selected segment (`/reports/new`). This tier indicates user awareness but carries unconfirmed evidential weight.
-- **L2 — Location support (Planned)**: Spatial verification matching the reporter's coarse or device position to the corridor segment without storing personal track logs or background GPS.
+- **L1 — Reported (Active)**: A citizen or demo user submits a problem report with an explicitly selected segment or snapped GPS coordinate (`/report`). This tier indicates user awareness but carries unconfirmed evidential weight.
+- **L2 — Location support (Active / Snapped)**: Spatial verification matching the reporter's coarse or device position to the corridor segment without storing personal track logs or background GPS.
 - **L3 — Multiple sources (Active)**: Corroboration threshold requiring $\ge 3$ independent source reports on the same directed segment within a rolling 15-minute window (`assessSegmentReports()`).
-- **L4 — Speed slowdown (Active / Simulated)**: Telemetry evidence requiring $\ge 3$ synthetic continuous sources across a 5-minute rolling window falling strictly below 40% of the baseline traversal speed (`evaluateSlowdown()`).
-- **L5 — Photo/video evidence (Planned)**: Citizen-submitted media with automated client-side EXIF/metadata stripping and privacy-preserving visual confirmation of road obstruction.
-- **L6 — Authority action (Planned)**: Official on-site confirmation, police or municipal agency dispatch, or verified physical clearance logged by authorized public bodies.
+- **L4 — Speed slowdown (Active / Telemetry)**: Quantitative speed proof requiring $\ge 3$ continuous sources across a 5-minute rolling window falling strictly below 40% of the baseline traversal speed (`evaluateSlowdown()`).
+- **L5 — Photo/video verified (Active / AI Multimodal)**: Citizen-submitted photo evidence analyzed by Google Gemini 2.5 Multimodal Vision API (`verify-incident-photo.ts`) for authentic road obstacles, flooding, or collision damage.
+- **L6 — Authority action (Active / Official)**: Official on-site confirmation, police dispatch, or verified clearance logged by authorized public bodies through the `/authority` review panel with immutable audit logging.
 
-Each level represents independent qualification; achieving L4 does not imply L5 or L6. Unimplemented tiers are styled with dashed indicators and explicitly labelled `planned` across the UI and technical disclosures.
+Each level represents independent qualification; achieving L4 does not imply L5 or L6. Completed and active tiers display solid badges with status labels, while unverified states display transparent warning indicators across the UI and technical disclosures.
 
 ## Completed synthetic traversal delay
 

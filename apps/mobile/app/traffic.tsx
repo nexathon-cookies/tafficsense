@@ -41,6 +41,106 @@ type TrafficData = {
 
 type ViewMode = "map" | "list";
 
+type TrafficControlsBarProps = {
+  activeView: ViewMode;
+  onSelectView: (view: ViewMode) => void;
+  searchQuery: string;
+  onSearchQueryChange: (q: string) => void;
+  clockString: string;
+  count: number | string;
+  floating?: boolean;
+};
+
+function TrafficControlsBar({
+  activeView,
+  onSelectView,
+  searchQuery,
+  onSearchQueryChange,
+  clockString,
+  count,
+  floating,
+}: TrafficControlsBarProps) {
+  return (
+    <View style={floating ? styles.topFloatingControls : styles.topControls}>
+      <View style={styles.switcherRow}>
+        {/* Segmented Pill Toggle */}
+        <View style={styles.segmentedToggle} accessibilityRole="tablist">
+          <Pressable
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeView === "map" }}
+            accessibilityLabel="Switch to Map view"
+            onPress={() => onSelectView("map")}
+            style={[styles.toggleBtn, activeView === "map" && styles.toggleBtnActive]}
+          >
+            <Icon
+              name="map"
+              size={16}
+              color={activeView === "map" ? colors.primary : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.toggleBtnText,
+                activeView === "map" && styles.toggleBtnTextActive,
+              ]}
+            >
+              Map
+            </Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeView === "list" }}
+            accessibilityLabel="Switch to List view"
+            onPress={() => onSelectView("list")}
+            style={[styles.toggleBtn, activeView === "list" && styles.toggleBtnActive]}
+          >
+            <Icon
+              name="edit_note"
+              size={16}
+              color={activeView === "list" ? colors.primary : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.toggleBtnText,
+                activeView === "list" && styles.toggleBtnTextActive,
+              ]}
+            >
+              List
+            </Text>
+            <View style={styles.countBadge}>
+              <Text style={styles.countBadgeText}>{count}</Text>
+            </View>
+          </Pressable>
+        </View>
+
+        {/* Live Sync & Simulation Pill */}
+        <View style={styles.liveSyncPill}>
+          <View style={styles.liveDot} />
+          <Text style={styles.clockText}>{clockString}</Text>
+          <View style={styles.simulatedMiniBadge}>
+            <Text style={styles.simulatedMiniBadgeText}>SIMULATED</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Corridor Search Bar */}
+      <View style={styles.searchBar}>
+        <Icon name="search" size={20} color={colors.primary} />
+        <TextInput
+          placeholder="Search corridor (e.g. Balmatta Rd, Kadri, Ladyhill)"
+          placeholderTextColor={colors.textMuted}
+          value={searchQuery}
+          onChangeText={onSearchQueryChange}
+          style={styles.searchInput}
+        />
+        <Pressable accessibilityLabel="Filter corridors" style={styles.micBtn}>
+          <Icon name="mic" size={18} color={colors.textSecondary} />
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 export default function TrafficScreen() {
   useTabBackHandler();
   const [view, setView] = useState<ViewMode>("map");
@@ -92,9 +192,7 @@ export default function TrafficScreen() {
       if (!hasData.current) {
         hasData.current = true;
         setFitKey((val) => val + 1);
-        if (incidents.length > 0) {
-          setSelectedId(incidents[0].id);
-        }
+        setSelectedId(null);
       }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Traffic service is unavailable.");
@@ -136,90 +234,6 @@ export default function TrafficScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AppHeader subtitle="Mangaluru · Map" showLive />
 
-      {/* Top Floating Controls */}
-      <View style={styles.topControls}>
-        <View style={styles.switcherRow}>
-          {/* Segmented Pill Toggle */}
-          <View style={styles.segmentedToggle} accessibilityRole="tablist">
-            <Pressable
-              accessibilityRole="tab"
-              accessibilityState={{ selected: view === "map" }}
-              accessibilityLabel="Switch to Map view"
-              onPress={() => setView("map")}
-              style={[styles.toggleBtn, view === "map" && styles.toggleBtnActive]}
-            >
-              <Icon
-                name="map"
-                size={16}
-                color={view === "map" ? colors.primary : colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.toggleBtnText,
-                  view === "map" && styles.toggleBtnTextActive,
-                ]}
-              >
-                Map
-              </Text>
-            </Pressable>
-
-            <Pressable
-              accessibilityRole="tab"
-              accessibilityState={{ selected: view === "list" }}
-              accessibilityLabel="Switch to List view"
-              onPress={() => setView("list")}
-              style={[styles.toggleBtn, view === "list" && styles.toggleBtnActive]}
-            >
-              <Icon
-                name="edit_note"
-                size={16}
-                color={view === "list" ? colors.primary : colors.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.toggleBtnText,
-                  view === "list" && styles.toggleBtnTextActive,
-                ]}
-              >
-                List
-              </Text>
-              <View style={styles.countBadge}>
-                <Text style={styles.countBadgeText}>
-                  {data?.incidents.length ?? "—"}
-                </Text>
-              </View>
-            </Pressable>
-          </View>
-
-          {/* Live Sync & Simulation Pill */}
-          <View style={styles.liveSyncPill}>
-            <View style={styles.liveDot} />
-            <Text style={styles.clockText}>{clockString}</Text>
-            <View style={styles.simulatedMiniBadge}>
-              <Text style={styles.simulatedMiniBadgeText}>SIMULATED</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Floating Corridor Search Bar */}
-        <View style={styles.searchBar}>
-          <Icon name="search" size={20} color={colors.primary} />
-          <TextInput
-            placeholder="Search corridor (e.g. Balmatta Rd, Kadri, Ladyhill)"
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={styles.searchInput}
-          />
-          <Pressable
-            accessibilityLabel="Filter corridors"
-            style={styles.micBtn}
-          >
-            <Icon name="mic" size={18} color={colors.textSecondary} />
-          </Pressable>
-        </View>
-      </View>
-
       {/* Error Feedback Box if any */}
       {error ? (
         <View style={styles.errorPadding}>
@@ -246,6 +260,21 @@ export default function TrafficScreen() {
             selectedIncidentId={selectedId}
             onSelectIncident={(id) => setSelectedId(id)}
             fitKey={fitKey}
+            fullScreen
+            floatingControls
+            floatingTopOffset={115}
+            hideDetailsCard
+          />
+
+          {/* Top Floating Controls Overlay */}
+          <TrafficControlsBar
+            activeView={view}
+            onSelectView={setView}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            clockString={clockString}
+            count={data?.incidents.length ?? "—"}
+            floating
           />
 
           {loading && !data ? (
@@ -362,12 +391,37 @@ export default function TrafficScreen() {
                 </View>
               </View>
             </Animated.View>
+          ) : (data?.incidents.length ?? 0) > 0 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View active reports summary"
+              onPress={() => {
+                if (data?.incidents[0]) setSelectedId(data.incidents[0].id);
+              }}
+              style={styles.floatingSummaryPill}
+            >
+              <View style={styles.floatingSummaryDot} />
+              <Text style={styles.floatingSummaryText}>
+                {data?.incidents.length} community reports active · Tap to inspect
+              </Text>
+              <Icon name="expand_more" size={20} color={colors.primary} />
+            </Pressable>
           ) : null}
         </View>
       ) : (
         /* Accessible List View */
-        <ScrollView
-          contentContainerStyle={styles.listContainer}
+        <View style={{ flex: 1 }}>
+          <TrafficControlsBar
+            activeView={view}
+            onSelectView={setView}
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            clockString={clockString}
+            count={data?.incidents.length ?? "—"}
+          />
+
+          <ScrollView
+            contentContainerStyle={styles.listContainer}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -436,6 +490,7 @@ export default function TrafficScreen() {
           )}
           <View style={{ height: layout.safeBottomPadding }} />
         </ScrollView>
+      </View>
       )}
 
       <BottomNav activeTab="map" />
@@ -461,6 +516,14 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: colors.background,
     zIndex: 20,
+  },
+  topFloatingControls: {
+    position: "absolute",
+    top: 10,
+    left: space.gutter,
+    right: space.gutter,
+    gap: 8,
+    zIndex: 35,
   },
   switcherRow: {
     flexDirection: "row",
@@ -638,6 +701,36 @@ const styles = StyleSheet.create({
     ...typography.codeSm,
     fontSize: 9,
     color: colors.textMuted,
+  },
+  floatingSummaryPill: {
+    position: "absolute",
+    bottom: 74,
+    left: space.gutter,
+    right: space.gutter,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sheet,
+    zIndex: 35,
+  },
+  floatingSummaryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
+  floatingSummaryText: {
+    ...typography.labelMd,
+    color: colors.text,
+    fontWeight: "600",
+    flex: 1,
+    marginHorizontal: 10,
   },
   bottomSheet: {
     position: "absolute",

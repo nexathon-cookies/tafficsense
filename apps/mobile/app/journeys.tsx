@@ -179,6 +179,22 @@ export default function JourneysScreen() {
           </Text>
         </View>
 
+        {/* Phase 7 Extension Notice */}
+        <View style={styles.inProgressBanner}>
+          <Icon name="tune" size={16} color={colors.secondary} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <View style={styles.inProgressHeaderRow}>
+              <Text style={styles.inProgressTitle}>Phase 7 Planned Extension</Text>
+              <View style={styles.inProgressPill}>
+                <Text style={styles.inProgressPillText}>IN PROGRESS</Text>
+              </View>
+            </View>
+            <Text style={styles.inProgressDesc}>
+              Employer journey corridor sharing and workplace delay receipts are currently in progress as Phase 7 extensions. Core community reporting, verification (L1–L6), and route planning remain fully operational.
+            </Text>
+          </View>
+        </View>
+
         {error ? (
           <FeedbackBox
             variant="error"
@@ -669,5 +685,45 @@ const styles = StyleSheet.create({
   loadingText: {
     ...typography.bodySm,
     color: colors.textSecondary,
+  },
+  inProgressBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: radius.control,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.surfaceContainerHigh,
+    borderStyle: "dashed",
+  },
+  inProgressHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  inProgressTitle: {
+    ...typography.labelMd,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  inProgressPill: {
+    backgroundColor: colors.evidenceSurface,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: radius.pill,
+  },
+  inProgressPillText: {
+    ...typography.codeSm,
+    fontSize: 8.5,
+    color: colors.secondary,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+  },
+  inProgressDesc: {
+    ...typography.bodySm,
+    color: colors.textSecondary,
+    fontSize: 11.5,
+    lineHeight: 16,
   },
 });

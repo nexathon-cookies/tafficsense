@@ -118,7 +118,7 @@ function ReportForm() {
   const [locating, setLocating] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
 
-  const useCurrentLocation = async () => {
+  const requestCurrentLocation = async () => {
     setState({ kind: "idle" });
     setLocating(true);
     try {
@@ -541,7 +541,7 @@ function ReportForm() {
                 <Text style={styles.trustNoticePillText}>{location?.source === "device" ? "GPS was requested only after your tap" : "Reference points are approximate and are not GPS"}</Text>
               </View>
               <View style={styles.locationActions}>
-                <Button title={locating ? "Getting current location…" : "Use current location"} loading={locating} onPress={() => void useCurrentLocation()} variant="outline" />
+                <Button title={locating ? "Getting current location…" : "Use current location"} loading={locating} onPress={() => void requestCurrentLocation()} variant="outline" />
                 <Button title="Choose reference point" onPress={() => setLocationPickerOpen(true)} variant="outline" />
               </View>
             </Card>

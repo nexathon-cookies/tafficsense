@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { reportCategories, reportCategoryIcons } from "@/lib/reports/rules";
-import type { AuthorityIncidentHistoryItem, LiveIncident } from "@/lib/incidents/server";
+import type { AuthorityIncidentHistoryItem, AuthorityNotificationItem, LiveIncident } from "@/lib/incidents/server";
 import type { SpreadResult } from "@/lib/routing/spread";
 
 function formatIncidentTime(value: string): string {
@@ -17,12 +17,57 @@ function formatIncidentTime(value: string): string {
   }).format(new Date(value));
 }
 
+function playNotificationChime() {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    // Tone 1: 880 Hz (A5)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(880, now);
+    gain1.gain.setValueAtTime(0.12, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.25);
+
+    // Tone 2: 1174.66 Hz (D6)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(1174.66, now + 0.12);
+    gain2.gain.setValueAtTime(0.15, now + 0.12);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.12);
+    osc2.stop(now + 0.45);
+  } catch {
+    // AudioContext blocked or not supported
+  }
+}
+
 export function IncidentReviewPanel() {
   const [incidents, setIncidents] = useState<LiveIncident[]>([]);
   const [history, setHistory] = useState<AuthorityIncidentHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingIncidentId, setPendingIncidentId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  // Real-time Authority Push Notifications
+  const [notifications, setNotifications] = useState<AuthorityNotificationItem[]>([]);
+  const [latestAlert, setLatestAlert] = useState<AuthorityNotificationItem | null>(null);
+  const [hasWebNotificationPerm, setHasWebNotificationPerm] = useState<boolean>(() => {
+    return typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted";
+  });
+  const [highlightedIncidentId, setHighlightedIncidentId] = useState<string | null>(null);
+  const seenNotificationIds = useRef<Set<string>>(new Set());
+  const isFirstPoll = useRef(true);
 
   // Spread check state
   const [spreadIncidentId, setSpreadIncidentId] = useState<string | null>(null);
@@ -45,6 +90,75 @@ export function IncidentReviewPanel() {
     if (!response.ok || !data.ok || !Array.isArray(data.history)) throw new Error("Unable to load incident history.");
     return data.history;
   }, []);
+
+  const requestNotificationPermission = useCallback(async () => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      const perm = await Notification.requestPermission();
+      setHasWebNotificationPerm(perm === "granted");
+      if (perm === "granted") {
+        new Notification("🚨 TrafficSense Control Room Alerts", {
+          body: "Push notifications active for commuter incident sightings with photo evidence.",
+          icon: "/favicon.ico",
+        });
+      }
+    }
+  }, []);
+
+  // Heartbeat Poller for Authority Push Notifications
+  useEffect(() => {
+    let mounted = true;
+
+    async function pollNotifications() {
+      try {
+        const res = await fetch("/api/authority/notifications?limit=25", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!mounted || !data.ok || !Array.isArray(data.notifications)) return;
+
+        const incoming: AuthorityNotificationItem[] = data.notifications;
+        setNotifications(incoming);
+
+        // Find truly new notifications not seen in this session
+        const newItems = incoming.filter((n) => !seenNotificationIds.current.has(n.id));
+        for (const item of incoming) {
+          seenNotificationIds.current.add(item.id);
+        }
+
+        if (!isFirstPoll.current && newItems.length > 0) {
+          const newest = newItems[0];
+          setLatestAlert(newest);
+          setHighlightedIncidentId(newest.incident_id);
+          playNotificationChime();
+
+          // Native OS Notification
+          if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+            const photoBadge = newest.has_photo ? " [📸 Photo Verified]" : "";
+            const cat = reportCategories[newest.category as keyof typeof reportCategories] ?? newest.category;
+            new Notification(`🚨 Road Hazard Spotted: ${cat}`, {
+              body: `${newest.landmark}${photoBadge} • Level ${newest.level}`,
+              icon: "/favicon.ico",
+            });
+          }
+
+          // Automatically reload incident list so it appears in the review queue in real-time
+          void fetchIncidents().then((reloaded) => {
+            if (mounted) setIncidents(reloaded);
+          });
+        }
+        isFirstPoll.current = false;
+      } catch {
+        // Heartbeat poll retry silently
+      }
+    }
+
+    void pollNotifications();
+    const interval = setInterval(() => void pollNotifications(), 3500);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [fetchIncidents]);
 
   useEffect(() => {
     let active = true;
@@ -134,15 +248,92 @@ export function IncidentReviewPanel() {
   }
 
   return (
-    <section className="p-5 rounded-xl bg-surface-container-lowest border border-surface-container shadow-sm space-y-3" aria-labelledby="incident-review-title">
+    <section className="p-5 rounded-xl bg-surface-container-lowest border border-surface-container shadow-sm space-y-4" aria-labelledby="incident-review-title">
+      {/* Real-time Incident Spotted Alert Banner */}
+      {latestAlert && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border-2 border-amber-500/50 dark:bg-amber-950/30 dark:border-amber-500/60 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse" role="alert">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl leading-none">🚨</span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                  New Incident Spotted
+                </span>
+                {latestAlert.has_photo && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+                    📸 Photo Evidence Corroborated
+                  </span>
+                )}
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-container-high text-surface-on-variant">
+                  {latestAlert.level}
+                </span>
+              </div>
+              <p className="text-sm font-semibold text-surface-on mt-0.5">
+                {reportCategories[latestAlert.category as keyof typeof reportCategories] ?? latestAlert.category} • {latestAlert.landmark}
+              </p>
+              {latestAlert.photo_summary && (
+                <p className="text-xs text-surface-on-variant mt-0.5 italic">
+                  &ldquo;{latestAlert.photo_summary}&rdquo;
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <button
+              type="button"
+              className="button text-xs px-3 py-1.5 whitespace-nowrap"
+              onClick={() => {
+                setHighlightedIncidentId(latestAlert.incident_id);
+                const el = document.getElementById(`incident-${latestAlert.incident_id}`);
+                el?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
+            >
+              Inspect &amp; Review →
+            </button>
+            <button
+              type="button"
+              className="button secondary text-xs px-2.5 py-1.5"
+              onClick={() => setLatestAlert(null)}
+              aria-label="Dismiss alert"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="incident-review-title" className="text-base font-bold text-surface-on">Active Incident Review</h2>
+          <div className="flex items-center gap-2">
+            <h2 id="incident-review-title" className="text-base font-bold text-surface-on">Active Incident Review</h2>
+            {notifications.filter((n) => !n.is_read).length > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300">
+                {notifications.filter((n) => !n.is_read).length} new
+              </span>
+            )}
+          </div>
           <p className="text-xs text-surface-on-variant">Confirming records an L6 authority decision; resolving removes the incident from public active views. Reported cause and congestion evidence remain separate.</p>
         </div>
-        <button type="button" className="button secondary text-xs px-3 py-1.5" onClick={() => void loadIncidents()} disabled={isLoading || pendingIncidentId !== null}>
-          {isLoading ? "Refreshing…" : "Refresh incidents"}
-        </button>
+        <div className="flex items-center gap-2">
+          {!hasWebNotificationPerm && (
+            <button
+              type="button"
+              className="button secondary text-xs px-3 py-1.5 border border-primary/40 text-primary"
+              onClick={() => void requestNotificationPermission()}
+              title="Allow browser notifications for real-time alerts"
+            >
+              🔔 Enable Push Alerts
+            </button>
+          )}
+          {hasWebNotificationPerm && (
+            <span className="text-[11px] text-emerald-700 dark:text-emerald-300 flex items-center gap-1 font-medium bg-emerald-50 dark:bg-emerald-950/50 px-2 py-1 rounded-md border border-emerald-200 dark:border-emerald-800">
+              🔔 Alerts Active
+            </span>
+          )}
+          <button type="button" className="button secondary text-xs px-3 py-1.5" onClick={() => void loadIncidents()} disabled={isLoading || pendingIncidentId !== null}>
+            {isLoading ? "Refreshing…" : "Refresh incidents"}
+          </button>
+        </div>
       </div>
 
       <p aria-live="polite" className={message ? "text-xs rounded-lg bg-surface-container-low p-3 text-surface-on" : "sr-only"}>{message}</p>
@@ -156,14 +347,30 @@ export function IncidentReviewPanel() {
           {incidents.map((incident) => {
             const isPending = pendingIncidentId === incident.id;
             const category = reportCategories[incident.category] ?? incident.category;
-            const isVerified = incident.level === "L3" || incident.level === "L6";
+            const isVerified = incident.level === "L3" || incident.level === "L5" || incident.level === "L6";
             const isCheckingSpread = spreadLoading && spreadIncidentId === incident.id;
             const isSpreadOpen = spreadIncidentId === incident.id;
+            const isHighlighted = highlightedIncidentId === incident.id;
 
             return (
-              <li key={incident.id} className="rounded-lg border border-surface-container bg-surface-container-low p-3 space-y-2">
+              <li
+                key={incident.id}
+                id={`incident-${incident.id}`}
+                className={`rounded-lg border p-3 space-y-2 transition-all ${
+                  isHighlighted
+                    ? "border-amber-500 bg-amber-50/20 dark:bg-amber-950/20 shadow-md ring-2 ring-amber-400"
+                    : "border-surface-container bg-surface-container-low"
+                }`}
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-surface-on">{reportCategoryIcons[incident.category] ?? "⚠️"} {category}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-surface-on">{reportCategoryIcons[incident.category] ?? "⚠️"} {category}</p>
+                    {incident.level === "L5" && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                        📸 Photo Corroborated
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[10px] font-mono rounded bg-surface-container-high px-2 py-0.5 text-surface-on-variant">{incident.level} · {incident.provenance}</span>
                 </div>
                 <p className="text-xs text-surface-on-variant">{incident.level_reason} · {incident.report_count} report{incident.report_count === 1 ? "" : "s"} · first reported {formatIncidentTime(incident.first_reported_at)} IST</p>
