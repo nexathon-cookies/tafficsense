@@ -103,7 +103,10 @@ export default function PlannerScreen() {
   };
 
   useEffect(() => {
-    void checkRoute();
+    const timer = setTimeout(() => {
+      void checkRoute();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const swapPlaces = () => {

@@ -9,9 +9,10 @@ export type NavTab = "home" | "map" | "report" | "plan" | "me" | "authority";
 
 type BottomNavProps = {
   activeTab: NavTab;
+  badgeCount?: number;
 };
 
-export function BottomNav({ activeTab }: BottomNavProps) {
+export function BottomNav({ activeTab, badgeCount }: BottomNavProps) {
   const insets = useSafeAreaInsets();
   const { session, role } = useAuth();
   const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
@@ -148,11 +149,16 @@ export function BottomNav({ activeTab }: BottomNavProps) {
         onPress={() => handleNavigate(isAuthority ? "authority" : "me")}
         style={styles.tabItem}
       >
-        <Icon
-          name={isAuthority ? "shield" : "account_circle"}
-          size={24}
-          color={(activeTab === "me" || activeTab === "authority") ? colors.primary : colors.textSecondary}
-        />
+        <View style={{ position: "relative" }}>
+          <Icon
+            name={isAuthority ? "shield" : "account_circle"}
+            size={24}
+            color={(activeTab === "me" || activeTab === "authority") ? colors.primary : colors.textSecondary}
+          />
+          {isAuthority && badgeCount && badgeCount > 0 ? (
+            <View style={styles.badgeDot} />
+          ) : null}
+        </View>
         <Text
           style={[
             styles.tabLabel,
@@ -230,5 +236,14 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: "700",
     marginTop: 3,
+  },
+  badgeDot: {
+    position: "absolute",
+    top: -1,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.error,
   },
 });

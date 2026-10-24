@@ -1,5 +1,31 @@
 # Project Progress
 
+## Authority Real-time Push Notification Engine (Incident Spotted + Photo Evidence Alert) — verified, 24 Oct 2026
+
+- **Scope & Implementation:**
+  - **Database Migration (`supabase/migrations/20261024000100_authority_notifications.sql`):**
+    - Created `authority_notifications` table storing `incident_id`, `category`, `landmark`, `lat`, `lng`, `has_photo`, `photo_summary`, `level`, `reporter_email`, `is_read`, and timestamps.
+    - Added RLS policies restricting reads and updates strictly to authenticated authority sessions.
+    - Implemented secure definer RPC functions: `dispatch_authority_notification`, `read_authority_notifications`, and `mark_authority_notification_read`.
+  - **Automatic Dispatch on Citizen Submission (`apps/web/src/lib/incidents/server.ts`, `apps/web/src/app/api/incidents/route.ts`):**
+    - Integrated nearest landmark proximity engine resolving Mangaluru corridor landmarks (*Hampankatta*, *Lalbagh*, *Bejai*, *Ladyhill*, *Pumpwell*, *Nanthoor*, etc.).
+    - In `submitIncidentReport`, every commuter hazard report automatically dispatches an authority notification. If the user attached a genuine photo verified via L5 AI Vision, `has_photo: true` and the visual summary are attached to the dispatch.
+  - **Authority Notifications Endpoint (`apps/web/src/app/api/authority/notifications/route.ts`):**
+    - Added `GET` endpoint supporting heartbeat polling (`?since=<ISO>`) and `PATCH` endpoint for read tracking.
+  - **Web Control Room Alerts (`apps/web/src/components/analytics/incident-review-panel.tsx`):**
+    - Integrated native Web Notifications API (`Notification.requestPermission()`) with "🔔 Enable Push Alerts" toggle.
+    - Synthesized custom two-tone audio alert chime (880Hz $\rightarrow$ 1174Hz) via Web Audio API.
+    - Added elevated animated floating dispatch banner: `🚨 New Incident Spotted: [Category] at [Landmark] • 📸 Photo Evidence Corroborated [Inspect & Review]`.
+    - Automatically reloads the active incident queue and highlights the newly spotted incident.
+  - **Mobile Authority Real-Time Dispatch (`apps/mobile/app/authority.tsx`, `BottomNav.tsx`, `authority.ts`):**
+    - Added 4-second heartbeat poller in `authority.tsx` for active authority sessions.
+    - Added live floating alert banner with photo evidence indicators and unread count badge.
+    - Added notification badge dot (`badgeDot`) to the 5th Authority tab in `BottomNav.tsx`.
+- **Verification Evidence:**
+  - `docker compose exec app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec app sh -c "cd apps/web && pnpm exec tsc --noEmit"`: Passed with 0 errors.
+  - `docker compose exec app pnpm test`: Passed all 233 tests across 10 test suites (**233/233 passed**, including new notification dispatch and photo evidence tests).
+
 ## Mobile Authority Navigation & Workspace Journeys In-Progress Status — verified, 24 Oct 2026
 
 - **Scope & Fixes:**
@@ -1241,3 +1267,22 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
   - `git diff --check` passed with no formatting or whitespace issues.
 - **Commit:** `bae990f` — `feat(planner): redesign route planner with Google Maps floating search and expandable bottom sheet`.
 - **Push:** Confirmed pushed to `origin/main`, 24 Oct 2026.
+
+## Real-Time Authority Push Notifications for Spotted Hazards & Photo Evidence — verified, 24 Oct 2026
+
+- **Scope:** Push instant real-time alerts to Traffic Authority on Web (`/authority`) and Mobile (`apps/mobile/app/authority.tsx`) whenever a citizen or automated sensor spots a road hazard/incident, including proximity landmark resolution (e.g. Lalbagh, Hampankatta, Ladyhill, Bejai, Kadri, Pumpwell, etc.) and visual photo evidence verification corroboration (`has_photo: true`, L5 verification summary).
+- **Implementation:**
+  - **Database Migration (`supabase/migrations/20261024000100_authority_notifications.sql`):** Created `authority_notifications` table, RLS policies, index on `(created_at desc)`, and RPCs (`dispatch_authority_notification`, `read_authority_notifications`, `mark_authority_notification_read`).
+  - **Landmark Geofence & Dispatch Engine (`apps/web/src/lib/incidents/server.ts`, `apps/web/src/app/api/incidents/route.ts`):** Added `resolveNearestLandmark` with coordinate bounding boxes across Mangaluru's primary arterial corridors. Automated dispatch in `submitIncidentReport` on every valid incident submission.
+  - **Authority Notifications Endpoint (`apps/web/src/app/api/authority/notifications/route.ts`):** `GET` with `?since=<ISO>` heartbeat query and `PATCH` for read acknowledgments.
+  - **Web Control Room (`apps/web/src/components/analytics/incident-review-panel.tsx`):** Web Notifications API browser push alerts with permission toggle button, Web Audio API synthetic two-tone alert chime (880Hz $\rightarrow$ 1174Hz), live floating alert toast with photo badge and 1-click inspection scroll.
+  - **Mobile Authority Screen & Navigation (`apps/mobile/app/authority.tsx`, `BottomNav.tsx`, `authority.ts`):** Heartbeat poller for authority sessions, floating alert banner with photo corroboration badges, and unread notification badge dot indicator on bottom navigation bar.
+- **Verification:**
+  - `docker compose exec app pnpm test`: All 233 unit tests pass across all test suites.
+  - `docker compose exec app pnpm lint`: 0 ESLint errors.
+  - `docker compose exec app pnpm lint:mobile`: 0 ESLint errors.
+  - `docker compose exec app pnpm --filter @trafficsense/mobile typecheck`: 0 TypeScript errors.
+  - `docker compose exec app sh -c "cd apps/web && pnpm exec tsc --noEmit"`: 0 TypeScript errors.
+  - `git diff --check`: Clean, no whitespace or formatting errors.
+- **Commit:** `2ea2630` — `feat(authority): real-time push notification engine for spotted incidents and photo evidence`.
+

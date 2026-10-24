@@ -1,4 +1,4 @@
-import type { LiveIncident } from "@trafficsense/shared";
+import type { AuthorityNotificationItem, LiveIncident } from "@trafficsense/shared";
 import { MobileApiError, requestJson } from "./request";
 import { parseActiveIncidentsResponse, parseAuthorityHistoryResponse, type AuthorityHistoryItem } from "./response-parsers";
 
@@ -82,4 +82,36 @@ export async function updateAuthorityIncident(
     throwResponseError(response, payload, "The incident review action could not be completed.");
   }
   if (!response.ok) throwResponseError(response, payload, "The incident review action could not be completed.");
+}
+
+export async function fetchAuthorityNotifications(
+  accessToken: string,
+  since?: string | null,
+): Promise<AuthorityNotificationItem[]> {
+  const query = since ? `?since=${encodeURIComponent(since)}` : "";
+  const { response, payload } = await authorizedRequest<unknown>(
+    `/api/authority/notifications${query}`,
+    accessToken,
+    "Authority service returned an invalid notification response.",
+  );
+  if (!response.ok || parseError(payload)) throwResponseError(response, payload, "Notifications could not be loaded.");
+  if (typeof payload === "object" && payload !== null && "notifications" in payload && Array.isArray((payload as { notifications: unknown }).notifications)) {
+    return (payload as { notifications: AuthorityNotificationItem[] }).notifications;
+  }
+  return [];
+}
+
+export async function markAuthorityNotificationRead(
+  accessToken: string,
+  notificationId?: string | null,
+  markAll = false,
+): Promise<void> {
+  const { response, payload } = await authorizedRequest<unknown>(
+    "/api/authority/notifications",
+    accessToken,
+    "Authority service returned an invalid response.",
+    "PATCH",
+    notificationId ? { notification_id: notificationId } : markAll ? { mark_all: "true" } : {},
+  );
+  if (!response.ok) throwResponseError(response, payload, "Notification could not be updated.");
 }

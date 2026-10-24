@@ -1,11 +1,12 @@
 import { router, Stack } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import type { LiveIncident } from "@trafficsense/shared";
+import type { AuthorityNotificationItem, LiveIncident } from "@trafficsense/shared";
 import { AppHeader, BottomNav, Button, FeedbackBox, Icon } from "../src/components/ui";
 import {
   fetchAuthorityHistory,
   fetchAuthorityIncidents,
+  fetchAuthorityNotifications,
   type AuthorityIncidentAction,
   updateAuthorityIncident,
 } from "../src/lib/authority";
@@ -44,11 +45,18 @@ function reviewPrompt(action: AuthorityIncidentAction): { title: string; verb: s
 export default function AuthorityScreen() {
   useTabBackHandler();
   const { session, loading: authLoading, role, roleLoading, roleError, reloadRole } = useAuth();
+  const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
   const [data, setData] = useState<DashboardData>({ incidents: [], history: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [pendingIncidentId, setPendingIncidentId] = useState<string | null>(null);
+
+  // Real-time Authority Dispatch Notifications
+  const [notifications, setNotifications] = useState<AuthorityNotificationItem[]>([]);
+  const [latestAlert, setLatestAlert] = useState<AuthorityNotificationItem | null>(null);
+  const seenNotificationIds = useRef<Set<string>>(new Set());
+  const isFirstPoll = useRef(true);
 
   const loadDashboard = useCallback(async (accessToken: string) => {
     await Promise.resolve();
@@ -83,7 +91,49 @@ export default function AuthorityScreen() {
     }
   }, [authLoading, loadDashboard, role, roleLoading, session]);
 
-  const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
+  // Heartbeat Poller for Real-time Authority Notifications
+  useEffect(() => {
+    const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
+    if (!isAuthority || !session?.access_token) return;
+
+    let mounted = true;
+    const token = session.access_token;
+
+    async function pollNotifications() {
+      try {
+        const incoming = await fetchAuthorityNotifications(token);
+        if (!mounted) return;
+        setNotifications(incoming);
+
+        const newItems = incoming.filter((n) => !seenNotificationIds.current.has(n.id));
+        for (const item of incoming) {
+          seenNotificationIds.current.add(item.id);
+        }
+
+        if (!isFirstPoll.current && newItems.length > 0) {
+          const newest = newItems[0];
+          setLatestAlert(newest);
+          // Auto-reload active incidents to show the new report in real time
+          void fetchAuthorityIncidents(token).then((incidents) => {
+            if (mounted) {
+              setData((prev) => ({ ...prev, incidents }));
+            }
+          });
+        }
+        isFirstPoll.current = false;
+      } catch {
+        // Silently retry next tick
+      }
+    }
+
+    void pollNotifications();
+    const interval = setInterval(() => void pollNotifications(), 4000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [isAuthority, role, session?.access_token]);
 
   async function refresh() {
     if (session?.access_token && isAuthority) await loadDashboard(session.access_token);
@@ -186,12 +236,59 @@ export default function AuthorityScreen() {
           </Pressable>
         </View>
 
+        {/* Real-time Push Alert Banner */}
+        {latestAlert ? (
+          <View style={styles.liveAlertBanner}>
+            <View style={styles.liveAlertHeader}>
+              <View style={styles.liveAlertIconWrapper}>
+                <Icon name="warning" size={18} color={colors.warning} />
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <View style={styles.liveAlertTagRow}>
+                  <Text style={styles.liveAlertTag}>NEW INCIDENT SPOTTED</Text>
+                  {latestAlert.has_photo ? (
+                    <View style={styles.photoVerifiedBadge}>
+                      <Text style={styles.photoVerifiedText}>📸 PHOTO EVIDENCE</Text>
+                    </View>
+                  ) : null}
+                  <Text style={styles.liveAlertLevel}>{latestAlert.level}</Text>
+                </View>
+                <Text style={styles.liveAlertTitle}>
+                  {categoryLabel(latestAlert.category)} • {latestAlert.landmark}
+                </Text>
+                {latestAlert.photo_summary ? (
+                  <Text style={styles.liveAlertSummary} numberOfLines={2}>
+                    &ldquo;{latestAlert.photo_summary}&rdquo;
+                  </Text>
+                ) : null}
+              </View>
+              <Pressable
+                accessibilityLabel="Dismiss alert"
+                onPress={() => setLatestAlert(null)}
+                hitSlop={8}
+                style={styles.liveAlertClose}
+              >
+                <Icon name="close" size={16} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         {feedback ? <FeedbackBox variant={feedback.variant} message={feedback.message} /> : null}
         {error ? <FeedbackBox variant="error" message={error} actionText="Retry" onAction={() => void refresh()} /> : null}
 
         <View style={styles.sectionHeading}>
           <View style={styles.sectionTitleGroup}>
-            <Text style={styles.sectionTitle}>Active incidents</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Text style={styles.sectionTitle}>Active incidents</Text>
+              {notifications.filter((n) => !n.is_read).length > 0 ? (
+                <View style={styles.unreadCountPill}>
+                  <Text style={styles.unreadCountText}>
+                    {notifications.filter((n) => !n.is_read).length} new
+                  </Text>
+                </View>
+              ) : null}
+            </View>
             <Text style={styles.sectionCaption}>{data.incidents.length} active incident{data.incidents.length === 1 ? "" : "s"}</Text>
           </View>
           <Button title="Refresh" variant="secondary" disabled={loading || pendingIncidentId !== null} onPress={() => void refresh()} style={styles.refreshButton} />
@@ -258,7 +355,7 @@ export default function AuthorityScreen() {
         </View>
         <View style={{ height: layout.safeBottomPadding }} />
       </ScrollView>
-      <BottomNav activeTab="authority" />
+      <BottomNav activeTab="authority" badgeCount={notifications.filter((n) => !n.is_read).length} />
     </View>
   );
 }
@@ -337,4 +434,93 @@ const styles = StyleSheet.create({
   historyMark: { width: 3, borderRadius: radius.pill, backgroundColor: colors.primaryFixed },
   historyText: { flex: 1, gap: 2 },
   historyTitle: { ...typography.labelMd },
+  liveAlertBanner: {
+    backgroundColor: colors.warningSurface,
+    borderWidth: 1.5,
+    borderColor: colors.warning,
+    borderRadius: radius.card,
+    padding: space.sm,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  liveAlertHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: space.sm,
+  },
+  liveAlertIconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  liveAlertTagRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  liveAlertTag: {
+    ...typography.codeSm,
+    fontSize: 9.5,
+    fontWeight: "800",
+    color: colors.warning,
+  },
+  photoVerifiedBadge: {
+    backgroundColor: colors.successSurface,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.success,
+  },
+  photoVerifiedText: {
+    ...typography.codeSm,
+    fontSize: 9,
+    fontWeight: "800",
+    color: colors.success,
+  },
+  liveAlertLevel: {
+    ...typography.codeSm,
+    fontSize: 9,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  liveAlertTitle: {
+    ...typography.labelMd,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  liveAlertSummary: {
+    ...typography.bodySm,
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontStyle: "italic",
+  },
+  liveAlertClose: {
+    padding: 4,
+  },
+  unreadCountPill: {
+    backgroundColor: colors.error,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+  },
+  unreadCountText: {
+    ...typography.codeSm,
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#fff",
+  },
 });

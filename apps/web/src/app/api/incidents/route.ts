@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
       note: typeof note === "string" ? note.slice(0, 300) : null,
       l5_verified: l5_verified === true,
       l5_summary: typeof l5_summary === "string" ? l5_summary.slice(0, 160) : null,
+      reporter_email: user.email ?? null,
     };
 
     const result = await submitIncidentReport(supabase, input);
