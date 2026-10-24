@@ -1,5 +1,26 @@
 # Project Progress
 
+## Mobile Authority Navigation & Workspace Journeys In-Progress Status — verified, 24 Oct 2026
+
+- **Scope & Fixes:**
+  - **Authority Role Dynamic Navigation (`apps/mobile/src/components/ui/BottomNav.tsx`):**
+    - Enhanced `BottomNav` with an `"authority"` navigation tab.
+    - When the logged-in user has the `authority` role (or an authority email handle), the fifth tab dynamically shifts from "Me" (`person` icon $\rightarrow$ `/workspace`) to "Authority" (`shield` icon $\rightarrow$ `/authority`), providing direct 1-tap navigation to the Authority Incident Control Room from any mobile screen.
+  - **Workspace Screen Role Integration (`apps/mobile/app/workspace.tsx`):**
+    - Displayed an elevated, high-priority "Authority Incident Control Room" card at the top of the Workspace screen when logged in as an authority user, linking directly to `/authority`.
+    - Updated user role badge to accurately state "Traffic Authority (Active Session)" for authority users.
+    - Marked "My journeys & employer sharing" with an explicit `IN PROGRESS` pill and explanatory text noting Phase 7 extension status.
+  - **Journeys Screen (`apps/mobile/app/journeys.tsx`):**
+    - Added an prominent "IN PROGRESS" status alert banner explaining that automated employer delay receipts and journey logging are planned Phase 7 extensions.
+  - **Authority Dashboard Screen (`apps/mobile/app/authority.tsx`):**
+    - Added role fallback logic checking user profile role and email.
+    - Added a quick-switch link button allowing authorities to seamlessly jump between the Control Room and Commuter Workspace.
+    - Set `activeTab="authority"` in `BottomNav`.
+- **Verification Evidence:**
+  - `docker compose exec app pnpm --filter @trafficsense/mobile typecheck`: Passed with 0 errors.
+  - `docker compose exec app pnpm test`: Passed all 231 tests across 10 test suites (**231/231 passed**).
+  - Browser/UI inspection: Verified authority tab appears in bottom nav for authority users and workspace prominently marks journeys as In Progress.
+
 ## Mobile Map Defaults to Full Screen & Route Planner Accident Pins Fixed — verified, 24 Oct 2026
 
 - **Scope & Fixes:**
