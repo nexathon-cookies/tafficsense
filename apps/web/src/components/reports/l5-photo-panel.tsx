@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { L5VerificationResult, L5DetectedCategory, L5MimeType } from "@/lib/vision/verify-incident-photo";
 import type { ReportCategory } from "@/lib/reports/rules";
+import { CameraIcon, CheckCircleIcon, AlertTriangleIcon, BanIcon } from "@/components/icons/ui-icons";
 
 /** Maps a live report category onto the coarser set the vision classifier understands. */
 export function toL5Category(category: ReportCategory): L5DetectedCategory {
@@ -303,11 +304,12 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
         <div>
           <button
             type="button"
-            className="button secondary"
+            className="button secondary inline-flex items-center gap-1.5"
             style={{ marginBottom: "0.5rem" }}
             onClick={() => inputRef.current?.click()}
           >
-            📷 Select / Capture Photo
+            <CameraIcon size={14} />
+            <span>Select / Capture Photo</span>
           </button>
           {status === "error" && errorMessage && (
             <p role="alert" style={{ fontSize: "0.8rem", color: "#b91c1c", marginTop: "0.4rem" }}>
@@ -320,8 +322,8 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
       {(status === "reading" || status === "verifying") && (
         <p role="status" style={{ fontSize: "0.82rem", fontStyle: "italic", color: "var(--color-surface-on-variant, #555)" }}>
           {status === "reading"
-            ? "📂 Reading image · Stripping EXIF PII…"
-            : "🔬 Running L5 Vision Corroboration · Querying AI pipeline…"}
+            ? "Reading image · Stripping EXIF PII…"
+            : "Running L5 Vision Corroboration · Querying AI pipeline…"}
         </p>
       )}
 
@@ -369,9 +371,9 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
               {result.isGenuineIncident
                 ? `L5 · AI VISUAL CORROBORATION · ${confidenceLabel(result.confidenceTier)} CONFIDENCE`
                 : result.isAiGenerated || result.rejectionReason === "ai_generated"
-                  ? "🚫 L5 REJECTED · AI-GENERATED / SYNTHETIC IMAGE BLOCKED"
+                  ? "L5 REJECTED · AI-GENERATED / SYNTHETIC IMAGE BLOCKED"
                   : result.rejectionReason === "screen_recapture"
-                    ? "🚫 L5 REJECTED · SCREENSHOT / MONITOR RECAPTURE BLOCKED"
+                    ? "L5 REJECTED · SCREENSHOT / MONITOR RECAPTURE BLOCKED"
                     : "L5 · UNVERIFIED IMAGE (NO ROAD INCIDENT DETECTED)"}
             </span>
             {result.source === "offline_fallback" && (
@@ -402,11 +404,17 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
               <strong>Detected:</strong>{" "}
               <code>{result.detectedCategory}</code>
             </span>
-            <span>
-              {result.categoryMatchesReport || result.detectedCategory === userSelectedCategory ? "✅" : "⚠️"}{" "}
-              {result.categoryMatchesReport || result.detectedCategory === userSelectedCategory
-                ? "Matches reported category"
-                : "Category mismatch — review your selection"}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+              {result.categoryMatchesReport || result.detectedCategory === userSelectedCategory ? (
+                <CheckCircleIcon size={14} className="text-emerald-600 inline shrink-0" />
+              ) : (
+                <AlertTriangleIcon size={14} className="text-amber-600 inline shrink-0" />
+              )}
+              <span>
+                {result.categoryMatchesReport || result.detectedCategory === userSelectedCategory
+                  ? "Matches reported category"
+                  : "Category mismatch — review your selection"}
+              </span>
             </span>
             <span>
               <strong>Severity:</strong>{" "}
@@ -428,9 +436,13 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
                   background: "#dcfce7",
                   color: "#166534",
                   border: "1px solid #bbf7d0",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.25rem",
                 }}
               >
-                ✓ C2PA / AI Metadata: Clean
+                <CheckCircleIcon size={12} className="inline shrink-0" />
+                C2PA / AI Metadata: Clean
               </span>
               <span
                 style={{
@@ -441,9 +453,13 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
                   background: "#dcfce7",
                   color: "#166534",
                   border: "1px solid #bbf7d0",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.25rem",
                 }}
               >
-                ✓ Vision Forensics: Authentic Camera Scene
+                <CheckCircleIcon size={12} className="inline shrink-0" />
+                Vision Forensics: Authentic Camera Scene
               </span>
               <span
                 style={{
@@ -454,9 +470,13 @@ export function L5PhotoPanel({ segmentId, userSelectedCategory, onResult }: L5Ph
                   background: "#dcfce7",
                   color: "#166534",
                   border: "1px solid #bbf7d0",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.25rem",
                 }}
               >
-                ✓ EXIF GPS Stripped
+                <CheckCircleIcon size={12} className="inline shrink-0" />
+                EXIF GPS Stripped
               </span>
             </div>
           )}

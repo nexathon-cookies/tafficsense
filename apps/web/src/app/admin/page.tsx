@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth/server";
 import { getActiveLiveIncidents } from "@/lib/incidents/server";
 import { reportCategories, reportCategoryIcons } from "@/lib/reports/rules";
+import { IncidentIcon } from "@/components/icons/incident-icons";
+import { CheckCircleIcon, ClockIcon } from "@/components/icons/ui-icons";
 
 export default async function AdminPage() {
   const { supabase } = await requireRole("admin");
@@ -96,7 +98,7 @@ export default async function AdminPage() {
                     <tr key={incident.id} className="text-surface-on hover:bg-surface-container-low/40 transition-colors">
                       <td className="py-2.5 px-3 font-medium">
                         <span className="inline-flex items-center gap-1.5">
-                          <span>{reportCategoryIcons[incident.category] ?? "⚠️"}</span>
+                          <IncidentIcon category={incident.category} size={16} className="text-primary inline shrink-0" />
                           <span>{category}</span>
                         </span>
                       </td>
@@ -111,12 +113,14 @@ export default async function AdminPage() {
                       </td>
                       <td className="py-2.5 px-3">
                         {isConfirmed ? (
-                          <span className="inline-flex items-center text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                            ✓ Authority Confirmed (L6)
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                            <CheckCircleIcon size={14} className="shrink-0" />
+                            <span>Authority Confirmed (L6)</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center text-xs font-semibold text-amber-700 dark:text-amber-300">
-                            ⏳ Awaiting Authority Review
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                            <ClockIcon size={14} className="shrink-0" />
+                            <span>Awaiting Authority Review</span>
                           </span>
                         )}
                       </td>

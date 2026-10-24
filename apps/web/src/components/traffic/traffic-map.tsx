@@ -14,6 +14,8 @@ import type { TraversalView } from "@/lib/traffic/phase4-presentation";
 import type { routeAlertView } from "@/lib/route-alerts/presentation";
 import { createFallbackStyle, MANGALURU_BASEMAP_GEOJSON } from "@/lib/traffic/mangaluru-basemap";
 import { findNearestPreset } from "@/lib/routing/presets";
+import { IncidentIcon, getIncidentSvgString } from "@/components/icons/incident-icons";
+import { CameraIcon, CrosshairIcon, XIcon } from "@/components/icons/ui-icons";
 import "maplibre-gl/dist/maplibre-gl.css";
 import styles from "./traffic.module.css";
 
@@ -163,7 +165,7 @@ function MapAttempt({
         button.type = "button";
         button.className = styles.liveIncidentMarker;
         button.dataset.liveIncidentMarker = incident.id;
-        button.textContent = reportCategoryIcons[incident.category] ?? "⚠️";
+        button.innerHTML = getIncidentSvgString(incident.category, 16);
         const category = reportCategories[incident.category] ?? incident.category;
         const label = `${category}. ${liveIncidentLevelLabel(incident)}. Reported ${formatLiveIncidentTime(incident.first_reported_at)}.`;
         button.setAttribute("aria-label", `Show report details: ${label}`);
@@ -424,22 +426,22 @@ function MapAttempt({
             <div>
               <p className={styles.liveIncidentEyebrow}>COMMUNITY REPORT</p>
               <h3 className="flex items-center gap-1.5 mt-0.5">
-                <span>{reportCategoryIcons[selectedLiveIncident.category] ?? "⚠️"}</span>
+                <IncidentIcon category={selectedLiveIncident.category} size={18} className="text-primary" />
                 <span>{reportCategories[selectedLiveIncident.category] ?? selectedLiveIncident.category}</span>
               </h3>
             </div>
             <button
               type="button"
               onClick={() => setIncidentSelection(null)}
-              className="text-xs px-2 py-1 rounded hover:bg-black/5 text-surface-on-variant"
+              className="p-1 rounded hover:bg-black/5 text-surface-on-variant flex items-center justify-center"
               aria-label="Close"
             >
-              ✕
+              <XIcon size={14} />
             </button>
           </div>
 
           <div className="flex items-center gap-2 my-1.5">
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-900">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-900 border border-rose-200">
               {selectedLiveIncident.level} · {selectedLiveIncident.report_count} report{selectedLiveIncident.report_count !== 1 ? "s" : ""}
             </span>
             {nearestPreset && (
@@ -457,8 +459,10 @@ function MapAttempt({
                 alt="Verified road incident evidence"
                 className="w-full h-32 object-cover block"
               />
-              <div className="px-2 py-1 text-[10px] font-mono bg-emerald-950 text-emerald-100 flex items-center justify-between">
-                <span>📷 BEST VERIFIED PHOTO</span>
+              <div className="px-2 py-1 text-[10px] font-mono bg-surface-container-highest text-surface-on flex items-center justify-between border-t border-surface-container">
+                <span className="inline-flex items-center gap-1 font-semibold">
+                  <CameraIcon size={12} className="text-primary" /> BEST VERIFIED PHOTO
+                </span>
                 <span>{(selectedLiveIncident.photo_confidence ?? "moderate").toUpperCase()} CONFIDENCE</span>
               </div>
             </div>
@@ -485,7 +489,7 @@ function MapAttempt({
           className="px-3 py-1.5 rounded-xl bg-surface/95 backdrop-blur border border-surface-container shadow-md text-xs font-semibold text-surface-on hover:bg-surface-container flex items-center gap-1.5"
           title="Recenter Mangaluru map"
         >
-          <span>🎯</span>
+          <CrosshairIcon size={14} className="text-primary" />
           <span>Recenter</span>
         </button>
         <div className="text-[11px] bg-surface/80 backdrop-blur px-2.5 py-1 rounded-lg border border-surface-container/60 shadow-xs flex items-center gap-2 text-surface-on-variant">

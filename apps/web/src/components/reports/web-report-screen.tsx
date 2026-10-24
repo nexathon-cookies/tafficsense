@@ -7,6 +7,8 @@ import type { Map as MapInstance, Marker as MarkerInstance } from "maplibre-gl";
 import { createFallbackStyle } from "@/lib/traffic/mangaluru-basemap";
 import { L5PhotoPanel } from "@/components/reports/l5-photo-panel";
 import type { L5DetectedCategory, L5VerificationResult } from "@/lib/vision/verify-incident-photo";
+import { IncidentIcon, getIncidentSvgString } from "@/components/icons/incident-icons";
+import { AlertTriangleIcon, MapPinIcon, CheckCircleIcon } from "@/components/icons/ui-icons";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { MANGALURU_PRESETS } from "@/lib/routing/presets";
@@ -195,10 +197,9 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
       if (disposed || !mapRef.current) return;
       for (const inc of liveIncidents) {
         const el = document.createElement("div");
-        const icon = reportCategoryIcons[inc.category] ?? "⚠️";
         el.className = "px-1.5 py-0.5 rounded-full bg-surface-container-lowest/95 border border-surface-container shadow flex items-center gap-1 text-[11px] font-bold cursor-pointer hover:scale-110 transition";
         el.title = `${reportCategories[inc.category] ?? inc.category} (${inc.level}): ${inc.level_reason}`;
-        el.innerHTML = `<span>${icon}</span><span class="text-[9px] px-1 rounded bg-amber-500 text-white font-bold">${inc.level}</span>`;
+        el.innerHTML = `<span class="inline-flex items-center text-surface-on">${getIncidentSvgString(inc.category, 14)}</span><span class="text-[9px] px-1 rounded bg-amber-500 text-white font-bold">${inc.level}</span>`;
         el.addEventListener("click", () => {
           mapRef.current?.flyTo({ center: [inc.lng, inc.lat], zoom: 15.5, duration: 600 });
         });
@@ -290,8 +291,8 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
         {successResult ? (
           <div className="p-6 rounded-xl bg-surface-container-lowest border border-success/40 shadow-sm space-y-4" role="alert">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg">
-                ✓
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                <CheckCircleIcon size={22} className="text-emerald-700" />
               </div>
               <div>
                 <h2 className="text-base font-bold text-surface-on">Report Submitted Successfully</h2>
@@ -340,21 +341,21 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
             </div>
 
             {viewer ? (
-              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-100">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950">
                 <div className="flex items-center gap-2">
-                  <span className="text-base leading-none">👤</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-600" />
                   <span>
                     Reporting as <strong>{viewer.email}</strong> ({viewer.role})
                   </span>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 font-bold">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold">
                   AUTHENTICATED
                 </span>
               </div>
             ) : (
-              <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-base leading-none">⚠️</span>
+                  <AlertTriangleIcon size={16} className="text-amber-700 shrink-0" />
                   <span>You are not signed in. Commuter sign-in is required to submit verified reports.</span>
                 </div>
                 <Link
@@ -367,9 +368,9 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
             )}
 
             {errorMessage && (
-              <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-xs text-rose-900 dark:text-rose-100 space-y-2">
+              <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-950 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span>⚠️</span>
+                  <AlertTriangleIcon size={16} className="text-rose-600 shrink-0" />
                   <span>{errorMessage}</span>
                 </div>
                 {errorMessage.includes("Sign in") && (
@@ -390,18 +391,23 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
               <label htmlFor="report-category" className="block text-xs font-semibold text-surface-on">
                 1. Select Hazard Category
               </label>
-              <select
-                id="report-category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value as ReportCategory)}
-                className="w-full text-xs p-2.5 rounded-lg bg-surface-container border border-surface-container-high text-surface-on"
-              >
-                {(Object.entries(reportCategories) as [ReportCategory, string][]).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {(reportCategoryIcons as Record<string, string>)[key] ?? "⚠️"} {label}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-surface-container text-primary flex items-center justify-center shrink-0 border border-surface-container-high">
+                  <IncidentIcon category={category} size={18} />
+                </div>
+                <select
+                  id="report-category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as ReportCategory)}
+                  className="w-full text-xs p-2.5 rounded-lg bg-surface-container border border-surface-container-high text-surface-on"
+                >
+                  {(Object.entries(reportCategories) as [ReportCategory, string][]).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Location Selection */}
@@ -413,19 +419,31 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
                 <button
                   type="button"
                   onClick={handleRequestGps}
-                  className={`text-[11px] px-2 py-0.5 rounded font-medium border ${
+                  className={`text-[11px] px-2 py-0.5 rounded font-medium border inline-flex items-center gap-1 ${
                     useGps
                       ? "bg-primary text-primary-on border-primary"
                       : "bg-surface-container border-surface-container-high text-primary hover:bg-surface-container-high"
                   }`}
                 >
-                  {useGps ? "📍 Using Device GPS" : "Use GPS position"}
+                  <MapPinIcon size={12} />
+                  {useGps ? "Using Device GPS" : "Use GPS position"}
                 </button>
               </div>
 
               {customCoords ? (
                 <div className="p-2.5 rounded-lg bg-surface-container border border-surface-container-high text-xs text-surface-on flex items-center justify-between">
-                  <span>📌 Map pin: {activeCoords[1].toFixed(5)}, {activeCoords[0].toFixed(5)}</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPinIcon size={14} className="text-primary shrink-0" />
+                    Map pin: {activeCoords[1].toFixed(5)}, {activeCoords[0].toFixed(5)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCustomCoords(null)}
+                    className="text-[11px] text-primary hover:underline ml-2"
+                  >
+                    Switch to preset list
+                  </button>
+                </div>
                   <button
                     type="button"
                     onClick={() => setCustomCoords(null)}
