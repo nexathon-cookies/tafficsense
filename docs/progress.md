@@ -1,5 +1,28 @@
 # Project Progress
 
+## Mobile Expo Bundler Dependency Mismatch & Route Export Fix — verified, 24 Oct 2026
+
+- **Root Cause & Diagnosis:**
+  - `just mobile-logs` captured three related runtime errors during Android Metro bundling:
+    1. `ERROR [TypeError: Cannot read property 'OS' of undefined]`: `expo-notifications@^58.1.6` was mismatched with the project's pinned Expo SDK 57 (`expo@57.0.30`). SDK 58 `expo-notifications` attempted `import { Platform } from 'expo'`, which is undefined in SDK 57.
+    2. `WARN Route "./authority.tsx" is missing the required default export. Ensure a React component is exported as default.`: The uncaught TypeError thrown while evaluating `../src/lib/notifications` caused Expo Router's route evaluation of `app/authority.tsx` to fail at import time.
+    3. `ERROR Can't perform a React state update on a component that hasn't mounted yet`: Triggered when route evaluation crashed abruptly before component mounting while background listeners and initial effect timers were scheduled.
+- **Scope & Fixes:**
+  - **Dependency Alignment (`apps/mobile/package.json`, `pnpm-lock.yaml`):**
+    - Downgraded `expo-notifications` from mismatched `^58.1.6` to SDK 57 compatible `~57.0.24`, which correctly imports `Platform` from `expo-modules-core`.
+  - **Notification Module Hardening (`apps/mobile/src/lib/notifications.ts`):**
+    - Guarded `Notifications.setNotificationHandler` with `if (Platform.OS !== "web" && typeof Notifications.setNotificationHandler === "function")` to avoid top-level evaluation side effects in non-native or unconfigured environments.
+  - **Route & Component Mount Safety (`apps/mobile/app/authority.tsx`, `apps/mobile/app/_layout.tsx`):**
+    - Added `<Stack.Screen name="authority" options={{ animation: "fade" }} />` in `_layout.tsx` for clean Expo Router stack registration.
+    - Introduced `isMountedRef` lifecycle guard in `AuthorityScreen` to prevent asynchronous dashboard loading, push polling, and review actions from firing React state updates (`setData`, `setLoading`, `setError`, `setFeedback`) on an unmounted component.
+    - Cleaned up duplicate `isAuthority` computation and missing hook dependencies in `authority.tsx`.
+- **Verification Evidence:**
+  - `just mobile-typecheck`: Passed with 0 errors (`tsc --noEmit`).
+  - `docker compose exec -T app pnpm --filter @trafficsense/mobile exec eslint .`: Passed with 0 errors.
+  - Metro Android bundle request: Bundled 1450 modules cleanly with HTTP 200 and **zero errors/warnings** (`Android Bundled 1057ms ...`).
+  - `just test`: Passed all 240 tests across 11 test suites (**240/240 passed**).
+  - `just check-docs`: App documentation layout valid for 3 targets.
+
 ## Official Mobile and Web App Brand Logo Integration — verified, 24 Oct 2026
 
 - **Context & User Request:**

@@ -4,14 +4,16 @@ import { Platform } from "react-native";
 import type { AuthorityNotificationItem } from "@trafficsense/shared";
 
 // Set global foreground notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+if (Platform.OS !== "web" && typeof Notifications.setNotificationHandler === "function") {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+}
 
 let isConfigured = false;
 

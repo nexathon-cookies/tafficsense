@@ -59,8 +59,17 @@ export default function AuthorityScreen() {
   const seenNotificationIds = useRef<Set<string>>(new Set());
   const isFirstPoll = useRef(true);
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const loadDashboard = useCallback(async (accessToken: string) => {
     await Promise.resolve();
+    if (!isMountedRef.current) return;
     setLoading(true);
     setError(null);
     try {
@@ -68,11 +77,15 @@ export default function AuthorityScreen() {
         fetchAuthorityIncidents(accessToken),
         fetchAuthorityHistory(accessToken),
       ]);
+      if (!isMountedRef.current) return;
       setData({ incidents, history });
     } catch (reason) {
+      if (!isMountedRef.current) return;
       setError(reason instanceof Error ? reason.message : "The authority dashboard could not be loaded.");
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -101,7 +114,6 @@ export default function AuthorityScreen() {
 
   // Heartbeat Poller for Real-time Authority Notifications
   useEffect(() => {
-    const isAuthority = role === "authority" || Boolean(session?.user?.email?.toLowerCase().includes("authority"));
     if (!isAuthority || !session?.access_token) return;
 
     let mounted = true;
@@ -143,7 +155,7 @@ export default function AuthorityScreen() {
       mounted = false;
       clearInterval(interval);
     };
-  }, [isAuthority, role, session?.access_token]);
+  }, [isAuthority, session?.access_token]);
 
   async function refresh() {
     if (session?.access_token && isAuthority) await loadDashboard(session.access_token);
@@ -156,6 +168,7 @@ export default function AuthorityScreen() {
     setFeedback(null);
     try {
       await updateAuthorityIncident(incident.id, action, session.access_token);
+      if (!isMountedRef.current) return;
       setFeedback({
         variant: "success",
         message: action === "confirm"
@@ -166,12 +179,15 @@ export default function AuthorityScreen() {
       });
       await loadDashboard(session.access_token);
     } catch (reason) {
+      if (!isMountedRef.current) return;
       setFeedback({
         variant: "error",
         message: reason instanceof Error ? reason.message : `${prompt.verb} failed. Try again.`,
       });
     } finally {
-      setPendingIncidentId(null);
+      if (isMountedRef.current) {
+        setPendingIncidentId(null);
+      }
     }
   }
 
