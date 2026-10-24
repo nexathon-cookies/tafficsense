@@ -6,6 +6,18 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "trafficsense",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#081323"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#081323"
+      }
+    },
     "ios": {
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "TrafficSense uses your location only when you submit a traffic report. It is not tracked in the background."

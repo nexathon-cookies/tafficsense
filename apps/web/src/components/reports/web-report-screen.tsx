@@ -444,14 +444,6 @@ export function WebReportScreen({ viewer }: { viewer?: { email?: string; role: s
                     Switch to preset list
                   </button>
                 </div>
-                  <button
-                    type="button"
-                    onClick={() => setCustomCoords(null)}
-                    className="text-[11px] text-primary hover:underline ml-2"
-                  >
-                    Switch to preset list
-                  </button>
-                </div>
               ) : !useGps ? (
                 <select
                   id="report-location"
