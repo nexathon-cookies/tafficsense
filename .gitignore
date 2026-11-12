@@ -30,6 +30,12 @@ yarn-error.log*
 
 apps/web/.next/
 apps/mobile/.expo/
+apps/traffic/.gradle/
+apps/traffic/build/
+apps/traffic/app/build/
+apps/traffic/.idea/
+apps/traffic/local.properties
 /app
 !apps/web/src/app/**
 !apps/mobile/app/**
+!apps/traffic/app/**

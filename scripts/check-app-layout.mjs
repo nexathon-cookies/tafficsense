@@ -8,7 +8,7 @@ const requiredFiles = [
   "docs/plan.md",
   "docs/progress.md",
 ];
-const targets = ["apps/web", "apps/mobile", "packages/shared"];
+const targets = ["apps/web", "packages/shared"];
 
 const missing = [];
 

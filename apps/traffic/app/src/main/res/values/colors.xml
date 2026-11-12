@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- TrafficSense Civic Design Palette -->
+    <color name="primary">#005C55</color>
+    <color name="primary_variant">#004741</color>
+    <color name="primary_container">#A7F0E6</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_primary_container">#00201D</color>
+
+    <color name="secondary">#6616D7</color>
+    <color name="secondary_container">#F3EDFF</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="on_secondary_container">#25005A</color>
+
+    <color name="surface">#FAF8FF</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="surface_container">#F2F3F9</color>
+    <color name="surface_container_high">#ECEEF3</color>
+    <color name="border">#E2E7FF</color>
+
+    <color name="text_primary">#191C20</color>
+    <color name="text_secondary">#3F4947</color>
+    <color name="text_muted">#6F7977</color>
+
+    <color name="warning">#904D00</color>
+    <color name="warning_container">#FFF4E5</color>
+    <color name="error">#BA1A1A</color>
+    <color name="error_container">#FFF0ED</color>
+    <color name="success">#176D55</color>
+    <color name="success_container">#E8F5EE</color>
+    <color name="live_green">#10B981</color>
+</resources>
