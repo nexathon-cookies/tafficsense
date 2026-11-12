@@ -37,11 +37,25 @@ public class WorkspaceFragment extends Fragment {
 
         setupHeader();
         demoAccounts = DemoAccount.getPredefinedAccounts();
-        currentAccount = demoAccounts.get(0); // Commuter A default
+        String currentEmail = com.love.trafficsense.data.api.TrafficApiClient.getInstance().getCurrentAuthEmail();
+        currentAccount = demoAccounts.get(0);
+        View initialCard = binding.cardAccountCommuterA;
+
+        for (int i = 0; i < demoAccounts.size(); i++) {
+            DemoAccount acc = demoAccounts.get(i);
+            if (acc.email.equalsIgnoreCase(currentEmail)) {
+                currentAccount = acc;
+                if (i == 1) initialCard = binding.cardAccountCommuterB;
+                else if (i == 2) initialCard = binding.cardAccountAuthority;
+                else if (i == 3) initialCard = binding.cardAccountEmployer;
+                break;
+            }
+        }
 
         setupPersonaCards();
         setupJourneyLogging();
         renderAccountDetails();
+        highlightCard(initialCard);
     }
 
     private void setupHeader() {
@@ -66,34 +80,34 @@ public class WorkspaceFragment extends Fragment {
         }
     }
 
+    private void switchAccount(DemoAccount account, View cardView) {
+        currentAccount = account;
+        renderAccountDetails();
+        highlightCard(cardView);
+        Toast.makeText(requireContext(), "Switching to: " + account.name + "...", Toast.LENGTH_SHORT).show();
+
+        com.love.trafficsense.data.api.TrafficApiClient.getInstance().login(account.email, account.password, new com.love.trafficsense.data.api.TrafficApiClient.ApiCallback<String>() {
+            @Override
+            public void onSuccess(String token) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), "Signed in as: " + account.name, Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                if (isAdded()) {
+                    Toast.makeText(requireContext(), "Persona auth: " + message, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
     private void setupPersonaCards() {
-        binding.cardAccountCommuterA.setOnClickListener(v -> {
-            currentAccount = demoAccounts.get(0);
-            renderAccountDetails();
-            highlightCard(binding.cardAccountCommuterA);
-            Toast.makeText(requireContext(), "Switched to: " + currentAccount.name, Toast.LENGTH_SHORT).show();
-        });
-
-        binding.cardAccountCommuterB.setOnClickListener(v -> {
-            currentAccount = demoAccounts.get(1);
-            renderAccountDetails();
-            highlightCard(binding.cardAccountCommuterB);
-            Toast.makeText(requireContext(), "Switched to: " + currentAccount.name, Toast.LENGTH_SHORT).show();
-        });
-
-        binding.cardAccountAuthority.setOnClickListener(v -> {
-            currentAccount = demoAccounts.get(2);
-            renderAccountDetails();
-            highlightCard(binding.cardAccountAuthority);
-            Toast.makeText(requireContext(), "Switched to: " + currentAccount.name, Toast.LENGTH_SHORT).show();
-        });
-
-        binding.cardAccountEmployer.setOnClickListener(v -> {
-            currentAccount = demoAccounts.get(3);
-            renderAccountDetails();
-            highlightCard(binding.cardAccountEmployer);
-            Toast.makeText(requireContext(), "Switched to: " + currentAccount.name, Toast.LENGTH_SHORT).show();
-        });
+        binding.cardAccountCommuterA.setOnClickListener(v -> switchAccount(demoAccounts.get(0), binding.cardAccountCommuterA));
+        binding.cardAccountCommuterB.setOnClickListener(v -> switchAccount(demoAccounts.get(1), binding.cardAccountCommuterB));
+        binding.cardAccountAuthority.setOnClickListener(v -> switchAccount(demoAccounts.get(2), binding.cardAccountAuthority));
+        binding.cardAccountEmployer.setOnClickListener(v -> switchAccount(demoAccounts.get(3), binding.cardAccountEmployer));
     }
 
     private void highlightCard(View selectedCard) {

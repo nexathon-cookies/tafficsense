@@ -15,20 +15,34 @@ public class RouteOption {
     @SerializedName("is_recommended")
     public boolean isRecommended;
 
-    @SerializedName("distance_meters")
+    @SerializedName(value = "distance_m", alternate = {"distance_meters"})
     public double distanceMeters;
 
-    @SerializedName("duration_seconds")
+    @SerializedName(value = "duration_s", alternate = {"duration_seconds"})
     public double durationSeconds;
 
     @SerializedName("has_hazards")
     public boolean hasHazards;
+
+    @SerializedName("avoids_incident")
+    public boolean avoidsIncident;
 
     @SerializedName("warning_note")
     public String warningNote;
 
     @SerializedName("warnings")
     public List<String> warnings = new ArrayList<>();
+
+    @SerializedName("geometry")
+    public RouteGeometry geometry;
+
+    public static class RouteGeometry {
+        @SerializedName("type")
+        public String type;
+
+        @SerializedName("coordinates")
+        public List<List<Double>> coordinates;
+    }
 
     public RouteOption() {}
 

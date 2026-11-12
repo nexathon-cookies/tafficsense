@@ -20,6 +20,7 @@ import com.love.trafficsense.data.api.TrafficApiClient;
 import com.love.trafficsense.data.model.LiveIncident;
 import com.love.trafficsense.databinding.FragmentHomeBinding;
 import com.love.trafficsense.ui.traffic.IncidentAdapter;
+import com.love.trafficsense.utils.MapHtmlBuilder;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -155,6 +156,9 @@ public class HomeFragment extends Fragment {
 
                 String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
                 binding.tvLiveTimestamp.setText("Live · updated " + time + " · 30s auto-refresh");
+
+                String mapHtml = MapHtmlBuilder.buildMapHtml(incidents, null, 12.8687, 74.8436);
+                binding.webviewHeroMap.loadDataWithBaseURL(null, mapHtml, "text/html", "UTF-8", null);
             }
 
             @Override

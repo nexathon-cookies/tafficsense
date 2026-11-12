@@ -1,5 +1,30 @@
 # Project Progress
 
+## Native Java Android App Full Backend & Supabase Integration Parity — verified, 13 Nov 2026
+
+- **Scope & Fixes:**
+  - **OSRM GeoJSON Coordinate Inversion Fix (`TrafficApiClient.java`):**
+    - Reversed route calculation coordinates from `[lat, lng]` to `[lng, lat]` matching GeoJSON specification and OSRM router expectations.
+    - Successfully resolved 400 "outside Mangaluru service area" errors when planning routes between State Bank and Pumpwell.
+  - **Live Supabase Authentication (`TrafficApiClient.java`, `WorkspaceFragment.java`):**
+    - Added Supabase JWT auth token retrieval against `http://<host>:54321/auth/v1/token?grant_type=password` using demo commuter credentials and `SUPABASE_ANON_KEY`.
+    - Wired persona switching cards in `WorkspaceFragment` (Commuter A, Commuter B, Traffic Authority Dispatcher, Employer Desk) to live authenticate, updating `currentAuthToken`, `currentAuthEmail`, and `currentRole`.
+    - Added `Authorization: Bearer <token>` header to incident submission POST requests, enabling named authenticated reports that unlock L2/L3 verification.
+  - **Data Model Serialization Parity (`LiveIncident.java`, `RouteOption.java`, `DemoAccount.java`):**
+    - In `LiveIncident.java`, added serialization alternates for `level` (`evidence_level`), `level_reason` (`evidence_label`), `note` (`notes`), and landmark coordinate fallback mappings.
+    - In `RouteOption.java`, added `@SerializedName` alternates for `distance_m` (`distance_meters`), `duration_s` (`duration_seconds`), and `RouteGeometry` (`coordinates: List<List<Double>>`). Fixed `hasHazards` vs `avoidsIncident` mapping.
+    - Handled `incidents_on_route` object parsing in `TrafficApiClient.java` without string casting exceptions.
+  - **Leaflet HTML Builder Syntax & Marker Rendering (`MapHtmlBuilder.java`, `HomeFragment.java`):**
+    - Corrected JavaScript array literal syntax in `routeCoords` and sanitized incident marker element IDs.
+    - Rendered live incident pins dynamically on both `HomeFragment` hero map and `TrafficFragment` live interactive Leaflet map.
+  - **Device Wireless ADB & Justfile Automation (`justfile`, `scripts/run-android.sh`):**
+    - Added `just kau-lan <ip>`, `just kau-up`, `just kau-build`, and `just kau-run` automation recipes.
+    - Updated `scripts/run-android.sh` to safely target connected physical devices when multiple endpoints are discovered via mDNS.
+- **Verification Evidence:**
+  - Built debug APK with `./gradlew assembleDebug -PapiBaseUrl="http://192.168.0.224:3000"`.
+  - Installed and launched on physical Android device (`192.168.0.233:38307`).
+  - Logcat verified: Supabase authentication succeeded (`role: commuter`), loaded 5 active incidents from backend (`GET /api/incidents`), and parsed live incidents into UI.
+
 ## Native Java Android Application (TrafficSense Pure Native App) — verified, 06 Nov 2026
 
 - **Scope & Implementation:**

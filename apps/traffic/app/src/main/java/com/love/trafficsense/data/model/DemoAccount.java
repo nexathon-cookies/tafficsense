@@ -28,21 +28,22 @@ public class DemoAccount {
 
     public DemoAccount() {}
 
-    public DemoAccount(String name, String role, String email, String badge, String description) {
+    public DemoAccount(String name, String role, String email, String password, String badge, String description) {
         this.name = name;
         this.label = name;
         this.role = role;
         this.email = email;
+        this.password = password;
         this.badge = badge;
         this.description = description;
     }
 
     public static List<DemoAccount> getPredefinedAccounts() {
         List<DemoAccount> list = new ArrayList<>();
-        list.add(new DemoAccount("Demo Commuter (A)", "commuter", "commuter-a@trafficsense.local", "ACTIVE", "Commuter with daily Mangaluru corridor pass."));
-        list.add(new DemoAccount("Demo Commuter (B)", "commuter", "commuter-b@trafficsense.local", "VERIFIED", "Commuter traveling via Kankanady Bypass."));
-        list.add(new DemoAccount("Traffic Authority Dispatcher", "authority", "authority@trafficsense.local", "AUTHORITY", "Municipal operations & hazard clearance dispatcher."));
-        list.add(new DemoAccount("Employer Verification Desk", "employer", "hr@company.local", "EMPLOYER", "HR & employer verification desk."));
+        list.add(new DemoAccount("Commuter (Primary)", "commuter", "commuter@demo.trafficsense.test", "z0F-KxD2BGwcyxyIyAGTXjxYCyLVzI2K", "COMMUTER", "Standard road user · Submit & verify reports"));
+        list.add(new DemoAccount("Commuter B", "commuter", "commuter-b@demo.trafficsense.test", "bdK8uR3z220uhgd8_C3c-9O05Gzhh-X2", "CORROBORATOR", "Second driver · Independent corridor verification"));
+        list.add(new DemoAccount("Traffic Authority", "authority", "authority@demo.trafficsense.test", "VCdoERM1tewQgPG9Kob9L-voyE0Z2aAK", "AUTHORITY", "Control room · Verify, confirm & clear hazards"));
+        list.add(new DemoAccount("Employer A", "employer", "employer-a@demo.trafficsense.test", "H4PyuaLaJBtYBzTjo6FmDExYaGLCxx2d", "EMPLOYER", "Workplace coordinator · Commute delay receipts"));
         return list;
     }
 

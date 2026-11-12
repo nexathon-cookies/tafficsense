@@ -75,10 +75,12 @@ if [ -z "$ONLINE_DEVICES" ]; then
     fi
 fi
 
+FIRST_DEVICE=$(echo "$ONLINE_DEVICES" | head -n1)
+echo "==> Targeted device: $FIRST_DEVICE"
 echo "==> Installing $APK_PATH..."
-$ADB install -r "$APK_PATH"
+$ADB -s "$FIRST_DEVICE" install -r "$APK_PATH"
 
 echo "==> Launching com.love.trafficsense..."
-$ADB shell am start -n com.love.trafficsense/.MainActivity
+$ADB -s "$FIRST_DEVICE" shell am start -n com.love.trafficsense/.MainActivity
 
 echo "==> TrafficSense is running! Connected to backend: $TARGET_URL"
