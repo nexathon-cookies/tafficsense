@@ -61,7 +61,7 @@ services:
       context: .
       target: development
     init: true
-    command: ["sh", "-c", "CI=true pnpm install --frozen-lockfile && pnpm test && pnpm lint && pnpm --filter @trafficsense/mobile typecheck && cd apps/web && pnpm exec next typegen && pnpm exec tsc --noEmit && cd ../.. && pnpm build"]
+    command: ["sh", "-c", "CI=true pnpm install --frozen-lockfile && pnpm test && pnpm lint && cd apps/web && pnpm exec next typegen && pnpm exec tsc --noEmit && cd ../.. && pnpm build"]
 
   production:
     profiles: ["production"]

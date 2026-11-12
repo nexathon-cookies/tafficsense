@@ -13,7 +13,6 @@ RUN corepack enable \
 
 USER node
 COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY --chown=node:node apps/mobile/package.json apps/mobile/package.json
 COPY --chown=node:node packages/shared/package.json packages/shared/package.json
 RUN --mount=type=cache,id=trafficsense-pnpm,target=/home/node/.local/share/pnpm/store,uid=1000,gid=1000 \
     corepack install && pnpm install --frozen-lockfile --fetch-timeout 600000
