@@ -45,6 +45,52 @@ mobile-lan host="192.168.0.224":
     @echo "==> Expo Go URL: exp://{{ trim_start_matches(host, "host=") }}:8081"
     @for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do if docker compose exec -T mobile node -e 'require("qrcode-terminal").generate("exp://{{ trim_start_matches(host, "host=") }}:8081", { small: true });' 2>/dev/null; then exit 0; fi; sleep 2; done; docker compose exec -T mobile node -e 'require("qrcode-terminal").generate("exp://{{ trim_start_matches(host, "host=") }}:8081", { small: true });'
 
+# Start development environment with native Java Android app (Supabase + seed + web + android emulator)
+kau-up avd="Pixel_8":
+    just db-start
+    just db-seed
+    docker compose up --build -d app
+    @echo "==> Web backend ready at http://localhost:3000 (10.0.2.2 for Android emulator)"
+    @echo "==> Building native Android app (apps/traffic)..."
+    cd apps/traffic && ./gradlew assembleDebug -PapiBaseUrl="http://10.0.2.2:3000"
+    @echo "==> Installing and running app on Android emulator/device..."
+    @bash scripts/run-android.sh emulator "http://10.0.2.2:3000" {{avd}}
+
+# Alias for kau-up
+traffic-up avd="Pixel_8":
+    just kau-up {{avd}}
+
+# Start backend on LAN and build Android app pointing to local network IP
+kau-lan host="192.168.0.224":
+    @echo "==> Starting backend on LAN (0.0.0.0)..."
+    LOCAL_SUPABASE_HOST_BIND=0.0.0.0 bash scripts/local-supabase.sh start
+    LOCAL_SUPABASE_HOST_BIND=0.0.0.0 bash scripts/local-supabase.sh seed
+    APP_HOST_BIND=0.0.0.0 docker compose up --build -d app
+    @echo "==> Building native Android app pointing to http://{{ trim_start_matches(host, "host=") }}:3000..."
+    cd apps/traffic && ./gradlew assembleDebug -PapiBaseUrl="http://{{ trim_start_matches(host, "host=") }}:3000"
+    @echo "==> Installing to connected device..."
+    @bash scripts/run-android.sh lan "http://{{ trim_start_matches(host, "host=") }}:3000"
+
+# Alias for kau-lan
+traffic-lan host="192.168.0.224":
+    just kau-lan {{host}}
+
+# Compile debug APK for Android app
+kau-build url="http://10.0.2.2:3000":
+    cd apps/traffic && ./gradlew assembleDebug -PapiBaseUrl="{{url}}"
+
+# Alias for kau-build
+traffic-build url="http://10.0.2.2:3000":
+    just kau-build {{url}}
+
+# Install and launch debug APK on connected device/emulator without rebuilding backend
+kau-run:
+    @bash scripts/run-android.sh emulator "http://10.0.2.2:3000" Pixel_8
+
+# Alias for kau-run
+traffic-run:
+    just kau-run
+
 # Start dev app and follow logs directly
 dev:
     docker compose up --build app

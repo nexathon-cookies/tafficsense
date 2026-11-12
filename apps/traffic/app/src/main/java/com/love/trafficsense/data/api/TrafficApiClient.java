@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import com.love.trafficsense.BuildConfig;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -23,8 +24,18 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class TrafficApiClient {
-    private static final String BASE_URL = "http://10.0.2.2:3000";
+    private static String baseUrl = BuildConfig.BASE_URL;
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+
+    public static synchronized String getBaseUrl() {
+        return baseUrl != null ? baseUrl : "http://10.0.2.2:3000";
+    }
+
+    public static synchronized void setBaseUrl(String url) {
+        if (url != null && !url.trim().isEmpty()) {
+            baseUrl = url.trim().replaceAll("/+$", "");
+        }
+    }
 
     private final OkHttpClient client;
     private final Gson gson;
@@ -55,7 +66,7 @@ public class TrafficApiClient {
 
     public void fetchActiveIncidents(ApiCallback<List<LiveIncident>> callback) {
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/incidents")
+                .url(getBaseUrl() + "/api/incidents")
                 .get()
                 .build();
 
@@ -101,7 +112,7 @@ public class TrafficApiClient {
 
         RequestBody body = RequestBody.create(payload.toString(), JSON);
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/incidents")
+                .url(getBaseUrl() + "/api/incidents")
                 .post(body)
                 .build();
 
@@ -132,7 +143,7 @@ public class TrafficApiClient {
 
         RequestBody body = RequestBody.create(payload.toString(), JSON);
         Request request = new Request.Builder()
-                .url(BASE_URL + "/api/route")
+                .url(getBaseUrl() + "/api/route")
                 .post(body)
                 .build();
 

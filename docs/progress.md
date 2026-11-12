@@ -1311,3 +1311,20 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
   - `git diff --check`: Clean, no whitespace or formatting errors.
 - **Commit:** `2ea2630` — `feat(authority): real-time push notification engine for spotted incidents and photo evidence`.
 
+## Native Android Justfile recipes & backend connection — verified, 12 Nov 2026
+
+- **Scope:** Provide unified `just` commands to build, compile, and run the native Java Android application (`apps/traffic`) connected to the local development backend (`apps/web` on port 3000 + Supabase on port 54321) on either the Android emulator or a physical phone over local LAN.
+- **Implementation:**
+  - **Dynamic Gradle BuildConfig (`apps/traffic/app/build.gradle.kts`):** Enabled `buildConfig = true` and injected `apiBaseUrl` into `BuildConfig.BASE_URL` with a default of `"http://10.0.2.2:3000"` for the emulator, overridable via `./gradlew assembleDebug -PapiBaseUrl="http://<LAN-IP>:3000"`.
+  - **Dynamic API Base URL in Client (`TrafficApiClient.java`):** Configured `TrafficApiClient` to initialize `baseUrl` from `BuildConfig.BASE_URL` and expose thread-safe `getBaseUrl()` and `setBaseUrl()`, replacing hardcoded loopback URLs across all endpoints (`/api/incidents`, `/api/route`).
+  - **Android Runner Script (`scripts/run-android.sh`):** Added a shell script that detects the Android SDK and `adb`, checks for connected devices, launches the Android emulator if inactive, waits for boot completion, installs `app-debug.apk`, and launches `com.love.trafficsense/.MainActivity`.
+  - **Justfile Recipes (`justfile`):**
+    - `just kau-up [avd="Pixel_8"]` (alias `traffic-up`): Starts Supabase and Next.js backend, builds Android debug APK configured for emulator (`http://10.0.2.2:3000`), installs, and starts the app.
+    - `just kau-lan [host="192.168.0.224"]` (alias `traffic-lan`): Starts Supabase and Next.js bound to `0.0.0.0` for LAN access, compiles debug APK with `-PapiBaseUrl="http://<host>:3000"`, installs to the connected USB device/phone, and launches.
+    - `just kau-build [url="..."]` (alias `traffic-build`): Compiles debug APK with custom backend URL.
+    - `just kau-run` (alias `traffic-run`): Installs and launches the APK on an active device/emulator without restarting backend services.
+- **Verification:**
+  - `apps/traffic/app/build.gradle.kts` and `TrafficApiClient.java` compiled with `./gradlew assembleDebug` (36 actionable tasks, BUILD SUCCESSFUL).
+  - `just --list` and dry-runs (`just --dry-run kau-up`, `just --dry-run kau-lan host=192.168.1.100`, `just --dry-run traffic-up`) executed and parsed correctly.
+  - `scripts/run-android.sh` created with executable permissions.
+
