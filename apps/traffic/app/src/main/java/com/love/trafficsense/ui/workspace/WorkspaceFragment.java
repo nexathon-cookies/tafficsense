@@ -36,7 +36,7 @@ public class WorkspaceFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         setupHeader();
-        demoAccounts = DemoAccount.getPredefinedAccounts();
+        demoAccounts = com.love.trafficsense.data.api.TrafficApiClient.getInstance().getCachedDemoAccounts();
         String currentEmail = com.love.trafficsense.data.api.TrafficApiClient.getInstance().getCurrentAuthEmail();
         currentAccount = demoAccounts.get(0);
         View initialCard = binding.cardAccountCommuterA;
@@ -56,6 +56,25 @@ public class WorkspaceFragment extends Fragment {
         setupJourneyLogging();
         renderAccountDetails();
         highlightCard(initialCard);
+
+        com.love.trafficsense.data.api.TrafficApiClient.getInstance().fetchDemoAccounts(new com.love.trafficsense.data.api.TrafficApiClient.ApiCallback<List<DemoAccount>>() {
+            @Override
+            public void onSuccess(List<DemoAccount> accounts) {
+                if (!isAdded()) return;
+                demoAccounts = accounts;
+                String liveEmail = com.love.trafficsense.data.api.TrafficApiClient.getInstance().getCurrentAuthEmail();
+                for (DemoAccount acc : accounts) {
+                    if (acc.email != null && acc.email.equalsIgnoreCase(liveEmail)) {
+                        currentAccount = acc;
+                        renderAccountDetails();
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public void onError(String message) {}
+        });
     }
 
     private void setupHeader() {
@@ -65,11 +84,11 @@ public class WorkspaceFragment extends Fragment {
     }
 
     private void renderAccountDetails() {
-        binding.tvUserName.setText(currentAccount.name);
-        binding.tvUserRole.setText(String.format("%s · Mangaluru Hub", currentAccount.role));
+        binding.tvUserName.setText(currentAccount.getName());
+        binding.tvUserRole.setText(String.format("%s · Mangaluru Hub", currentAccount.getRole()));
         binding.tvWorkspaceSubtitle.setText("Signed in as " + currentAccount.email);
 
-        boolean isAuthority = "authority".equalsIgnoreCase(currentAccount.role);
+        boolean isAuthority = "authority".equalsIgnoreCase(currentAccount.getRole());
         binding.tvWorkspaceEyebrow.setText(isAuthority ? "CIVIC CONTROL ROOM ACCESS" : "AUTHENTICATED COMMUTER");
         binding.header.tvHeaderSubtitle.setText(isAuthority ? "AUTHORITY OPS" : "COMMUTER PROFILE");
 
@@ -84,13 +103,14 @@ public class WorkspaceFragment extends Fragment {
         currentAccount = account;
         renderAccountDetails();
         highlightCard(cardView);
-        Toast.makeText(requireContext(), "Switching to: " + account.name + "...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "Switching to: " + account.getName() + "...", Toast.LENGTH_SHORT).show();
 
-        com.love.trafficsense.data.api.TrafficApiClient.getInstance().login(account.email, account.password, new com.love.trafficsense.data.api.TrafficApiClient.ApiCallback<String>() {
+        com.love.trafficsense.data.api.TrafficApiClient.getInstance().syncDemoAccountsAndLogin(account.email, new com.love.trafficsense.data.api.TrafficApiClient.ApiCallback<String>() {
             @Override
             public void onSuccess(String token) {
                 if (isAdded()) {
-                    Toast.makeText(requireContext(), "Signed in as: " + account.name, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), "Signed in as: " + account.getName(), Toast.LENGTH_SHORT).show();
+                    renderAccountDetails();
                 }
             }
 

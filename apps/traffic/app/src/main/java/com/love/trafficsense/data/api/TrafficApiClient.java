@@ -66,6 +66,8 @@ public class TrafficApiClient {
     private String currentAuthEmail = "commuter@demo.trafficsense.test";
     private String currentRole = "commuter";
 
+    private List<DemoAccount> cachedDemoAccounts = DemoAccount.getPredefinedAccounts();
+
     public interface ApiCallback<T> {
         void onSuccess(T result);
         void onError(String message);
@@ -88,8 +90,8 @@ public class TrafficApiClient {
         this.gson = new Gson();
         this.mainHandler = new Handler(Looper.getMainLooper());
 
-        // Perform initial background sign-in with default commuter credentials
-        login("commuter@demo.trafficsense.test", "z0F-KxD2BGwcyxyIyAGTXjxYCyLVzI2K", null);
+        // Perform initial dynamic credentials fetch and sign-in
+        syncDemoAccountsAndLogin("commuter@demo.trafficsense.test", null);
     }
 
     public synchronized String getCurrentAuthToken() {
@@ -104,10 +106,64 @@ public class TrafficApiClient {
         return currentRole;
     }
 
+    public synchronized List<DemoAccount> getCachedDemoAccounts() {
+        return new ArrayList<>(cachedDemoAccounts);
+    }
+
+    public void syncDemoAccountsAndLogin(String emailToLogin, ApiCallback<String> callback) {
+        Log.i(TAG, "Syncing demo accounts from " + getBaseUrl() + "/api/demo-accounts...");
+        fetchDemoAccounts(new ApiCallback<List<DemoAccount>>() {
+            @Override
+            public void onSuccess(List<DemoAccount> accounts) {
+                cachedDemoAccounts = accounts;
+                String targetEmail = emailToLogin != null ? emailToLogin : "commuter@demo.trafficsense.test";
+                DemoAccount match = null;
+                for (DemoAccount acc : accounts) {
+                    if (acc.email != null && acc.email.equalsIgnoreCase(targetEmail)) {
+                        match = acc;
+                        break;
+                    }
+                }
+                if (match != null && match.password != null && !match.password.isEmpty()) {
+                    Log.i(TAG, "Found dynamic credentials for " + match.email + ", logging in...");
+                    login(match.email, match.password, callback);
+                } else if (!accounts.isEmpty()) {
+                    DemoAccount first = accounts.get(0);
+                    login(first.email, first.password, callback);
+                } else if (callback != null) {
+                    callback.onError("No valid demo accounts found");
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                Log.w(TAG, "Failed to sync demo accounts: " + message + ", using predefined credentials");
+                // fallback to predefined
+                for (DemoAccount acc : cachedDemoAccounts) {
+                    if (acc.email != null && acc.email.equalsIgnoreCase(emailToLogin)) {
+                        login(acc.email, acc.password, callback);
+                        return;
+                    }
+                }
+                if (callback != null) callback.onError(message);
+            }
+        });
+    }
+
     public void login(String email, String password, ApiCallback<String> callback) {
+        String effectivePassword = password;
+        if (effectivePassword == null || effectivePassword.isEmpty()) {
+            for (DemoAccount acc : cachedDemoAccounts) {
+                if (acc.email != null && acc.email.equalsIgnoreCase(email)) {
+                    effectivePassword = acc.password;
+                    break;
+                }
+            }
+        }
+
         JsonObject payload = new JsonObject();
         payload.addProperty("email", email);
-        payload.addProperty("password", password);
+        payload.addProperty("password", effectivePassword != null ? effectivePassword : "");
 
         RequestBody body = RequestBody.create(payload.toString(), JSON);
         Request request = new Request.Builder()
@@ -118,6 +174,7 @@ public class TrafficApiClient {
 
         Log.i(TAG, "Attempting Supabase login for: " + email + " at " + getSupabaseAuthUrl());
 
+        final String finalEmail = email;
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -131,7 +188,16 @@ public class TrafficApiClient {
             public void onResponse(Call call, Response response) throws IOException {
                 if (!response.isSuccessful()) {
                     String err = "Auth status: " + response.code();
-                    Log.e(TAG, "Login failed: " + err);
+                    String errBody = response.body() != null ? response.body().string() : "";
+                    Log.e(TAG, "Login failed: " + err + " body: " + errBody);
+
+                    // If invalid credentials, attempt refresh from /api/demo-accounts if we haven't already
+                    if (response.code() == 400 && errBody.contains("invalid_credentials") && !finalEmail.endsWith(".refreshed")) {
+                        Log.i(TAG, "Invalid credentials detected, re-syncing /api/demo-accounts...");
+                        mainHandler.post(() -> syncDemoAccountsAndLogin(finalEmail + ".refreshed", callback));
+                        return;
+                    }
+
                     if (callback != null) {
                         mainHandler.post(() -> callback.onError(err));
                     }
@@ -142,15 +208,15 @@ public class TrafficApiClient {
                     JsonObject json = gson.fromJson(respStr, JsonObject.class);
                     if (json.has("access_token")) {
                         currentAuthToken = json.get("access_token").getAsString();
-                        currentAuthEmail = email;
-                        if (email.contains("authority")) {
+                        currentAuthEmail = finalEmail.replace(".refreshed", "");
+                        if (currentAuthEmail.contains("authority")) {
                             currentRole = "authority";
-                        } else if (email.contains("employer")) {
+                        } else if (currentAuthEmail.contains("employer")) {
                             currentRole = "employer";
                         } else {
                             currentRole = "commuter";
                         }
-                        Log.i(TAG, "Successfully signed in as: " + email + ", role: " + currentRole);
+                        Log.i(TAG, "Successfully signed in as: " + currentAuthEmail + ", role: " + currentRole);
                         if (callback != null) {
                             mainHandler.post(() -> callback.onSuccess(currentAuthToken));
                         }
@@ -215,6 +281,26 @@ public class TrafficApiClient {
     }
 
     public void submitIncident(String category, double lat, double lng, String note, ApiCallback<Boolean> callback) {
+        if (currentAuthToken == null) {
+            Log.i(TAG, "No auth token for submitIncident, syncing demo accounts and logging in first...");
+            syncDemoAccountsAndLogin(currentAuthEmail != null ? currentAuthEmail : "commuter@demo.trafficsense.test", new ApiCallback<String>() {
+                @Override
+                public void onSuccess(String token) {
+                    executeSubmitIncident(category, lat, lng, note, true, callback);
+                }
+
+                @Override
+                public void onError(String message) {
+                    Log.e(TAG, "Auto-login before submit failed: " + message);
+                    mainHandler.post(() -> callback.onError("Authentication required: " + message));
+                }
+            });
+            return;
+        }
+        executeSubmitIncident(category, lat, lng, note, false, callback);
+    }
+
+    private void executeSubmitIncident(String category, double lat, double lng, String note, boolean hasRetried, ApiCallback<Boolean> callback) {
         JsonObject payload = new JsonObject();
         payload.addProperty("category", category);
         payload.addProperty("lat", lat);
@@ -249,6 +335,24 @@ public class TrafficApiClient {
                 boolean success = response.isSuccessful();
                 String respBody = response.body() != null ? response.body().string() : "";
                 Log.i(TAG, "submitIncident response code=" + response.code() + " body=" + respBody);
+
+                if (response.code() == 401 && !hasRetried) {
+                    Log.i(TAG, "401 Unauthorized during submit, refreshing session and retrying...");
+                    currentAuthToken = null;
+                    syncDemoAccountsAndLogin(currentAuthEmail, new ApiCallback<String>() {
+                        @Override
+                        public void onSuccess(String token) {
+                            executeSubmitIncident(category, lat, lng, note, true, callback);
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            mainHandler.post(() -> callback.onError("Sign-in expired: " + message));
+                        }
+                    });
+                    return;
+                }
+
                 if (success) {
                     mainHandler.post(() -> callback.onSuccess(true));
                 } else {

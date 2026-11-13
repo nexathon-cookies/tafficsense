@@ -1,29 +1,33 @@
 # Project Progress
 
-## Native Java Android App Full Backend & Supabase Integration Parity — verified, 13 Nov 2026
+## Native Java Android App Full Backend, Dual-Route Detours & Automated Test Suite — verified, 13 Nov 2026
 
 - **Scope & Fixes:**
-  - **OSRM GeoJSON Coordinate Inversion Fix (`TrafficApiClient.java`):**
-    - Reversed route calculation coordinates from `[lat, lng]` to `[lng, lat]` matching GeoJSON specification and OSRM router expectations.
-    - Successfully resolved 400 "outside Mangaluru service area" errors when planning routes between State Bank and Pumpwell.
-  - **Live Supabase Authentication (`TrafficApiClient.java`, `WorkspaceFragment.java`):**
-    - Added Supabase JWT auth token retrieval against `http://<host>:54321/auth/v1/token?grant_type=password` using demo commuter credentials and `SUPABASE_ANON_KEY`.
-    - Wired persona switching cards in `WorkspaceFragment` (Commuter A, Commuter B, Traffic Authority Dispatcher, Employer Desk) to live authenticate, updating `currentAuthToken`, `currentAuthEmail`, and `currentRole`.
-    - Added `Authorization: Bearer <token>` header to incident submission POST requests, enabling named authenticated reports that unlock L2/L3 verification.
-  - **Data Model Serialization Parity (`LiveIncident.java`, `RouteOption.java`, `DemoAccount.java`):**
-    - In `LiveIncident.java`, added serialization alternates for `level` (`evidence_level`), `level_reason` (`evidence_label`), `note` (`notes`), and landmark coordinate fallback mappings.
-    - In `RouteOption.java`, added `@SerializedName` alternates for `distance_m` (`distance_meters`), `duration_s` (`duration_seconds`), and `RouteGeometry` (`coordinates: List<List<Double>>`). Fixed `hasHazards` vs `avoidsIncident` mapping.
-    - Handled `incidents_on_route` object parsing in `TrafficApiClient.java` without string casting exceptions.
-  - **Leaflet HTML Builder Syntax & Marker Rendering (`MapHtmlBuilder.java`, `HomeFragment.java`):**
-    - Corrected JavaScript array literal syntax in `routeCoords` and sanitized incident marker element IDs.
-    - Rendered live incident pins dynamically on both `HomeFragment` hero map and `TrafficFragment` live interactive Leaflet map.
-  - **Device Wireless ADB & Justfile Automation (`justfile`, `scripts/run-android.sh`):**
-    - Added `just kau-lan <ip>`, `just kau-up`, `just kau-build`, and `just kau-run` automation recipes.
-    - Updated `scripts/run-android.sh` to safely target connected physical devices when multiple endpoints are discovered via mDNS.
+  - **Dynamic Supabase Demo Credentials Sync (`TrafficApiClient.java`, `WorkspaceFragment.java`):**
+    - Dynamically queries `/api/demo-accounts` on launch to retrieve randomized seed passwords for `commuter@demo.trafficsense.test`, `authority@demo.trafficsense.test`, and `employer-a@demo.trafficsense.test`.
+    - Auto-authenticates against Supabase Auth endpoint `http://<host>:54321/auth/v1/token?grant_type=password`, acquiring a valid JWT `access_token` and preventing `401 Unauthorized` errors on report submission.
+    - Updated `WorkspaceFragment` persona switcher to seamlessly re-authenticate on tap with live dynamic credentials.
+  - **Dual-Route Detour Rerouting & Corridor Hazards (`MapHtmlBuilder.java`, `PlannerFragment.java`, `fragment_planner.xml`):**
+    - Added view IDs `tv_alternative_title`, `tv_alternative_telemetry`, and `card_primary_route` to `fragment_planner.xml`.
+    - Updated `MapHtmlBuilder.java` to support simultaneous dual-route rendering (Primary Route in `#BA1A1A` / `#D97706` + Safe Detour in `#005C55`).
+    - Added custom teardrop pins with category emojis (💥, 🌊, ⛔, 🚧, 🚗) and SVG downward pointing tip to pin road hazards accurately on route planner and live traffic maps.
+    - Connected `switch_alternative` and `btn_select_detour` in `PlannerFragment` to toggle the detour route, update navigation telemetry, and re-render the Leaflet map with active selection styling.
+  - **Live Corroboration & WebView Resilience (`TrafficFragment.java`, `HomeFragment.java`):**
+    - Wired `btnSheetCorroborate` to submit live peer confirmation reports to `POST /api/incidents` to increment evidence levels (L1 → L2 → L3).
+    - Added `WebChromeClient` with `onConsoleMessage` logging and configured `MIXED_CONTENT_ALWAYS_ALLOW` for consistent tile rendering across OEM Android skins.
+  - **Automated JVM Integration & Unit Test Suite (`BackendIntegrationTest.java`):**
+    - Created comprehensive test suite verifying the end-to-end backend flow:
+      1. `testMapHtmlBuilderGeneratesValidSyntax`: Verifies Leaflet JS structure, dual route layers, and teardrop pin formatting.
+      2. `testFullBackendEndToEndFlow`: Tests dynamic `/api/demo-accounts` retrieval, Supabase token exchange, active incidents query, OSRM route calculation, and authenticated report submission (`201 Created`).
 - **Verification Evidence:**
-  - Built debug APK with `./gradlew assembleDebug -PapiBaseUrl="http://192.168.0.224:3000"`.
-  - Installed and launched on physical Android device (`192.168.0.233:38307`).
-  - Logcat verified: Supabase authentication succeeded (`role: commuter`), loaded 5 active incidents from backend (`GET /api/incidents`), and parsed live incidents into UI.
+  - `./gradlew testDebugUnitTest`: All test cases passed in 1.554s (`TEST-com.love.trafficsense.BackendIntegrationTest.xml`).
+  - Reassembled debug APK with `./gradlew assembleDebug -PapiBaseUrl="http://192.168.0.224:3000"`.
+  - Installed and launched on phone via wireless ADB (`adb-10BE2D1SYX000UY-KSkZnU._adb-tls-connect._tcp`).
+  - Logcat verified at 17:25:34:
+    - `I TrafficApiClient: Syncing demo accounts from http://192.168.0.224:3000/api/demo-accounts...`
+    - `I TrafficApiClient: Found dynamic credentials for commuter@demo.trafficsense.test, logging in...`
+    - `I TrafficApiClient: Successfully signed in as: commuter@demo.trafficsense.test, role: commuter`
+    - `I TrafficApiClient: Computed 2 route options from OSRM backend`
 
 ## Native Java Android Application (TrafficSense Pure Native App) — verified, 06 Nov 2026
 

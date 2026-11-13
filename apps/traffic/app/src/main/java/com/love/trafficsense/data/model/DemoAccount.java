@@ -47,9 +47,37 @@ public class DemoAccount {
         return list;
     }
 
-    public String getName() { return name != null ? name : ""; }
+    public String getName() {
+        if (name != null && !name.isEmpty()) return name;
+        if (label != null && !label.isEmpty()) {
+            if ("commuter".equalsIgnoreCase(label)) return "Commuter (Primary)";
+            if ("commuter-b".equalsIgnoreCase(label)) return "Commuter B";
+            if ("commuter-c".equalsIgnoreCase(label)) return "Commuter C";
+            if ("authority".equalsIgnoreCase(label)) return "Traffic Authority";
+            if ("employer-a".equalsIgnoreCase(label)) return "Employer A";
+            if ("employer-b".equalsIgnoreCase(label)) return "Employer B";
+            return label;
+        }
+        return email != null ? email : "Demo User";
+    }
+
     public String getRole() { return role != null ? role : "commuter"; }
     public String getEmail() { return email != null ? email : ""; }
-    public String getBadge() { return badge != null ? badge : "COMMUTER"; }
-    public String getDescription() { return description != null ? description : ""; }
+    public String getPassword() { return password != null ? password : ""; }
+
+    public String getBadge() {
+        if (badge != null && !badge.isEmpty()) return badge;
+        if ("authority".equalsIgnoreCase(role)) return "AUTHORITY";
+        if ("employer".equalsIgnoreCase(role)) return "EMPLOYER";
+        if (label != null && (label.contains("b") || label.contains("c"))) return "CORROBORATOR";
+        return "COMMUTER";
+    }
+
+    public String getDescription() {
+        if (description != null && !description.isEmpty()) return description;
+        if ("authority".equalsIgnoreCase(role)) return "Control room · Verify, confirm & clear hazards";
+        if ("employer".equalsIgnoreCase(role)) return "Workplace coordinator · Commute delay receipts";
+        if (label != null && (label.contains("b") || label.contains("c"))) return "Second driver · Independent corridor verification";
+        return "Standard road user · Submit & verify reports";
+    }
 }

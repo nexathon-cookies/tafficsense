@@ -86,7 +86,18 @@ public class TrafficFragment extends Fragment {
         WebSettings settings = binding.webViewMap.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         binding.webViewMap.setWebViewClient(new WebViewClient());
+        binding.webViewMap.setWebChromeClient(new android.webkit.WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(android.webkit.ConsoleMessage cm) {
+                android.util.Log.d("TrafficMap", "Map JS: " + cm.message() + " -- Line " + cm.lineNumber());
+                return true;
+            }
+        });
 
         // JavaScript Interface bridge to receive clicks from Leaflet markers
         binding.webViewMap.addJavascriptInterface(new Object() {
@@ -161,8 +172,27 @@ public class TrafficFragment extends Fragment {
 
         // Corroborate button
         binding.btnSheetCorroborate.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Thank you! Corroboration recorded for this incident.", Toast.LENGTH_SHORT).show();
-            binding.bottomSheetIncident.setVisibility(View.GONE);
+            binding.btnSheetCorroborate.setEnabled(false);
+            Toast.makeText(requireContext(), "Submitting corroboration to backend...", Toast.LENGTH_SHORT).show();
+            TrafficApiClient.getInstance().submitIncident(inc.category, inc.lat, inc.lng,
+                    "Corroborated by active commuter at " + (inc.landmark != null ? inc.landmark : "corridor"),
+                    new TrafficApiClient.ApiCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean result) {
+                            if (!isAdded()) return;
+                            binding.btnSheetCorroborate.setEnabled(true);
+                            binding.bottomSheetIncident.setVisibility(View.GONE);
+                            Toast.makeText(requireContext(), "Corroboration verified! Evidence level updated.", Toast.LENGTH_SHORT).show();
+                            loadIncidents();
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            if (!isAdded()) return;
+                            binding.btnSheetCorroborate.setEnabled(true);
+                            Toast.makeText(requireContext(), "Corroboration: " + message, Toast.LENGTH_SHORT).show();
+                        }
+                    });
         });
     }
 
@@ -177,7 +207,7 @@ public class TrafficFragment extends Fragment {
 
                 // Build & Render OpenStreetMap
                 String mapHtml = MapHtmlBuilder.buildMapHtml(incidents, null, 12.8687, 74.8436);
-                binding.webViewMap.loadDataWithBaseURL(null, mapHtml, "text/html", "UTF-8", null);
+                binding.webViewMap.loadDataWithBaseURL("https://trafficsense.local", mapHtml, "text/html", "UTF-8", null);
             }
 
             @Override

@@ -1,9 +1,12 @@
 package com.love.trafficsense.ui.planner;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ConsoleMessage;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -11,24 +14,34 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.love.trafficsense.R;
 import com.love.trafficsense.data.api.TrafficApiClient;
+import com.love.trafficsense.data.model.LiveIncident;
 import com.love.trafficsense.data.model.RouteOption;
 import com.love.trafficsense.databinding.FragmentPlannerBinding;
 import com.love.trafficsense.utils.MapHtmlBuilder;
 import com.love.trafficsense.utils.PlacesData;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class PlannerFragment extends Fragment {
 
+    private static final String TAG = "PlannerFragment";
+
     private FragmentPlannerBinding binding;
     private PlacesData.Place origin = PlacesData.MANGALURU_PLACES.get(0);
     private PlacesData.Place destination = PlacesData.MANGALURU_PLACES.get(1);
+
+    private RouteOption primaryRoute;
+    private RouteOption alternativeRoute;
+    private boolean isAlternativeSelected = false;
+    private List<LiveIncident> activeIncidents = new ArrayList<>();
 
     @Nullable
     @Override
@@ -60,17 +73,24 @@ public class PlannerFragment extends Fragment {
         binding.btnCheckRoute.setOnClickListener(v -> checkRoute());
 
         binding.switchAlternative.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isAlternativeSelected = isChecked;
             binding.cardAlternativeRoute.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-            if (isChecked) {
-                Toast.makeText(requireContext(), "Alternative detour displayed (commuter choice)", Toast.LENGTH_SHORT).show();
+            updateCardHighlights();
+            renderRouteMap();
+            if (isChecked && alternativeRoute != null) {
+                Toast.makeText(requireContext(), "Alternative detour active: " + alternativeRoute.name, Toast.LENGTH_SHORT).show();
             }
         });
 
         binding.btnSelectDetour.setOnClickListener(v -> {
-            Toast.makeText(requireContext(), "Alternative bypass route selected for navigation", Toast.LENGTH_SHORT).show();
+            isAlternativeSelected = true;
+            binding.switchAlternative.setChecked(true);
+            updateCardHighlights();
+            renderRouteMap();
+            Toast.makeText(requireContext(), "Selected alternative detour: " + (alternativeRoute != null ? alternativeRoute.name : "Detour"), Toast.LENGTH_SHORT).show();
         });
 
-        checkRoute();
+        loadIncidentsAndRoute();
     }
 
     private void setupHeader() {
@@ -86,14 +106,43 @@ public class PlannerFragment extends Fragment {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         webView.setWebViewClient(new WebViewClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage cm) {
+                Log.d(TAG, "Map JS: " + cm.message() + " -- From line " + cm.lineNumber());
+                return true;
+            }
+        });
 
-        renderRouteMap(null);
+        renderRouteMap();
     }
 
-    private void renderRouteMap(RouteOption route) {
-        String html = MapHtmlBuilder.buildMapHtml(null, route, origin.lat, origin.lng);
-        binding.webviewPlannerMap.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
+    private void updateCardHighlights() {
+        int primaryBorderColor = ContextCompat.getColor(requireContext(), R.color.primary);
+        int secondaryBorderColor = ContextCompat.getColor(requireContext(), R.color.secondary);
+        int defaultBorderColor = ContextCompat.getColor(requireContext(), R.color.border);
+
+        if (isAlternativeSelected) {
+            binding.cardPrimaryRoute.setStrokeColor(defaultBorderColor);
+            binding.cardPrimaryRoute.setStrokeWidth(1);
+            binding.cardAlternativeRoute.setStrokeColor(secondaryBorderColor);
+            binding.cardAlternativeRoute.setStrokeWidth(3);
+        } else {
+            binding.cardPrimaryRoute.setStrokeColor(primaryBorderColor);
+            binding.cardPrimaryRoute.setStrokeWidth(3);
+            binding.cardAlternativeRoute.setStrokeColor(defaultBorderColor);
+            binding.cardAlternativeRoute.setStrokeWidth(1);
+        }
+    }
+
+    private void renderRouteMap() {
+        String html = MapHtmlBuilder.buildMapHtml(activeIncidents, primaryRoute, alternativeRoute, isAlternativeSelected, origin.lat, origin.lng);
+        binding.webviewPlannerMap.loadDataWithBaseURL("https://trafficsense.local", html, "text/html", "UTF-8", null);
     }
 
     private void setupPresetChips() {
@@ -146,6 +195,23 @@ public class PlannerFragment extends Fragment {
                 .show();
     }
 
+    private void loadIncidentsAndRoute() {
+        TrafficApiClient.getInstance().fetchActiveIncidents(new TrafficApiClient.ApiCallback<List<LiveIncident>>() {
+            @Override
+            public void onSuccess(List<LiveIncident> incidents) {
+                if (isAdded()) {
+                    activeIncidents = incidents;
+                }
+                checkRoute();
+            }
+
+            @Override
+            public void onError(String message) {
+                checkRoute();
+            }
+        });
+    }
+
     private void checkRoute() {
         binding.btnCheckRoute.setEnabled(false);
         TrafficApiClient.getInstance().fetchRoute(origin.lat, origin.lng, destination.lat, destination.lng, new TrafficApiClient.ApiCallback<List<RouteOption>>() {
@@ -154,18 +220,32 @@ public class PlannerFragment extends Fragment {
                 if (!isAdded() || routes == null || routes.isEmpty()) return;
                 binding.btnCheckRoute.setEnabled(true);
 
-                RouteOption route = routes.get(0);
-                binding.tvPrimaryTitle.setText(route.name);
-                binding.tvPrimaryTelemetry.setText(String.format("%s · %s", route.getFormattedDistance(), route.getFormattedDuration()));
+                primaryRoute = routes.get(0);
+                binding.tvPrimaryTitle.setText(primaryRoute.name);
+                binding.tvPrimaryTelemetry.setText(String.format("%s · %s", primaryRoute.getFormattedDistance(), primaryRoute.getFormattedDuration()));
 
-                if (route.hasHazards && route.warningNote != null && !route.warningNote.isEmpty()) {
+                if (primaryRoute.hasHazards && primaryRoute.warningNote != null && !primaryRoute.warningNote.isEmpty()) {
                     binding.layoutRouteWarning.setVisibility(View.VISIBLE);
-                    binding.tvRouteWarning.setText(route.warningNote);
+                    binding.tvRouteWarning.setText(primaryRoute.warningNote);
                 } else {
                     binding.layoutRouteWarning.setVisibility(View.GONE);
                 }
 
-                renderRouteMap(route);
+                if (routes.size() > 1) {
+                    alternativeRoute = routes.get(1);
+                    binding.tvAlternativeTitle.setText(alternativeRoute.name);
+                    binding.tvAlternativeTelemetry.setText(String.format("%s · %s · Avoids reported corridor hazard",
+                            alternativeRoute.getFormattedDistance(), alternativeRoute.getFormattedDuration()));
+                    binding.switchAlternative.setVisibility(View.VISIBLE);
+                } else {
+                    alternativeRoute = null;
+                    isAlternativeSelected = false;
+                    binding.switchAlternative.setChecked(false);
+                    binding.cardAlternativeRoute.setVisibility(View.GONE);
+                }
+
+                updateCardHighlights();
+                renderRouteMap();
             }
 
             @Override

@@ -67,23 +67,14 @@ public class HomeFragment extends Fragment {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         webView.setWebViewClient(new WebViewClient());
 
-        // Leaflet interactive map centered on Mangaluru Corridor
-        String mapHtml = "<!DOCTYPE html><html><head>" +
-                "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'/>" +
-                "<link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'/>" +
-                "<script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>" +
-                "<style>html,body,#map{height:100%;margin:0;padding:0;background:#FAF8FF;}</style>" +
-                "</head><body><div id='map'></div><script>" +
-                "var map = L.map('map', {zoomControl: false, attributionControl: false}).setView([12.8687, 74.8436], 13);" +
-                "L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);" +
-                "L.circleMarker([12.8687, 74.8436], {radius: 7, color: '#005C55', fillColor: '#005C55', fillOpacity: 0.9}).addTo(map);" +
-                "L.circleMarker([12.8580, 74.8550], {radius: 7, color: '#BA1A1A', fillColor: '#BA1A1A', fillOpacity: 0.9}).addTo(map);" +
-                "L.polyline([[12.8687, 74.8436],[12.8620, 74.8480],[12.8580, 74.8550]], {color: '#005C55', weight: 4}).addTo(map);" +
-                "</script></body></html>";
-
-        webView.loadDataWithBaseURL(null, mapHtml, "text/html", "UTF-8", null);
+        String initialHtml = MapHtmlBuilder.buildMapHtml(null, null, 12.8687, 74.8436);
+        webView.loadDataWithBaseURL("https://trafficsense.local", initialHtml, "text/html", "UTF-8", null);
     }
 
     private void setupInteractions() {
@@ -158,7 +149,7 @@ public class HomeFragment extends Fragment {
                 binding.tvLiveTimestamp.setText("Live · updated " + time + " · 30s auto-refresh");
 
                 String mapHtml = MapHtmlBuilder.buildMapHtml(incidents, null, 12.8687, 74.8436);
-                binding.webviewHeroMap.loadDataWithBaseURL(null, mapHtml, "text/html", "UTF-8", null);
+                binding.webviewHeroMap.loadDataWithBaseURL("https://trafficsense.local", mapHtml, "text/html", "UTF-8", null);
             }
 
             @Override
