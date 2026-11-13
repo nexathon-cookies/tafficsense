@@ -67,6 +67,20 @@ public class TrafficApiClient {
     private String currentRole = "commuter";
 
     private List<DemoAccount> cachedDemoAccounts = DemoAccount.getPredefinedAccounts();
+    private List<LiveIncident> cachedIncidents = new ArrayList<>();
+
+    public synchronized List<LiveIncident> getCachedIncidents() {
+        if (cachedIncidents == null || cachedIncidents.isEmpty()) {
+            return getFallbackIncidents();
+        }
+        return new ArrayList<>(cachedIncidents);
+    }
+
+    public synchronized void setCachedIncidents(List<LiveIncident> list) {
+        if (list != null) {
+            this.cachedIncidents = new ArrayList<>(list);
+        }
+    }
 
     public interface ApiCallback<T> {
         void onSuccess(T result);
@@ -269,6 +283,9 @@ public class TrafficApiClient {
                     if (list.isEmpty()) {
                         list = getFallbackIncidents();
                     }
+                    synchronized (TrafficApiClient.this) {
+                        cachedIncidents = new ArrayList<>(list);
+                    }
                     Log.i(TAG, "Loaded " + list.size() + " active incidents from backend");
                     final List<LiveIncident> finalList = list;
                     mainHandler.post(() -> callback.onSuccess(finalList));
@@ -354,6 +371,30 @@ public class TrafficApiClient {
                 }
 
                 if (success) {
+                    try {
+                        JsonObject obj = gson.fromJson(respBody, JsonObject.class);
+                        String incId = obj != null && obj.has("incident_id") ? obj.get("incident_id").getAsString() : ("rep_" + System.currentTimeMillis());
+                        String level = obj != null && obj.has("level") ? obj.get("level").getAsString() : "L2";
+                        String reason = obj != null && obj.has("level_reason") ? obj.get("level_reason").getAsString() : "Location verified by device GPS";
+
+                        LiveIncident newInc = new LiveIncident(
+                                incId, category, null, lat, lng, level, reason, note, 1
+                        );
+                        synchronized (TrafficApiClient.this) {
+                            if (cachedIncidents == null) cachedIncidents = new ArrayList<>();
+                            boolean found = false;
+                            for (int i = 0; i < cachedIncidents.size(); i++) {
+                                if (cachedIncidents.get(i).id != null && cachedIncidents.get(i).id.equals(incId)) {
+                                    cachedIncidents.set(i, newInc);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (!found) {
+                                cachedIncidents.add(0, newInc);
+                            }
+                        }
+                    } catch (Exception ignored) {}
                     mainHandler.post(() -> callback.onSuccess(true));
                 } else {
                     String cleanError = "Server error " + response.code();

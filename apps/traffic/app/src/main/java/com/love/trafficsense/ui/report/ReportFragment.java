@@ -66,7 +66,7 @@ public class ReportFragment extends Fragment {
         binding.header.tvHeaderTitle.setText("Report a Hazard");
         binding.header.tvHeaderSubtitle.setText("CIVIC CITIZEN REPORT");
         binding.header.ivHeaderAvatar.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_workspace);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_workspace);
         });
     }
 
@@ -189,9 +189,12 @@ public class ReportFragment extends Fragment {
                 binding.btnSubmitReport.setEnabled(true);
                 binding.etHazardNote.setText("");
                 new MaterialAlertDialogBuilder(requireContext())
-                        .setTitle("Report Submitted!")
-                        .setMessage("Thank you! Your civic hazard report has been recorded with initial Evidence Level L1 and is pending peer corroboration.")
-                        .setPositiveButton("Done", null)
+                        .setTitle("Hazard Reported!")
+                        .setMessage("Your hazard report has been recorded and verified by high-accuracy GPS (Level L2).\n\nWould you like to view it on the Live Traffic Map?")
+                        .setPositiveButton("View on Map", (dialog, which) -> {
+                            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_traffic);
+                        })
+                        .setNegativeButton("Done", null)
                         .show();
             }
 
@@ -204,7 +207,7 @@ public class ReportFragment extends Fragment {
                             .setTitle("Hourly Rate Limit (Anti-Spam)")
                             .setMessage("The civic engine allows up to 5 reports per hour per account to prevent spam.\n\nYou can switch to another demo persona (e.g. Commuter 2 or Traffic Authority) in the Workspace tab to continue reporting immediately.")
                             .setPositiveButton("Switch Persona", (dialog, which) -> {
-                                androidx.navigation.Navigation.findNavController(requireView()).navigate(R.id.navigation_workspace);
+                                com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_workspace);
                             })
                             .setNegativeButton("OK", null)
                             .show();

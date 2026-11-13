@@ -58,8 +58,16 @@ public class HomeFragment extends Fragment {
         binding.rvHomeIncidents.setAdapter(adapter);
 
         adapter.setOnIncidentClickListener(incident -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_traffic);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_traffic);
         });
+    }
+
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden && isAdded()) {
+            loadIncidents();
+        }
     }
 
     private void setupMiniMap() {
@@ -74,7 +82,7 @@ public class HomeFragment extends Fragment {
         webView.setWebViewClient(new WebViewClient());
 
         String initialHtml = MapHtmlBuilder.buildMapHtml(null, null, 12.8687, 74.8436);
-        webView.loadDataWithBaseURL("https://trafficsense.local", initialHtml, "text/html", "UTF-8", null);
+        webView.loadDataWithBaseURL("file:///android_asset/", initialHtml, "text/html", "UTF-8", null);
     }
 
     private void setupInteractions() {
@@ -92,42 +100,42 @@ public class HomeFragment extends Fragment {
 
         // Clickable Route Inspection
         binding.btnInspectRoutes.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_planner);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_planner);
         });
 
         binding.rowOriginPicker.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_planner);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_planner);
         });
 
         binding.rowDestPicker.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_planner);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_planner);
         });
 
         // Explore Full Map Button
         binding.btnExploreFullMap.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_traffic);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_traffic);
         });
 
         // 2x2 Quick Actions
         binding.actionReportIssue.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_report);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_report);
         });
 
         binding.actionLiveMap.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_traffic);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_traffic);
         });
 
         binding.actionPlanRoute.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_planner);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_planner);
         });
 
         binding.actionMyJourneys.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_workspace);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_workspace);
         });
 
         // Header Avatar & Sync
         binding.header.ivHeaderAvatar.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_workspace);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_workspace);
         });
 
         binding.btnHomeSync.setOnClickListener(v -> {
@@ -137,6 +145,14 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadIncidents() {
+        List<LiveIncident> cached = TrafficApiClient.getInstance().getCachedIncidents();
+        if (cached != null && !cached.isEmpty()) {
+            adapter.setIncidents(cached);
+            binding.tvReportsCount.setText(cached.size() + " reports");
+            String cachedHtml = MapHtmlBuilder.buildMapHtml(cached, null, 12.8687, 74.8436);
+            binding.webviewHeroMap.loadDataWithBaseURL("file:///android_asset/", cachedHtml, "text/html", "UTF-8", null);
+        }
+
         TrafficApiClient.getInstance().fetchActiveIncidents(new TrafficApiClient.ApiCallback<List<LiveIncident>>() {
             @Override
             public void onSuccess(List<LiveIncident> incidents) {
@@ -149,7 +165,7 @@ public class HomeFragment extends Fragment {
                 binding.tvLiveTimestamp.setText("Live · updated " + time + " · 30s auto-refresh");
 
                 String mapHtml = MapHtmlBuilder.buildMapHtml(incidents, null, 12.8687, 74.8436);
-                binding.webviewHeroMap.loadDataWithBaseURL("https://trafficsense.local", mapHtml, "text/html", "UTF-8", null);
+                binding.webviewHeroMap.loadDataWithBaseURL("file:///android_asset/", mapHtml, "text/html", "UTF-8", null);
             }
 
             @Override

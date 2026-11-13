@@ -93,11 +93,19 @@ public class PlannerFragment extends Fragment {
         loadIncidentsAndRoute();
     }
 
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden && isAdded()) {
+            checkRoute();
+        }
+    }
+
     private void setupHeader() {
         binding.header.tvHeaderTitle.setText("Route Planner");
         binding.header.tvHeaderSubtitle.setText("MANGALURU · HUBS");
         binding.header.ivHeaderAvatar.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_workspace);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_workspace);
         });
     }
 
@@ -142,7 +150,7 @@ public class PlannerFragment extends Fragment {
 
     private void renderRouteMap() {
         String html = MapHtmlBuilder.buildMapHtml(activeIncidents, primaryRoute, alternativeRoute, isAlternativeSelected, origin.lat, origin.lng);
-        binding.webviewPlannerMap.loadDataWithBaseURL("https://trafficsense.local", html, "text/html", "UTF-8", null);
+        binding.webviewPlannerMap.loadDataWithBaseURL("file:///android_asset/", html, "text/html", "UTF-8", null);
     }
 
     private void setupPresetChips() {

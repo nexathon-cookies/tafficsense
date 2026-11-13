@@ -25,4 +25,8 @@
     </style>
 
     <style name="Theme.TrafficSense" parent="Base.Theme.TrafficSense" />
+
+    <style name="Widget.TrafficSense.BottomNavigationView.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/primary_container</item>
+    </style>
 </resources>

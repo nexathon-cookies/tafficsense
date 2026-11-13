@@ -57,11 +57,19 @@ public class TrafficFragment extends Fragment {
         loadIncidents();
     }
 
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden && isAdded()) {
+            loadIncidents();
+        }
+    }
+
     private void setupHeader() {
         binding.header.tvHeaderTitle.setText("Live Traffic Map");
         binding.header.tvHeaderSubtitle.setText("MANGALURU · CORRIDORS");
         binding.header.ivHeaderAvatar.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_workspace);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_workspace);
         });
     }
 
@@ -167,7 +175,7 @@ public class TrafficFragment extends Fragment {
 
         // Detour navigation button
         binding.btnSheetPlanDetour.setOnClickListener(v -> {
-            Navigation.findNavController(requireView()).navigate(R.id.navigation_planner);
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_planner);
         });
 
         // Corroborate button
@@ -201,6 +209,15 @@ public class TrafficFragment extends Fragment {
     }
 
     private void loadIncidents() {
+        List<LiveIncident> cached = TrafficApiClient.getInstance().getCachedIncidents();
+        if (cached != null && !cached.isEmpty()) {
+            allIncidents = cached;
+            adapter.setIncidents(cached);
+            binding.btnViewList.setText("List (" + cached.size() + ")");
+            String cachedHtml = MapHtmlBuilder.buildMapHtml(cached, null, 12.8687, 74.8436);
+            binding.webViewMap.loadDataWithBaseURL("file:///android_asset/", cachedHtml, "text/html", "UTF-8", null);
+        }
+
         TrafficApiClient.getInstance().fetchActiveIncidents(new TrafficApiClient.ApiCallback<List<LiveIncident>>() {
             @Override
             public void onSuccess(List<LiveIncident> incidents) {
@@ -211,7 +228,7 @@ public class TrafficFragment extends Fragment {
 
                 // Build & Render OpenStreetMap
                 String mapHtml = MapHtmlBuilder.buildMapHtml(incidents, null, 12.8687, 74.8436);
-                binding.webViewMap.loadDataWithBaseURL("https://trafficsense.local", mapHtml, "text/html", "UTF-8", null);
+                binding.webViewMap.loadDataWithBaseURL("file:///android_asset/", mapHtml, "text/html", "UTF-8", null);
             }
 
             @Override

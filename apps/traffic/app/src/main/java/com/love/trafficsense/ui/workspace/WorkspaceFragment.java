@@ -77,6 +77,14 @@ public class WorkspaceFragment extends Fragment {
         });
     }
 
+    @Override
+    public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden && isAdded()) {
+            renderAccountDetails();
+        }
+    }
+
     private void setupHeader() {
         binding.header.tvHeaderTitle.setText("Workspace");
         binding.header.tvHeaderSubtitle.setText("COMMUTER PROFILE");
