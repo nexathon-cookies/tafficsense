@@ -190,7 +190,11 @@ public class TrafficFragment extends Fragment {
                         public void onError(String message) {
                             if (!isAdded()) return;
                             binding.btnSheetCorroborate.setEnabled(true);
-                            Toast.makeText(requireContext(), "Corroboration: " + message, Toast.LENGTH_SHORT).show();
+                            if (message != null && message.toLowerCase().contains("rate limit")) {
+                                Toast.makeText(requireContext(), "Rate limit reached (5 reports/hr). Switch persona in Workspace to submit more.", Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(requireContext(), "Corroboration: " + message, Toast.LENGTH_SHORT).show();
+                            }
                         }
                     });
         });

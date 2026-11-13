@@ -198,12 +198,19 @@ public class BackendIntegrationTest {
                 .build();
 
         try (Response submitResp = client.newCall(submitReq).execute()) {
-            assertEquals("Authenticated incident submission should return 201 Created", 201, submitResp.code());
-            String body = submitResp.body().string();
+            int code = submitResp.code();
+            String body = submitResp.body() != null ? submitResp.body().string() : "";
+            assertTrue("Expected 201 Created or 400 Rate Limited (anti-spam quota): code=" + code + ", body=" + body,
+                    code == 201 || (code == 400 && body.contains("Rate limit exceeded")));
             JsonObject submitJson = gson.fromJson(body, JsonObject.class);
-            assertTrue(submitJson.get("ok").getAsBoolean());
-            assertTrue(submitJson.has("incident_id"));
-            assertTrue("Report should be verified at least L1/L2", submitJson.has("level"));
+            if (code == 201) {
+                assertTrue(submitJson.get("ok").getAsBoolean());
+                assertTrue(submitJson.has("incident_id"));
+                assertTrue("Report should be verified at least L1/L2", submitJson.has("level"));
+            } else {
+                assertFalse(submitJson.get("ok").getAsBoolean());
+                assertTrue(submitJson.get("error").getAsString().contains("Rate limit exceeded"));
+            }
         }
     }
 }

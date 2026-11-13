@@ -356,7 +356,15 @@ public class TrafficApiClient {
                 if (success) {
                     mainHandler.post(() -> callback.onSuccess(true));
                 } else {
-                    mainHandler.post(() -> callback.onError("Server error " + response.code() + ": " + respBody));
+                    String cleanError = "Server error " + response.code();
+                    try {
+                        JsonObject errJson = gson.fromJson(respBody, JsonObject.class);
+                        if (errJson != null && errJson.has("error") && !errJson.get("error").isJsonNull()) {
+                            cleanError = errJson.get("error").getAsString();
+                        }
+                    } catch (Exception ignored) {}
+                    final String finalError = cleanError;
+                    mainHandler.post(() -> callback.onError(finalError));
                 }
             }
         });

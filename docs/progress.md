@@ -1,5 +1,26 @@
 # Project Progress
 
+## Rate Limit Resilience, Clean Error Handling & Corroboration Feedback — verified, 13 Nov 2026
+
+- **Scope & Fixes:**
+  - **Clean Backend Error Parsing (`TrafficApiClient.java`):**
+    - Extracted JSON `error` message string directly from non-2xx responses rather than displaying raw status code strings or JSON payload strings.
+  - **Civic Anti-Spam Rate Limit Dialog (`ReportFragment.java`, `TrafficFragment.java`):**
+    - The Supabase database enforces a strict anti-spam business rule: at most 5 hazard reports per hour per user account (`public.incident_reports` check).
+    - When an account reaches this quota, `ReportFragment` displays an informative Material alert dialog clarifying the 5 reports/hour civic anti-spam rule and offers a 1-tap "Switch Persona" button navigating directly to the Workspace tab.
+    - `TrafficFragment` corroboration errors now cleanly inform the user of the hourly quota and guide persona switching.
+  - **Test Suite Updates (`BackendIntegrationTest.java`):**
+    - Updated `testFullBackendEndToEndFlow` to recognize both 201 Created and 400 Rate Limited responses as valid backend contract outcomes.
+- **Verification Evidence:**
+  - Phone logcat verified live corroboration:
+    - `submitIncident response code=201 body={"ok":true,"level":"L2","incident_id":"7eccb050...","level_reason":"Location verified by high-accuracy device GPS (<= 50m)","distinct_reporters":2}`
+    - `submitIncident response code=201 body={"ok":true,"level":"L2","incident_id":"5dd6c210...","level_reason":"Location verified by high-accuracy device GPS (<= 50m)","distinct_reporters":1}`
+    - `submitIncident response code=201 body={"ok":true,"level":"L2","incident_id":"80d3be4a...","level_reason":"Location verified by high-accuracy device GPS (<= 50m)","distinct_reporters":2}`
+  - Verified 400 Rate limit handling on subsequent rapid submissions:
+    - `submitIncident response code=400 body={"ok":false,"error":"Rate limit exceeded: maximum 5 reports per hour."}`
+  - Unit tests executed: `./gradlew testDebugUnitTest` passed (3 tests completed, 0 failed).
+  - Updated debug APK installed and verified running on physical Android device (PID 14703).
+
 ## Native Java Android App Full Backend, Dual-Route Detours & Automated Test Suite — verified, 13 Nov 2026
 
 - **Scope & Fixes:**

@@ -199,7 +199,18 @@ public class ReportFragment extends Fragment {
             public void onError(String message) {
                 if (!isAdded()) return;
                 binding.btnSubmitReport.setEnabled(true);
-                Toast.makeText(requireContext(), "Submission: " + message, Toast.LENGTH_SHORT).show();
+                if (message != null && message.toLowerCase().contains("rate limit")) {
+                    new MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Hourly Rate Limit (Anti-Spam)")
+                            .setMessage("The civic engine allows up to 5 reports per hour per account to prevent spam.\n\nYou can switch to another demo persona (e.g. Commuter 2 or Traffic Authority) in the Workspace tab to continue reporting immediately.")
+                            .setPositiveButton("Switch Persona", (dialog, which) -> {
+                                androidx.navigation.Navigation.findNavController(requireView()).navigate(R.id.navigation_workspace);
+                            })
+                            .setNegativeButton("OK", null)
+                            .show();
+                } else {
+                    Toast.makeText(requireContext(), "Submission: " + message, Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
