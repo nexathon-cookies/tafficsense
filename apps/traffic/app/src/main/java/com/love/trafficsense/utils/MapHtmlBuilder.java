@@ -27,6 +27,11 @@ public class MapHtmlBuilder {
           .append("  65% { transform: translateY(4px) scale(1.08); opacity: 1; }")
           .append("  100% { transform: translateY(0) scale(1); }")
           .append("}")
+          .append("@keyframes pulseRing {")
+          .append("  0% { box-shadow: 0 0 0 0 rgba(102,22,215,0.7); }")
+          .append("  70% { box-shadow: 0 0 0 14px rgba(102,22,215,0); }")
+          .append("  100% { box-shadow: 0 0 0 0 rgba(102,22,215,0); }")
+          .append("}")
           .append("</style>")
           .append("</head><body>")
           .append("<div id='map'></div>")
@@ -158,10 +163,11 @@ public class MapHtmlBuilder {
                   .append("});\n")
                   .append("var marker_").append(safeId).append(" = L.marker([")
                   .append(inc.lat).append(", ").append(inc.lng).append("], { icon: icon_").append(safeId).append(" });\n")
-                  .append("marker_").append(safeId).append(".on('click', function(e) {")
+                  .append("marker_").append(safeId).append(".on('click', function(e) {\n")
                   .append("  if (e && e.originalEvent) { L.DomEvent.stopPropagation(e); }\n")
                   .append("  selectionLayer.clearLayers();\n")
-                  .append("  if (window.AndroidBridge && window.AndroidBridge.onIncidentSelected) { window.AndroidBridge.onIncidentSelected('").append(rawId).append("'); }")
+                  .append("  map.flyTo([").append(inc.lat).append(", ").append(inc.lng).append("], Math.max(map.getZoom(), 15), { duration: 0.6, easeLinearity: 0.25 });\n")
+                  .append("  if (window.AndroidBridge && window.AndroidBridge.onIncidentSelected) { window.AndroidBridge.onIncidentSelected('").append(rawId).append("'); }\n")
                   .append("});\n")
                   .append("marker_").append(safeId).append(".addTo(incidentsLayer);\n")
                   .append("bounds.push([").append(inc.lat).append(", ").append(inc.lng).append("]);\n");
@@ -174,21 +180,21 @@ public class MapHtmlBuilder {
           .append("  var lat = e.latlng.lat;\n")
           .append("  var lng = e.latlng.lng;\n")
           .append("  var selectHtml = \"<div style='position:relative;width:32px;height:42px;display:flex;flex-direction:column;align-items:center;'>\" +\n")
-          .append("    \"<div style='width:32px;height:32px;border-radius:16px;background:#6616D7;border:3px solid #ffffff;box-shadow:0 4px 10px rgba(102,22,215,0.5);display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:14px;'>📍</div>\" +\n")
+          .append("    \"<div style='width:32px;height:32px;border-radius:16px;background:#6616D7;border:3px solid #ffffff;animation:pulseRing 1.8s infinite;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:14px;'>📍</div>\" +\n")
           .append("    \"<div style='width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid #6616D7;margin-top:-1px;'></div>\" +\n")
           .append("    \"</div>\";\n")
           .append("  var selectIcon = L.divIcon({ className: 'leaflet-selection-pin', html: selectHtml, iconSize: [32, 42], iconAnchor: [16, 42] });\n")
           .append("  L.marker([lat, lng], { icon: selectIcon }).addTo(selectionLayer);\n")
-          .append("  map.panTo([lat, lng], { animate: true, duration: 0.3 });\n")
+          .append("  map.flyTo([lat, lng], Math.max(map.getZoom(), 15), { duration: 0.5, easeLinearity: 0.25 });\n")
           .append("  if (window.AndroidBridge && window.AndroidBridge.onLocationSelected) {\n")
           .append("    window.AndroidBridge.onLocationSelected(lat, lng);\n")
           .append("  }\n")
           .append("});\n");
 
-        // Global Controller Functions for Floating UI Controls
-        sb.append("window.zoomIn = function() { map.zoomIn(); };\n")
-          .append("window.zoomOut = function() { map.zoomOut(); };\n")
-          .append("window.centerMap = function(lat, lng) { map.setView([lat, lng], 15, { animate: true }); };\n")
+        // Global Controller Functions for Floating UI Controls with Smooth Easing
+        sb.append("window.zoomIn = function() { map.zoomIn({ animate: true }); };\n")
+          .append("window.zoomOut = function() { map.zoomOut({ animate: true }); };\n")
+          .append("window.centerMap = function(lat, lng) { map.flyTo([lat, lng], 15, { duration: 0.8, easeLinearity: 0.25 }); };\n")
           .append("window.clearSelection = function() { selectionLayer.clearLayers(); };\n");
 
         sb.append("if (bounds.length > 0) { map.fitBounds(bounds, { padding: [30, 30] }); }\n")

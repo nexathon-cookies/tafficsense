@@ -2,6 +2,7 @@ package com.love.trafficsense;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.view.View;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -68,11 +69,28 @@ public class MainActivity extends AppCompatActivity {
             else if (id == R.id.navigation_workspace) target = workspaceFragment;
 
             if (target != activeFragment) {
+                Fragment outgoing = activeFragment;
+                Fragment incoming = target;
+
                 fm.beginTransaction()
-                        .hide(activeFragment)
-                        .show(target)
+                        .hide(outgoing)
+                        .show(incoming)
                         .commit();
                 activeFragment = target;
+
+                View incomingView = incoming.getView();
+                if (incomingView != null) {
+                    incomingView.setAlpha(0.6f);
+                    incomingView.setScaleX(0.985f);
+                    incomingView.setScaleY(0.985f);
+                    incomingView.animate()
+                            .alpha(1.0f)
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(160)
+                            .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                            .start();
+                }
             }
             return true;
         });

@@ -85,26 +85,34 @@ public class ReportFragment extends Fragment {
         int defaultBorderColor = ContextCompat.getColor(requireContext(), R.color.border);
         int primaryBorderColor = ContextCompat.getColor(requireContext(), R.color.primary);
 
-        binding.cardCatAccident.setStrokeColor(defaultBorderColor);
-        binding.cardCatAccident.setStrokeWidth(1);
+        MaterialCardView[] allCards = new MaterialCardView[] {
+            binding.cardCatAccident, binding.cardCatBlockage, binding.cardCatTraffic,
+            binding.cardCatFlood, binding.cardCatConstruction, binding.cardCatOther
+        };
 
-        binding.cardCatBlockage.setStrokeColor(defaultBorderColor);
-        binding.cardCatBlockage.setStrokeWidth(1);
-
-        binding.cardCatTraffic.setStrokeColor(defaultBorderColor);
-        binding.cardCatTraffic.setStrokeWidth(1);
-
-        binding.cardCatFlood.setStrokeColor(defaultBorderColor);
-        binding.cardCatFlood.setStrokeWidth(1);
-
-        binding.cardCatConstruction.setStrokeColor(defaultBorderColor);
-        binding.cardCatConstruction.setStrokeWidth(1);
-
-        binding.cardCatOther.setStrokeColor(defaultBorderColor);
-        binding.cardCatOther.setStrokeWidth(1);
-
-        selectedCard.setStrokeColor(primaryBorderColor);
-        selectedCard.setStrokeWidth(4);
+        for (MaterialCardView card : allCards) {
+            if (card == selectedCard) {
+                card.setStrokeColor(primaryBorderColor);
+                card.setStrokeWidth(4);
+                card.setCardElevation(6f);
+                card.animate()
+                    .scaleX(1.06f)
+                    .scaleY(1.06f)
+                    .setDuration(100)
+                    .setInterpolator(new android.view.animation.OvershootInterpolator(1.8f))
+                    .withEndAction(() -> {
+                        if (isAdded() && binding != null) {
+                            card.animate().scaleX(1.02f).scaleY(1.02f).setDuration(80).start();
+                        }
+                    })
+                    .start();
+            } else {
+                card.setStrokeColor(defaultBorderColor);
+                card.setStrokeWidth(1);
+                card.setCardElevation(1f);
+                card.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start();
+            }
+        }
     }
 
     private void setupLocationSelection() {

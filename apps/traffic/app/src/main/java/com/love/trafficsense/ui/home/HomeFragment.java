@@ -55,6 +55,7 @@ public class HomeFragment extends Fragment {
     private void setupRecyclerView() {
         adapter = new IncidentAdapter();
         binding.rvHomeIncidents.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvHomeIncidents.setLayoutAnimation(android.view.animation.AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_animation_fall_down));
         binding.rvHomeIncidents.setAdapter(adapter);
 
         adapter.setOnIncidentClickListener(incident -> {
@@ -86,16 +87,28 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupInteractions() {
-        // Swap Origin & Destination
+        // Swap Origin & Destination with Elastic 180° Spin and Text Fade
         binding.btnHomeSwap.setOnClickListener(v -> {
             isSwapped = !isSwapped;
-            if (isSwapped) {
-                binding.tvHomeOrigin.setText("Pumpwell Circle / Kankanady");
-                binding.tvHomeDest.setText("State Bank / Ladyhill");
-            } else {
-                binding.tvHomeOrigin.setText("State Bank / Ladyhill");
-                binding.tvHomeDest.setText("Pumpwell Circle / Kankanady");
-            }
+            binding.btnHomeSwap.animate()
+                    .rotationBy(180f)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
+
+            binding.tvHomeOrigin.animate().alpha(0.2f).setDuration(100).withEndAction(() -> {
+                if (binding != null) {
+                    binding.tvHomeOrigin.setText(isSwapped ? "Pumpwell Circle / Kankanady" : "State Bank / Ladyhill");
+                    binding.tvHomeOrigin.animate().alpha(1.0f).setDuration(120).start();
+                }
+            }).start();
+
+            binding.tvHomeDest.animate().alpha(0.2f).setDuration(100).withEndAction(() -> {
+                if (binding != null) {
+                    binding.tvHomeDest.setText(isSwapped ? "State Bank / Ladyhill" : "Pumpwell Circle / Kankanady");
+                    binding.tvHomeDest.animate().alpha(1.0f).setDuration(120).start();
+                }
+            }).start();
         });
 
         // Clickable Route Inspection
@@ -148,6 +161,7 @@ public class HomeFragment extends Fragment {
         List<LiveIncident> cached = TrafficApiClient.getInstance().getCachedIncidents();
         if (cached != null && !cached.isEmpty()) {
             adapter.setIncidents(cached);
+            binding.rvHomeIncidents.scheduleLayoutAnimation();
             binding.tvReportsCount.setText(cached.size() + " reports");
             String cachedHtml = MapHtmlBuilder.buildMapHtml(cached, null, 12.8687, 74.8436);
             binding.webviewHeroMap.loadDataWithBaseURL("file:///android_asset/", cachedHtml, "text/html", "UTF-8", null);
@@ -159,6 +173,7 @@ public class HomeFragment extends Fragment {
                 if (!isAdded()) return;
                 binding.swipeRefresh.setRefreshing(false);
                 adapter.setIncidents(incidents);
+                binding.rvHomeIncidents.scheduleLayoutAnimation();
                 binding.tvReportsCount.setText(incidents.size() + " reports");
 
                 String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());

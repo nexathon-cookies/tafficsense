@@ -17,6 +17,8 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
+import androidx.transition.AutoTransition;
+import androidx.transition.TransitionManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.love.trafficsense.R;
@@ -63,10 +65,30 @@ public class PlannerFragment extends Fragment {
         binding.cardSelectDest.setOnClickListener(v -> showPlacePicker(false));
 
         binding.btnPlannerSwap.setOnClickListener(v -> {
+            binding.btnPlannerSwap.animate()
+                    .rotationBy(180f)
+                    .setDuration(240)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                    .start();
+
             PlacesData.Place temp = origin;
             origin = destination;
             destination = temp;
-            updatePlaceLabels();
+
+            binding.tvOriginName.animate().alpha(0.2f).setDuration(100).withEndAction(() -> {
+                if (binding != null) {
+                    binding.tvOriginName.setText(origin.name);
+                    binding.tvOriginName.animate().alpha(1.0f).setDuration(120).start();
+                }
+            }).start();
+
+            binding.tvDestName.animate().alpha(0.2f).setDuration(100).withEndAction(() -> {
+                if (binding != null) {
+                    binding.tvDestName.setText(destination.name);
+                    binding.tvDestName.animate().alpha(1.0f).setDuration(120).start();
+                }
+            }).start();
+
             checkRoute();
         });
 
@@ -74,6 +96,7 @@ public class PlannerFragment extends Fragment {
 
         binding.switchAlternative.setOnCheckedChangeListener((buttonView, isChecked) -> {
             isAlternativeSelected = isChecked;
+            TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition().setDuration(220));
             binding.cardAlternativeRoute.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             updateCardHighlights();
             renderRouteMap();
@@ -84,6 +107,7 @@ public class PlannerFragment extends Fragment {
 
         binding.btnSelectDetour.setOnClickListener(v -> {
             isAlternativeSelected = true;
+            TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition().setDuration(220));
             binding.switchAlternative.setChecked(true);
             updateCardHighlights();
             renderRouteMap();

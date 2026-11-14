@@ -1,5 +1,35 @@
 # Project Progress
 
+## Fluid UI Transitions, Micro-Interactions, Leaflet Fly-To & Spring Animations — verified, 14 Nov 2026
+
+- **Scope & Fixes:**
+  - **Zero-Logic Architecture:**
+    - Upgraded UI feel and responsiveness exclusively through GPU-accelerated animators and view transitions (`ViewPropertyAnimator`, `AutoTransition`, `TransitionManager`, Leaflet `flyTo`, and `LayoutAnimationController`) without touching backend endpoints, databases, or business logic.
+  - **Fragment Tab Cross-Fade & Scale Transition (`MainActivity.java`):**
+    - Upgraded instant fragment show/hide cuts to a 160ms cross-fade and scale entrance transition (`alpha: 0.6 -> 1.0`, `scale: 0.985 -> 1.0` with `DecelerateInterpolator`). Tab navigation feels physically responsive with zero memory jank.
+  - **Details Card Slide-Up with Overshoot Bounce (`TrafficFragment.java`):**
+    - Replacing instant card appearance with a vertical slide-in and overshoot bounce (`translationY: 250dp -> 0dp`, `alpha: 0 -> 1`, 260ms, `OvershootInterpolator(1.05f)`).
+    - Smooth slide-down dismiss animation (`translationY: 0dp -> 250dp`, `alpha: 1 -> 0`, 180ms) upon tapping the `✕` close button or after corroborating an incident.
+  - **Floating Controls Depth Bounce (`TrafficFragment.java`):**
+    - Added tactile scale bounce feedback (`scale: 0.85 -> 1.0` with overshoot) to zoom in/out and recenter buttons.
+  - **Leaflet Cinematic `flyTo` Transitions & Glowing Pulse Marker (`MapHtmlBuilder.java`):**
+    - Upgraded map camera repositioning to Leaflet's hardware-accelerated `map.flyTo([lat, lng], zoom, { duration: 0.8, easeLinearity: 0.25 })`.
+    - Added `@keyframes pulseRing` with an expanding glowing radius for tapped location pins.
+  - **Cascading Staggered Incident Feed Entrance (`layout_animation_fall_down.xml`, `item_animation_fall_down.xml`):**
+    - Added layout animation controller to `rv_traffic_list` and `rv_home_incidents`. Hazard cards cascade gracefully down into the feed on load and refresh.
+  - **Tactile Category Selection Bounce & Elevation (`ReportFragment.java`):**
+    - Tapping category cards now triggers an active spring bounce (`scale: 1.06x -> 1.02x`), elevates shadow from 1dp to 6dp, and highlights the primary border, while unselected cards smoothly return to flat elevation.
+  - **Origin / Destination 180° Spin & Text Cross-Fade (`HomeFragment.java`, `PlannerFragment.java`):**
+    - Tapping the swap button animates an elastic 180° rotation on the swap icon while place labels softly cross-fade.
+  - **Expandable Detour Transitions (`PlannerFragment.java`):**
+    - Connected `TransitionManager.beginDelayedTransition` with `AutoTransition(220ms)` to smoothly expand and collapse the alternative detour route card.
+- **Verification Evidence:**
+  - Unit tests `./gradlew testDebugUnitTest`: 3/3 passed in 4s.
+  - APK assembly `./gradlew assembleDebug`: Built successfully in 2s (`apps/traffic/app/build/outputs/apk/debug/app-debug.apk`, 9.7MB).
+  - Pushed APK to device `/data/local/tmp/app-debug.apk` and installed via `pm install -r`: `Success`.
+  - Launched app (`com.love.trafficsense/.MainActivity`, PID 4130) on device.
+  - Verified hardware-accelerated rendering and animation pipeline without crashes.
+
 ## Map Interactivity, Location Inspection, Floating Controls & Green Line Removal — verified, 14 Nov 2026
 
 - **Scope & Fixes:**

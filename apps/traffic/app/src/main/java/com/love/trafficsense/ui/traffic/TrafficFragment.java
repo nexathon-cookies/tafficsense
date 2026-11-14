@@ -10,6 +10,9 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AnimationUtils;
+import android.view.animation.OvershootInterpolator;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -133,22 +136,82 @@ public class TrafficFragment extends Fragment {
         }, "AndroidBridge");
     }
 
+    private void animateButtonPress(View view, Runnable onEnd) {
+        view.animate()
+                .scaleX(0.85f)
+                .scaleY(0.85f)
+                .setDuration(70)
+                .withEndAction(() -> {
+                    view.animate()
+                            .scaleX(1.0f)
+                            .scaleY(1.0f)
+                            .setDuration(120)
+                            .setInterpolator(new OvershootInterpolator(1.4f))
+                            .start();
+                    if (onEnd != null) onEnd.run();
+                })
+                .start();
+    }
+
+    private void animateShowCard() {
+        if (binding.bottomSheetIncident.getVisibility() == View.VISIBLE && binding.bottomSheetIncident.getAlpha() > 0.8f) {
+            binding.bottomSheetIncident.animate()
+                    .scaleX(1.02f)
+                    .scaleY(1.02f)
+                    .setDuration(90)
+                    .withEndAction(() -> {
+                        if (binding != null) {
+                            binding.bottomSheetIncident.animate().scaleX(1.0f).scaleY(1.0f).setDuration(90).start();
+                        }
+                    })
+                    .start();
+            return;
+        }
+        binding.bottomSheetIncident.setVisibility(View.VISIBLE);
+        binding.bottomSheetIncident.setAlpha(0f);
+        binding.bottomSheetIncident.setTranslationY(250f);
+        binding.bottomSheetIncident.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(260)
+                .setInterpolator(new OvershootInterpolator(1.05f))
+                .start();
+    }
+
+    private void animateDismissCard() {
+        binding.bottomSheetIncident.animate()
+                .alpha(0f)
+                .translationY(250f)
+                .setDuration(180)
+                .setInterpolator(new AccelerateInterpolator())
+                .withEndAction(() -> {
+                    if (binding != null) {
+                        binding.bottomSheetIncident.setVisibility(View.GONE);
+                        binding.bottomSheetIncident.setTranslationY(0f);
+                        binding.bottomSheetIncident.setAlpha(1f);
+                    }
+                })
+                .start();
+    }
+
     private void setupFloatingControls() {
         binding.btnMapZoomIn.setOnClickListener(v -> {
-            binding.webViewMap.evaluateJavascript("window.zoomIn && window.zoomIn();", null);
+            animateButtonPress(binding.btnMapZoomIn, () -> binding.webViewMap.evaluateJavascript("window.zoomIn && window.zoomIn();", null));
         });
 
         binding.btnMapZoomOut.setOnClickListener(v -> {
-            binding.webViewMap.evaluateJavascript("window.zoomOut && window.zoomOut();", null);
+            animateButtonPress(binding.btnMapZoomOut, () -> binding.webViewMap.evaluateJavascript("window.zoomOut && window.zoomOut();", null));
         });
 
         binding.btnMapRecenter.setOnClickListener(v -> {
-            binding.webViewMap.evaluateJavascript("window.centerMap && window.centerMap(12.8687, 74.8436);", null);
-            Toast.makeText(requireContext(), "Centered on Mangaluru", Toast.LENGTH_SHORT).show();
+            animateButtonPress(binding.btnMapRecenter, () -> {
+                binding.webViewMap.evaluateJavascript("window.centerMap && window.centerMap(12.8687, 74.8436);", null);
+                Toast.makeText(requireContext(), "Centered on Mangaluru", Toast.LENGTH_SHORT).show();
+            });
         });
 
         binding.ivSheetClose.setOnClickListener(v -> {
-            binding.bottomSheetIncident.setVisibility(View.GONE);
+            animateDismissCard();
             binding.webViewMap.evaluateJavascript("window.clearSelection && window.clearSelection();", null);
         });
     }
@@ -156,6 +219,7 @@ public class TrafficFragment extends Fragment {
     private void setupRecyclerView() {
         adapter = new IncidentAdapter();
         binding.rvTrafficList.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.rvTrafficList.setLayoutAnimation(AnimationUtils.loadLayoutAnimation(requireContext(), R.anim.layout_animation_fall_down));
         binding.rvTrafficList.setAdapter(adapter);
 
         adapter.setOnIncidentClickListener(this::showIncidentDetails);
@@ -194,7 +258,7 @@ public class TrafficFragment extends Fragment {
     }
 
     private void showPlaceDetails(double lat, double lng) {
-        binding.bottomSheetIncident.setVisibility(View.VISIBLE);
+        animateShowCard();
         binding.layoutIncidentActions.setVisibility(View.GONE);
         binding.layoutPlaceActions.setVisibility(View.VISIBLE);
 
@@ -221,7 +285,7 @@ public class TrafficFragment extends Fragment {
 
     private void showIncidentDetails(LiveIncident inc) {
         this.selectedIncident = inc;
-        binding.bottomSheetIncident.setVisibility(View.VISIBLE);
+        animateShowCard();
         binding.layoutIncidentActions.setVisibility(View.VISIBLE);
         binding.layoutPlaceActions.setVisibility(View.GONE);
 
@@ -269,7 +333,7 @@ public class TrafficFragment extends Fragment {
                         public void onSuccess(Boolean result) {
                             if (!isAdded()) return;
                             binding.btnSheetCorroborate.setEnabled(true);
-                            binding.bottomSheetIncident.setVisibility(View.GONE);
+                            animateDismissCard();
                             Toast.makeText(requireContext(), "Corroboration verified! Evidence level updated.", Toast.LENGTH_SHORT).show();
                             loadIncidents();
                         }
@@ -293,6 +357,7 @@ public class TrafficFragment extends Fragment {
         if (cached != null && !cached.isEmpty()) {
             allIncidents = cached;
             adapter.setIncidents(cached);
+            binding.rvTrafficList.scheduleLayoutAnimation();
             binding.btnViewList.setText("List (" + cached.size() + ")");
             String cachedHtml = MapHtmlBuilder.buildMapHtml(cached, null, 12.8687, 74.8436);
             binding.webViewMap.loadDataWithBaseURL("file:///android_asset/", cachedHtml, "text/html", "UTF-8", null);
@@ -304,6 +369,7 @@ public class TrafficFragment extends Fragment {
                 if (!isAdded()) return;
                 allIncidents = incidents;
                 adapter.setIncidents(incidents);
+                binding.rvTrafficList.scheduleLayoutAnimation();
                 binding.btnViewList.setText("List (" + incidents.size() + ")");
 
                 // Build & Render OpenStreetMap
