@@ -202,4 +202,22 @@ public class MapHtmlBuilder {
 
         return sb.toString();
     }
+
+    public static String buildMiniPinMapHtml(double lat, double lng) {
+        return "<!doctype html><html><head><meta charset='utf-8'/>" +
+            "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'/>" +
+            "<link rel='stylesheet' href='file:///android_asset/leaflet/leaflet.css'/>" +
+            "<style>html, body, #map { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #FAF8FF; }" +
+            "@keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(102,22,215,0.7); } 70% { box-shadow: 0 0 0 14px rgba(102,22,215,0); } 100% { box-shadow: 0 0 0 0 rgba(102,22,215,0); } }" +
+            "</style></head><body><div id='map'></div>" +
+            "<script src='file:///android_asset/leaflet/leaflet.js'></script>" +
+            "<script>" +
+            "var map = L.map('map', { zoomControl: false, attributionControl: false, dragging: true, touchZoom: true }).setView([" + lat + ", " + lng + "], 15);" +
+            "L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);" +
+            "var pinHtml = \"<div style='width:28px;height:28px;border-radius:14px;background:#6616D7;border:3px solid #ffffff;animation:pulseRing 1.8s infinite;display:flex;align-items:center;justify-content:center;color:#ffffff;font-size:13px;'>📍</div>\";" +
+            "var pinIcon = L.divIcon({ className: 'custom-pin', html: pinHtml, iconSize: [28, 28], iconAnchor: [14, 14] });" +
+            "var marker = L.marker([" + lat + ", " + lng + "], { icon: pinIcon }).addTo(map);" +
+            "window.setPin = function(newLat, newLng) { marker.setLatLng([newLat, newLng]); map.panTo([newLat, newLng]); };" +
+            "</script></body></html>";
+    }
 }

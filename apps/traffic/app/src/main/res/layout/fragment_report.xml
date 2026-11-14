@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Header -->
+        <!-- App Header -->
         <include
             android:id="@+id/header"
             layout="@layout/layout_app_header" />
@@ -22,14 +22,24 @@
             android:orientation="vertical"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:paddingBottom="32dp">
+            android:paddingBottom="36dp">
 
-            <!-- Title & Eyebrow -->
+            <!-- Hero Headline -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Report a Hazard"
+                android:layout_marginTop="4dp"
+                android:text="CIVIC ACTION"
                 android:textColor="@color/primary"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Report Road Disruption"
+                android:textColor="@color/text_primary"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
@@ -37,134 +47,29 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Fast, privacy-respecting community traffic report"
+                android:text="Verified anonymously across Mangaluru corridors in seconds"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
-            <!-- 3-Step Progress Indicators -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/step_indicator_1"
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:background="@drawable/bg_circle_icon"
-                        android:backgroundTint="@color/primary"
-                        android:gravity="center"
-                        android:text="1"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Category"
-                        android:textColor="@color/primary"
-                        android:textSize="10sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="2dp"
-                    android:layout_weight="0.8"
-                    android:background="@color/border" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/step_indicator_2"
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:background="@drawable/bg_circle_icon"
-                        android:backgroundTint="@color/border"
-                        android:gravity="center"
-                        android:text="2"
-                        android:textColor="@color/text_muted"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Location"
-                        android:textColor="@color/text_muted"
-                        android:textSize="10sp" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="2dp"
-                    android:layout_weight="0.8"
-                    android:background="@color/border" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/step_indicator_3"
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:background="@drawable/bg_circle_icon"
-                        android:backgroundTint="@color/border"
-                        android:gravity="center"
-                        android:text="3"
-                        android:textColor="@color/text_muted"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Confirm"
-                        android:textColor="@color/text_muted"
-                        android:textSize="10sp" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- 1. Select Hazard Category (2x3 Grid with React Native Color Tokens) -->
+            <!-- Category Section Header -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="1. Select Hazard Category"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
+                android:layout_marginTop="18dp"
+                android:text="1. SELECT HAZARD CATEGORY"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp"
                 android:textStyle="bold" />
 
+            <!-- 2x3 Grid with Tactile Cards & Active Indicators -->
             <GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
                 android:columnCount="2"
                 android:rowCount="3">
 
-                <!-- Accident -->
+                <!-- 1. Accident / Crash -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_cat_accident"
                     android:layout_width="0dp"
@@ -172,46 +77,66 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="14dp"
-                    app:cardElevation="1dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="4dp"
                     app:strokeColor="@color/primary"
                     app:strokeWidth="2dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
                         android:orientation="vertical"
                         android:padding="12dp">
 
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:background="@drawable/bg_circle_icon"
-                            android:backgroundTint="@color/error_container"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_car_crash"
-                            app:tint="@color/error" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_circle_icon"
+                                android:backgroundTint="@color/error_container"
+                                android:padding="8dp"
+                                android:src="@drawable/ic_car_crash"
+                                app:tint="@color/error" />
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_weight="1" />
+
+                            <ImageView
+                                android:id="@+id/iv_check_cat_accident"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_verified"
+                                android:visibility="visible"
+                                app:tint="@color/primary" />
+                        </LinearLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
                             android:text="Accident"
                             android:textColor="@color/text_primary"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
                             android:text="Collisions, breakdown"
                             android:textColor="@color/text_muted"
                             android:textSize="10sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Road Closed -->
+                <!-- 2. Road Closed -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_cat_blockage"
                     android:layout_width="0dp"
@@ -219,7 +144,7 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="14dp"
+                    app:cardCornerRadius="16dp"
                     app:cardElevation="1dp"
                     app:strokeColor="@color/border"
                     app:strokeWidth="1dp">
@@ -227,38 +152,58 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
                         android:orientation="vertical"
                         android:padding="12dp">
 
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:background="@drawable/bg_circle_icon"
-                            android:backgroundTint="@color/surface_container"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_road_closed"
-                            app:tint="@color/text_primary" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_circle_icon"
+                                android:backgroundTint="@color/surface_container"
+                                android:padding="8dp"
+                                android:src="@drawable/ic_road_closed"
+                                app:tint="@color/text_primary" />
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_weight="1" />
+
+                            <ImageView
+                                android:id="@+id/iv_check_cat_blockage"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_verified"
+                                android:visibility="gone"
+                                app:tint="@color/primary" />
+                        </LinearLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
                             android:text="Road closed"
                             android:textColor="@color/text_primary"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
                             android:text="Barricades, diversion"
                             android:textColor="@color/text_muted"
                             android:textSize="10sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Heavy Volume -->
+                <!-- 3. Heavy Volume -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_cat_traffic"
                     android:layout_width="0dp"
@@ -266,7 +211,7 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="14dp"
+                    app:cardCornerRadius="16dp"
                     app:cardElevation="1dp"
                     app:strokeColor="@color/border"
                     app:strokeWidth="1dp">
@@ -274,38 +219,58 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
                         android:orientation="vertical"
                         android:padding="12dp">
 
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:background="@drawable/bg_circle_icon"
-                            android:backgroundTint="@color/surface_container"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_traffic"
-                            app:tint="@color/text_primary" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_circle_icon"
+                                android:backgroundTint="@color/surface_container"
+                                android:padding="8dp"
+                                android:src="@drawable/ic_traffic"
+                                app:tint="@color/text_primary" />
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_weight="1" />
+
+                            <ImageView
+                                android:id="@+id/iv_check_cat_traffic"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_verified"
+                                android:visibility="gone"
+                                app:tint="@color/primary" />
+                        </LinearLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
                             android:text="Heavy volume"
                             android:textColor="@color/text_primary"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
                             android:text="Gridlock, crawling"
                             android:textColor="@color/text_muted"
                             android:textSize="10sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Flood / Rain -->
+                <!-- 4. Flood / Monsoon -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_cat_flood"
                     android:layout_width="0dp"
@@ -313,7 +278,7 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="14dp"
+                    app:cardCornerRadius="16dp"
                     app:cardElevation="1dp"
                     app:strokeColor="@color/border"
                     app:strokeWidth="1dp">
@@ -321,38 +286,58 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
                         android:orientation="vertical"
                         android:padding="12dp">
 
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:background="@drawable/bg_circle_icon"
-                            android:backgroundTint="@color/primary_container"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_flood"
-                            app:tint="@color/primary" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_circle_icon"
+                                android:backgroundTint="@color/primary_container"
+                                android:padding="8dp"
+                                android:src="@drawable/ic_flood"
+                                app:tint="@color/primary" />
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_weight="1" />
+
+                            <ImageView
+                                android:id="@+id/iv_check_cat_flood"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_verified"
+                                android:visibility="gone"
+                                app:tint="@color/primary" />
+                        </LinearLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
                             android:text="Flood / Rain"
                             android:textColor="@color/text_primary"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
                             android:text="Waterlog, puddles"
                             android:textColor="@color/text_muted"
                             android:textSize="10sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Road repair -->
+                <!-- 5. Road Repair -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_cat_construction"
                     android:layout_width="0dp"
@@ -360,7 +345,7 @@
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
                     app:cardBackgroundColor="@color/surface_card"
-                    app:cardCornerRadius="14dp"
+                    app:cardCornerRadius="16dp"
                     app:cardElevation="1dp"
                     app:strokeColor="@color/border"
                     app:strokeWidth="1dp">
@@ -368,44 +353,200 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
                         android:orientation="vertical"
                         android:padding="12dp">
 
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:background="@drawable/bg_circle_icon"
-                            android:backgroundTint="@color/warning_container"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_construction"
-                            app:tint="@color/warning" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_circle_icon"
+                                android:backgroundTint="@color/warning_container"
+                                android:padding="8dp"
+                                android:src="@drawable/ic_construction"
+                                app:tint="@color/warning" />
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_weight="1" />
+
+                            <ImageView
+                                android:id="@+id/iv_check_cat_construction"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_verified"
+                                android:visibility="gone"
+                                app:tint="@color/primary" />
+                        </LinearLayout>
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
                             android:text="Road repair"
                             android:textColor="@color/text_primary"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
                             android:text="Potholes, excavation"
                             android:textColor="@color/text_muted"
                             android:textSize="10sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Other hazard -->
+                <!-- 6. Other Hazard -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_cat_other"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
                     android:layout_margin="4dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/border"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="@drawable/bg_circle_icon"
+                                android:backgroundTint="@color/surface_container"
+                                android:padding="8dp"
+                                android:src="@drawable/ic_warning"
+                                app:tint="@color/text_primary" />
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="1dp"
+                                android:layout_weight="1" />
+
+                            <ImageView
+                                android:id="@+id/iv_check_cat_other"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_verified"
+                                android:visibility="gone"
+                                app:tint="@color/primary" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Other hazard"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:text="Fallen tree, wire"
+                            android:textColor="@color/text_muted"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </GridLayout>
+
+            <!-- 2. Severity Switcher -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="2. SEVERITY LEVEL"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <!-- Minor Severity Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_severity_minor"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="2dp"
+                    app:strokeColor="@color/primary"
+                    app:strokeWidth="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:gravity="center"
+                            android:text="⚠️"
+                            android:textSize="16sp" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tv_severity_minor_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Minor Delay"
+                                android:textColor="@color/primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Passable with care"
+                                android:textColor="@color/text_muted"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Severe Blockage Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_severity_severe"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
                     app:cardBackgroundColor="@color/surface_card"
                     app:cardCornerRadius="14dp"
                     app:cardElevation="1dp"
@@ -415,133 +556,356 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
                         android:padding="12dp">
 
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:background="@drawable/bg_circle_icon"
-                            android:backgroundTint="@color/surface_container"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_warning"
-                            app:tint="@color/text_primary" />
-
                         <TextView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:gravity="center"
+                            android:text="🔥"
+                            android:textSize="16sp" />
+
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Other hazard"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
+                            android:layout_marginStart="8dp"
+                            android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Fallen tree, wire"
-                            android:textColor="@color/text_muted"
-                            android:textSize="10sp" />
+                            <TextView
+                                android:id="@+id/tv_severity_severe_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Major / Blocked"
+                                android:textColor="@color/text_primary"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Detour suggested"
+                                android:textColor="@color/text_muted"
+                                android:textSize="10sp" />
+                        </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
-            </GridLayout>
+            </LinearLayout>
 
-            <!-- 2. Location Section -->
+            <!-- 3. Location Snippet with Visual Mini-Map -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="2. Location"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
+                android:layout_marginTop="18dp"
+                android:text="3. INCIDENT LOCATION"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp"
                 android:textStyle="bold" />
 
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_pick_location"
+                android:id="@+id/card_location_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 app:cardBackgroundColor="@color/surface_card"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="1dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
                 app:strokeColor="@color/border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="14dp">
+                    android:orientation="vertical">
 
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:background="@drawable/bg_circle_icon"
-                        android:backgroundTint="@color/primary_container"
-                        android:padding="5dp"
-                        android:src="@drawable/ic_location_on"
-                        app:tint="@color/primary" />
+                    <!-- Visual Mini-Map Preview Box (110dp) -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="110dp">
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        <WebView
+                            android:id="@+id/webview_report_mini_map"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
+                        <!-- Accuracy Overlay Badge -->
                         <TextView
-                            android:id="@+id/tv_report_location_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Hampankatta Junction (City Core)"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp"
+                            android:layout_gravity="top|end"
+                            android:layout_margin="8dp"
+                            android:background="@drawable/bg_pill_green"
+                            android:paddingStart="8dp"
+                            android:paddingTop="3dp"
+                            android:paddingEnd="8dp"
+                            android:paddingBottom="3dp"
+                            android:text="🟢 Live Pin"
+                            android:textColor="@color/success"
+                            android:textSize="10sp"
                             android:textStyle="bold" />
+                    </FrameLayout>
+
+                    <!-- Location Title and Coordinates -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_location_on"
+                                app:tint="@color/primary" />
+
+                            <TextView
+                                android:id="@+id/tv_report_location_title"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="Hampankatta Junction (City Core)"
+                                android:textColor="@color/text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
 
                         <TextView
                             android:id="@+id/tv_report_coords"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="28dp"
                             android:layout_marginTop="2dp"
-                            android:text="Tap to change location · GPS ±12m"
+                            android:text="Lat: 12.8687, Lng: 74.8436 · GPS ±8m"
                             android:textColor="@color/text_secondary"
                             android:textSize="11sp" />
-                    </LinearLayout>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_use_gps"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:text="Use GPS"
-                        android:textColor="@color/primary"
-                        android:textSize="11sp"
-                        app:cornerRadius="18dp" />
+                        <!-- Actions Row -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_use_gps"
+                                style="@style/Widget.Material3.Button.TonalButton"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_marginEnd="4dp"
+                                android:layout_weight="1"
+                                android:text="Use GPS"
+                                android:textColor="@color/primary"
+                                android:textSize="12sp"
+                                app:cornerRadius="10dp"
+                                app:icon="@drawable/ic_my_location"
+                                app:iconSize="16dp"
+                                app:iconTint="@color/primary" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/card_pick_location"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_marginStart="4dp"
+                                android:layout_weight="1"
+                                android:text="Choose Hub"
+                                android:textColor="@color/text_primary"
+                                android:textSize="12sp"
+                                app:cornerRadius="10dp"
+                                app:icon="@drawable/ic_location_on"
+                                app:iconSize="16dp"
+                                app:iconTint="@color/text_primary"
+                                app:strokeColor="@color/border" />
+                        </LinearLayout>
+
+                        <!-- Quick Mangaluru Hubs Chips -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="QUICK MANGALURU HUBS"
+                            android:textColor="@color/text_muted"
+                            android:textSize="9sp"
+                            android:textStyle="bold" />
+
+                        <HorizontalScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:scrollbars="none">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chip_hub_hampankatta"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="6dp"
+                                    android:text="Hampankatta"
+                                    android:textColor="@color/primary"
+                                    android:textSize="11sp"
+                                    app:chipBackgroundColor="@color/surface_card"
+                                    app:chipStrokeColor="@color/border"
+                                    app:chipStrokeWidth="1dp" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chip_hub_lalbagh"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="6dp"
+                                    android:text="Lalbagh"
+                                    android:textColor="@color/primary"
+                                    android:textSize="11sp"
+                                    app:chipBackgroundColor="@color/surface_card"
+                                    app:chipStrokeColor="@color/border"
+                                    app:chipStrokeWidth="1dp" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chip_hub_bejai"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="6dp"
+                                    android:text="Bejai Circle"
+                                    android:textColor="@color/primary"
+                                    android:textSize="11sp"
+                                    app:chipBackgroundColor="@color/surface_card"
+                                    app:chipStrokeColor="@color/border"
+                                    app:chipStrokeWidth="1dp" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chip_hub_pumpwell"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="6dp"
+                                    android:text="Pumpwell"
+                                    android:textColor="@color/primary"
+                                    android:textSize="11sp"
+                                    app:chipBackgroundColor="@color/surface_card"
+                                    app:chipStrokeColor="@color/border"
+                                    app:chipStrokeWidth="1dp" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chip_hub_ladyhill"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="6dp"
+                                    android:text="Ladyhill"
+                                    android:textColor="@color/primary"
+                                    android:textSize="11sp"
+                                    app:chipBackgroundColor="@color/surface_card"
+                                    app:chipStrokeColor="@color/border"
+                                    app:chipStrokeWidth="1dp" />
+                            </LinearLayout>
+                        </HorizontalScrollView>
+
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 3. Details & Evidence -->
+            <!-- 4. Observation Details & Quick Chips -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="3. Details &amp; Observation Note"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
+                android:layout_marginTop="18dp"
+                android:text="4. DETAILS &amp; QUICK TAGS"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Tap to append rapid observations:"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+
+            <!-- Dynamic 1-Tap Observation Chips -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/layout_quick_chips"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_obs_1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:text="+ Overturned vehicle"
+                        android:textColor="@color/text_primary"
+                        android:textSize="11sp"
+                        app:chipBackgroundColor="@color/surface_container"
+                        app:chipStrokeColor="@color/border"
+                        app:chipStrokeWidth="1dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_obs_2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:text="+ Right lane blocked"
+                        android:textColor="@color/text_primary"
+                        android:textSize="11sp"
+                        app:chipBackgroundColor="@color/surface_container"
+                        app:chipStrokeColor="@color/border"
+                        app:chipStrokeWidth="1dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_obs_3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:text="+ Emergency on scene"
+                        android:textColor="@color/text_primary"
+                        android:textSize="11sp"
+                        app:chipBackgroundColor="@color/surface_container"
+                        app:chipStrokeColor="@color/border"
+                        app:chipStrokeWidth="1dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chip_obs_4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:text="+ Traffic crawling"
+                        android:textColor="@color/text_primary"
+                        android:textSize="11sp"
+                        app:chipBackgroundColor="@color/surface_container"
+                        app:chipStrokeColor="@color/border"
+                        app:chipStrokeWidth="1dp" />
+                </LinearLayout>
+            </HorizontalScrollView>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:hint="Provide a brief description of the incident"
+                android:hint="Observation note (or tap quick chips above)"
                 app:boxBackgroundColor="@color/surface_card"
-                app:boxCornerRadiusBottomEnd="12dp"
-                app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
-                app:boxCornerRadiusTopStart="12dp"
+                app:boxCornerRadiusBottomEnd="14dp"
+                app:boxCornerRadiusBottomStart="14dp"
+                app:boxCornerRadiusTopEnd="14dp"
+                app:boxCornerRadiusTopStart="14dp"
                 app:counterEnabled="true"
                 app:counterMaxLength="300">
 
@@ -560,7 +924,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="12dp"
                 android:background="@drawable/bg_pill_violet"
                 android:backgroundTint="@color/surface_container"
                 android:gravity="center_vertical"
@@ -569,7 +933,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="🛡️ Reports are strictly anonymized. No license plates, face IDs, or personal telemetry are transmitted."
+                    android:text="🛡️ Civic Telemetry Guarantee: Reports are strictly anonymized. No license plates, face IDs, or personal telemetry are transmitted."
                     android:textColor="@color/text_secondary"
                     android:textSize="11sp" />
             </LinearLayout>
@@ -578,13 +942,17 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_submit_report"
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="20dp"
+                android:layout_height="52dp"
+                android:layout_marginTop="16dp"
                 app:backgroundTint="@color/btn_primary_bg_selector"
                 android:text="Submit Anonymized Hazard"
                 android:textColor="@color/btn_primary_text_selector"
                 android:textSize="14sp"
-                app:cornerRadius="12dp" />
+                app:cornerRadius="14dp"
+                app:icon="@drawable/ic_send"
+                app:iconGravity="textStart"
+                app:iconSize="18dp"
+                app:iconTint="@color/btn_primary_text_selector" />
 
         </LinearLayout>
     </LinearLayout>

@@ -10,6 +10,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -18,19 +21,21 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.Navigation;
 
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.love.trafficsense.R;
 import com.love.trafficsense.data.api.TrafficApiClient;
 import com.love.trafficsense.databinding.FragmentReportBinding;
+import com.love.trafficsense.utils.MapHtmlBuilder;
 import com.love.trafficsense.utils.PlacesData;
 
 public class ReportFragment extends Fragment {
 
     private FragmentReportBinding binding;
     private String selectedCategory = "accident";
+    private boolean isSevere = false;
     private PlacesData.Place selectedPlace = PlacesData.MANGALURU_PLACES.get(0);
     private double currentLat = 12.8687;
     private double currentLng = 74.8436;
@@ -57,7 +62,11 @@ public class ReportFragment extends Fragment {
 
         setupHeader();
         setupCategorySelection();
+        setupSeveritySwitcher();
+        setupMiniMap();
         setupLocationSelection();
+        setupQuickHubs();
+        setupQuickObservationChips();
 
         binding.btnSubmitReport.setOnClickListener(v -> submitHazard());
     }
@@ -77,6 +86,9 @@ public class ReportFragment extends Fragment {
         binding.cardCatFlood.setOnClickListener(v -> selectCategory("flood", binding.cardCatFlood));
         binding.cardCatConstruction.setOnClickListener(v -> selectCategory("road_repair", binding.cardCatConstruction));
         binding.cardCatOther.setOnClickListener(v -> selectCategory("other", binding.cardCatOther));
+
+        // Initial default state
+        selectCategory("accident", binding.cardCatAccident);
     }
 
     private void selectCategory(String category, MaterialCardView selectedCard) {
@@ -90,14 +102,23 @@ public class ReportFragment extends Fragment {
             binding.cardCatFlood, binding.cardCatConstruction, binding.cardCatOther
         };
 
-        for (MaterialCardView card : allCards) {
+        View[] allCheckmarks = new View[] {
+            binding.ivCheckCatAccident, binding.ivCheckCatBlockage, binding.ivCheckCatTraffic,
+            binding.ivCheckCatFlood, binding.ivCheckCatConstruction, binding.ivCheckCatOther
+        };
+
+        for (int i = 0; i < allCards.length; i++) {
+            MaterialCardView card = allCards[i];
+            View checkmark = allCheckmarks[i];
+
             if (card == selectedCard) {
                 card.setStrokeColor(primaryBorderColor);
-                card.setStrokeWidth(4);
+                card.setStrokeWidth(3);
                 card.setCardElevation(6f);
+                if (checkmark != null) checkmark.setVisibility(View.VISIBLE);
                 card.animate()
-                    .scaleX(1.06f)
-                    .scaleY(1.06f)
+                    .scaleX(1.05f)
+                    .scaleY(1.05f)
                     .setDuration(100)
                     .setInterpolator(new android.view.animation.OvershootInterpolator(1.8f))
                     .withEndAction(() -> {
@@ -110,14 +131,71 @@ public class ReportFragment extends Fragment {
                 card.setStrokeColor(defaultBorderColor);
                 card.setStrokeWidth(1);
                 card.setCardElevation(1f);
+                if (checkmark != null) checkmark.setVisibility(View.GONE);
                 card.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start();
             }
+        }
+
+        updateQuickObservationChips(category);
+    }
+
+    private void setupSeveritySwitcher() {
+        int primaryColor = ContextCompat.getColor(requireContext(), R.color.primary);
+        int defaultBorder = ContextCompat.getColor(requireContext(), R.color.border);
+
+        binding.cardSeverityMinor.setOnClickListener(v -> {
+            isSevere = false;
+            binding.cardSeverityMinor.setStrokeColor(primaryColor);
+            binding.cardSeverityMinor.setStrokeWidth(2);
+            binding.cardSeverityMinor.setCardElevation(3f);
+            binding.tvSeverityMinorTitle.setTextColor(primaryColor);
+
+            binding.cardSeveritySevere.setStrokeColor(defaultBorder);
+            binding.cardSeveritySevere.setStrokeWidth(1);
+            binding.cardSeveritySevere.setCardElevation(1f);
+            binding.tvSeveritySevereTitle.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+        });
+
+        binding.cardSeveritySevere.setOnClickListener(v -> {
+            isSevere = true;
+            int warningColor = ContextCompat.getColor(requireContext(), R.color.error);
+            binding.cardSeveritySevere.setStrokeColor(warningColor);
+            binding.cardSeveritySevere.setStrokeWidth(2);
+            binding.cardSeveritySevere.setCardElevation(3f);
+            binding.tvSeveritySevereTitle.setTextColor(warningColor);
+
+            binding.cardSeverityMinor.setStrokeColor(defaultBorder);
+            binding.cardSeverityMinor.setStrokeWidth(1);
+            binding.cardSeverityMinor.setCardElevation(1f);
+            binding.tvSeverityMinorTitle.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary));
+        });
+    }
+
+    private void setupMiniMap() {
+        WebView webView = binding.webviewReportMiniMap;
+        WebSettings settings = webView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        webView.setWebViewClient(new WebViewClient());
+
+        String initialHtml = MapHtmlBuilder.buildMiniPinMapHtml(currentLat, currentLng);
+        webView.loadDataWithBaseURL("file:///android_asset/", initialHtml, "text/html", "UTF-8", null);
+    }
+
+    private void updateMiniMap(double lat, double lng) {
+        if (binding != null && binding.webviewReportMiniMap != null) {
+            String script = String.format(java.util.Locale.US, "window.setPin && window.setPin(%.5f, %.5f);", lat, lng);
+            binding.webviewReportMiniMap.evaluateJavascript(script, null);
         }
     }
 
     private void setupLocationSelection() {
         binding.tvReportLocationTitle.setText(selectedPlace.name);
-        binding.tvReportCoords.setText(String.format("Lat: %.4f, Lng: %.4f · GPS ±12m", currentLat, currentLng));
+        binding.tvReportCoords.setText(String.format(java.util.Locale.US, "Lat: %.4f, Lng: %.4f · GPS ±8m", currentLat, currentLng));
 
         binding.cardPickLocation.setOnClickListener(v -> {
             String[] placeNames = new String[PlacesData.MANGALURU_PLACES.size()];
@@ -132,7 +210,8 @@ public class ReportFragment extends Fragment {
                         currentLat = selectedPlace.lat;
                         currentLng = selectedPlace.lng;
                         binding.tvReportLocationTitle.setText(selectedPlace.name);
-                        binding.tvReportCoords.setText(String.format("Lat: %.4f, Lng: %.4f · Selected preset", currentLat, currentLng));
+                        binding.tvReportCoords.setText(String.format(java.util.Locale.US, "Lat: %.4f, Lng: %.4f · Selected preset", currentLat, currentLng));
+                        updateMiniMap(currentLat, currentLng);
                     })
                     .setNegativeButton("Cancel", null)
                     .show();
@@ -146,6 +225,83 @@ public class ReportFragment extends Fragment {
                 requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
             }
         });
+    }
+
+    private void setupQuickHubs() {
+        binding.chipHubHampankatta.setOnClickListener(v -> applyHub(PlacesData.MANGALURU_PLACES.get(0)));
+        binding.chipHubLalbagh.setOnClickListener(v -> applyHub(PlacesData.MANGALURU_PLACES.get(3)));
+        binding.chipHubBejai.setOnClickListener(v -> applyHub(PlacesData.MANGALURU_PLACES.get(1)));
+        binding.chipHubPumpwell.setOnClickListener(v -> applyHub(PlacesData.MANGALURU_PLACES.get(2)));
+        binding.chipHubLadyhill.setOnClickListener(v -> applyHub(PlacesData.MANGALURU_PLACES.get(4)));
+    }
+
+    private void applyHub(PlacesData.Place place) {
+        selectedPlace = place;
+        currentLat = place.lat;
+        currentLng = place.lng;
+        binding.tvReportLocationTitle.setText(place.name);
+        binding.tvReportCoords.setText(String.format(java.util.Locale.US, "Lat: %.4f, Lng: %.4f · %s", currentLat, currentLng, place.hub));
+        updateMiniMap(currentLat, currentLng);
+        Toast.makeText(requireContext(), "Pinned to " + place.name, Toast.LENGTH_SHORT).show();
+    }
+
+    private void setupQuickObservationChips() {
+        Chip[] chips = new Chip[] { binding.chipObs1, binding.chipObs2, binding.chipObs3, binding.chipObs4 };
+        for (Chip chip : chips) {
+            chip.setOnClickListener(v -> {
+                String chipText = chip.getText().toString().replace("+ ", "").trim();
+                String current = binding.etHazardNote.getText() != null ? binding.etHazardNote.getText().toString().trim() : "";
+                if (current.isEmpty()) {
+                    binding.etHazardNote.setText(chipText);
+                } else if (!current.contains(chipText)) {
+                    binding.etHazardNote.setText(current + " · " + chipText);
+                }
+                binding.etHazardNote.setSelection(binding.etHazardNote.getText().length());
+            });
+        }
+    }
+
+    private void updateQuickObservationChips(String category) {
+        if (binding == null) return;
+        switch (category) {
+            case "road_closed":
+                binding.chipObs1.setText("+ Road closed ahead");
+                binding.chipObs2.setText("+ Police barricade");
+                binding.chipObs3.setText("+ Diversion via bypass");
+                binding.chipObs4.setText("+ Excavation work");
+                break;
+            case "heavy_traffic":
+                binding.chipObs1.setText("+ Bumper-to-bumper");
+                binding.chipObs2.setText("+ Signal failure");
+                binding.chipObs3.setText("+ Heavy truck queue");
+                binding.chipObs4.setText("+ Standstill 15+ mins");
+                break;
+            case "flood":
+                binding.chipObs1.setText("+ Waterlogging 1ft deep");
+                binding.chipObs2.setText("+ Passable only by buses");
+                binding.chipObs3.setText("+ Manhole overflow");
+                binding.chipObs4.setText("+ Flash flood puddle");
+                break;
+            case "road_repair":
+                binding.chipObs1.setText("+ Potholes on left lane");
+                binding.chipObs2.setText("+ Road resurfacing");
+                binding.chipObs3.setText("+ Open trench");
+                binding.chipObs4.setText("+ Tar laying active");
+                break;
+            case "other":
+                binding.chipObs1.setText("+ Fallen tree branch");
+                binding.chipObs2.setText("+ Low hanging cable");
+                binding.chipObs3.setText("+ Oil spill on road");
+                binding.chipObs4.setText("+ Stray cattle on lane");
+                break;
+            case "accident":
+            default:
+                binding.chipObs1.setText("+ Overturned vehicle");
+                binding.chipObs2.setText("+ Right lane blocked");
+                binding.chipObs3.setText("+ Emergency on scene");
+                binding.chipObs4.setText("+ Traffic halted");
+                break;
+        }
     }
 
     private void fetchGpsLocation() {
@@ -162,7 +318,8 @@ public class ReportFragment extends Fragment {
                 currentLat = lastKnown.getLatitude();
                 currentLng = lastKnown.getLongitude();
                 binding.tvReportLocationTitle.setText("Current Device GPS");
-                binding.tvReportCoords.setText(String.format("Lat: %.4f, Lng: %.4f · Fix acquired", currentLat, currentLng));
+                binding.tvReportCoords.setText(String.format(java.util.Locale.US, "Lat: %.4f, Lng: %.4f · Fix acquired", currentLat, currentLng));
+                updateMiniMap(currentLat, currentLng);
                 Toast.makeText(requireContext(), "Location updated from GPS", Toast.LENGTH_SHORT).show();
             } else {
                 locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, new LocationListener() {
@@ -170,9 +327,10 @@ public class ReportFragment extends Fragment {
                     public void onLocationChanged(@NonNull Location location) {
                         currentLat = location.getLatitude();
                         currentLng = location.getLongitude();
-                        if (isAdded()) {
+                        if (isAdded() && binding != null) {
                             binding.tvReportLocationTitle.setText("Current Device GPS");
-                            binding.tvReportCoords.setText(String.format("Lat: %.4f, Lng: %.4f · Fix acquired", currentLat, currentLng));
+                            binding.tvReportCoords.setText(String.format(java.util.Locale.US, "Lat: %.4f, Lng: %.4f · Fix acquired", currentLat, currentLng));
+                            updateMiniMap(currentLat, currentLng);
                             Toast.makeText(requireContext(), "GPS acquired", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -189,6 +347,7 @@ public class ReportFragment extends Fragment {
         if (binding != null) {
             binding.tvReportLocationTitle.setText(landmarkName != null ? landmarkName : PlacesData.describeLocation(lat, lng));
             binding.tvReportCoords.setText(String.format(java.util.Locale.US, "Lat: %.4f, Lng: %.4f · Pinned from Map", lat, lng));
+            updateMiniMap(lat, lng);
         }
     }
 
@@ -196,6 +355,10 @@ public class ReportFragment extends Fragment {
         String note = binding.etHazardNote.getText() != null ? binding.etHazardNote.getText().toString().trim() : "";
         if (note.isEmpty()) {
             note = selectedCategory + " observed at " + binding.tvReportLocationTitle.getText().toString();
+        }
+
+        if (isSevere) {
+            note = "[SEVERE / ROAD BLOCKED] " + note;
         }
 
         binding.btnSubmitReport.setEnabled(false);
@@ -240,6 +403,9 @@ public class ReportFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        if (binding != null && binding.webviewReportMiniMap != null) {
+            binding.webviewReportMiniMap.stopLoading();
+        }
         super.onDestroyView();
         binding = null;
     }

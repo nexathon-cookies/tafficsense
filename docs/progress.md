@@ -1,5 +1,41 @@
 # Project Progress
 
+## Rapid Civic Incident Reporter UI Redesign — verified, 14 Nov 2026
+
+- **Scope & Fixes:**
+  - **Zero-Logic Architecture:**
+    - Upgraded the Report Hazard page from a static, cumbersome form into a modern 2-tap civic incident reporting interface without touching backend report submission APIs or data contracts.
+  - **Hero & Clean Layout (`fragment_report.xml`):**
+    - Removed duplicate titles and non-functional fake 3-step indicator.
+    - Added crisp hero header with civic eyebrow: `CIVIC ACTION · Report Road Disruption`.
+  - **Tactile 2x3 Hazard Category Cards (`fragment_report.xml`, `ReportFragment.java`):**
+    - High-contrast visual cue cards with vibrant colored circle badges and category icons: Accident (`💥`), Road Closed (`⛔`), Heavy Traffic (`🚗`), Flood / Rain (`🌊`), Road Repair (`🚧`), and Other Hazard (`⚠️`).
+    - Added active selection checkmark badge (`iv_check_cat_*`), spring scale bounce (`1.05x`), and primary border highlight.
+  - **Two-Level Severity Switcher (`card_severity_minor`, `card_severity_severe`):**
+    - Added quick severity toggles: "Minor Delay" (slowdown) vs "Major / Blocked" (detour required).
+    - Automatically prepends `[SEVERE / ROAD BLOCKED]` tag to incident note for priority traffic routing.
+  - **Visual Location Card with Live Mini-Map Preview (`fragment_report.xml`, `ReportFragment.java`, `MapHtmlBuilder.java`):**
+    - Added `buildMiniPinMapHtml(lat, lng)`: renders an interactive 110dp-height Leaflet mini-map preview box with a pulsing purple target pin (📍).
+    - Added `updateMiniMap(lat, lng)`: dynamically recenters and moves pin when location changes.
+    - Quick Hubs horizontal scroll: one-tap chips for key Mangaluru junctions (`Hampankatta`, `Lalbagh`, `Bejai Circle`, `Pumpwell`, `Ladyhill`).
+  - **1-Tap Dynamic Quick Observation Chips (`fragment_report.xml`, `ReportFragment.java`):**
+    - Dynamic contextual observation chips that automatically update based on the selected category:
+      - Accident: `+ Overturned vehicle`, `+ Right lane blocked`, `+ Emergency on scene`, `+ Traffic halted`
+      - Flood: `+ Waterlogging 1ft deep`, `+ Passable only by buses`, `+ Manhole overflow`, `+ Flash flood puddle`
+      - Road Closed: `+ Road closed ahead`, `+ Police barricade`, `+ Diversion via bypass`, `+ Excavation work`
+      - Heavy Traffic: `+ Bumper-to-bumper`, `+ Signal failure`, `+ Heavy truck queue`, `+ Standstill 15+ mins`
+    - Tapping any chip immediately appends the observation phrase into the note box without requiring manual typing.
+  - **New Vector Drawable:**
+    - Added `ic_send.xml` (submit rocket/send icon).
+- **Verification Evidence:**
+  - Automated tests: `./gradlew testDebugUnitTest` passed without regressions.
+  - APK assembly: `./gradlew assembleDebug -PapiBaseUrl="http://192.168.0.224:3000"` built in 1s (`apps/traffic/app/build/outputs/apk/debug/app-debug.apk`, 9.7MB).
+  - Deployed to wireless device via `adb push` & `pm install -r`: `Success`.
+  - Live runtime validation on device (PID 4473):
+    - Verified new hero layout and tactile category selection.
+    - Verified mini-map rendering with live target pin.
+    - Verified dynamic observation chips and severity toggle.
+
 ## Full-Screen Route Planner Map, Floating Overlays & Mode Toggle — verified, 14 Nov 2026
 
 - **Scope & Fixes:**
