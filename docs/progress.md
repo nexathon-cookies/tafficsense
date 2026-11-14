@@ -1,5 +1,38 @@
 # Project Progress
 
+## Map Interactivity, Location Inspection, Floating Controls & Green Line Removal — verified, 14 Nov 2026
+
+- **Scope & Fixes:**
+  - **Removal of Dummy Green Baseline Polyline (`MapHtmlBuilder.java`):**
+    - Removed hardcoded fallback polyline (`var baselineCoords = [[12.8687, 74.8436],[12.8640, 74.8470],[12.8580, 74.8550]]`) that drew a green line slicing diagonally across the screen whenever `primaryRoute == null`.
+    - Live Traffic Map now renders exclusively clean OpenStreetMap cartography and verified real hazard pins.
+  - **Google Maps & OSM-Style Tap Selection & Native Touch Events (`MapHtmlBuilder.java`):**
+    - Configured Leaflet viewport with dynamic pinch/zoom support (`maximum-scale=5.0`, `user-scalable=yes`).
+    - Disabled Leaflet synthetic tap hijacking (`tap: false`), enabling native Chromium click propagation.
+    - Added map click listener (`map.on('click')`) dropping an animated teardrop pin (📍) and dispatching coordinates to native Android via `window.AndroidBridge.onLocationSelected(lat, lng)`.
+    - Added `L.DomEvent.stopPropagation(e)` to hazard markers to avoid collision with general map tap selection.
+    - Exposed native JS controls: `window.zoomIn()`, `window.zoomOut()`, `window.centerMap(lat, lng)`, and `window.clearSelection()`.
+  - **Floating Zoom & Recenter Controls (`fragment_traffic.xml`, `TrafficFragment.java`):**
+    - Added floating vertical pill with Zoom In (`+`) and Zoom Out (`-`) buttons.
+    - Added circular floating Recenter button (`ic_my_location`) to center camera smoothly back to Mangaluru city center (12.8687, 74.8436).
+    - Added vector drawables: `ic_close.xml`, `ic_remove.xml`, and `ic_my_location.xml`.
+  - **Dual-Mode Interactive Bottom Details Card (`fragment_traffic.xml`, `TrafficFragment.java`):**
+    - Replaced buggy `BottomSheetBehavior` layout trap with gravity-anchored floating card (`android:layout_gravity="bottom"`, elevation 12dp) ensuring guaranteed visibility transitions.
+    - Added dismiss button (`iv_sheet_close`) to clear pin and hide card.
+    - Added dual-mode UI:
+      - **Place Mode:** Shows nearest landmark name, GPS coordinates, distance, and 2 action buttons: "Report Hazard" (pre-fills coordinates into Report tab) and "Plan Route Here" (sets destination in Route Planner).
+      - **Incident Mode:** Shows incident category emoji (💥, 🌊, ⛔, 🚧, 🚗), severity/verification badge, details, and actions: "Still there?" corroboration and "Plan Detour".
+  - **Nearest Landmark Geocoding (`PlacesData.java`):**
+    - Added `getNearestPlace(lat, lng)` and `describeLocation(lat, lng)` calculating Haversine distance to key Mangaluru junctions, providing instant context (e.g. "At Bejai Circle", "Near Lalbagh Junction (180m)").
+- **Verification Evidence:**
+  - Automated tests: `./gradlew testDebugUnitTest` passed (3/3 tests passed in 5s).
+  - APK assembly: `./gradlew assembleDebug` built successfully in 1s (`apps/traffic/app/build/outputs/apk/debug/app-debug.apk`, 9.7MB).
+  - Streamed install to wireless ADB device `adb-10BE2D1SYX000UY-KSkZnU._adb-tls-connect._tcp`: `Success`.
+  - Launched `com.love.trafficsense/.MainActivity` (PID 8932). Logcat confirmed:
+    - `Loaded 6 active incidents from backend`
+    - `WebViewFactory: Loading com.google.android.webview`
+    - Full native library linkage without errors.
+
 ## Zero-Lag Navigation, Offline Asset Bundling, Bottom Nav Styling & Instant Map Reporting — verified, 13 Nov 2026
 
 - **Scope & Fixes:**

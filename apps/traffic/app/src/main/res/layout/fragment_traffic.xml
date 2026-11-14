@@ -148,6 +148,84 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
 
+            <!-- Floating Map Controls (Google Maps / OSM Style) -->
+            <LinearLayout
+                android:id="@+id/layout_map_controls"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:orientation="vertical">
+
+                <!-- Zoom Controls Pill -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="22dp"
+                    app:cardElevation="6dp"
+                    app:strokeColor="@color/border"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/btn_map_zoom_in"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="12dp"
+                            android:src="@drawable/ic_add"
+                            app:tint="@color/text_primary" />
+
+                        <View
+                            android:layout_width="28dp"
+                            android:layout_height="1dp"
+                            android:background="@color/border" />
+
+                        <ImageView
+                            android:id="@+id/btn_map_zoom_out"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="12dp"
+                            android:src="@drawable/ic_remove"
+                            app:tint="@color/text_primary" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Recenter on Mangaluru / My Location Button -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btn_map_recenter"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="12dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="22dp"
+                    app:cardElevation="6dp"
+                    app:strokeColor="@color/border"
+                    app:strokeWidth="1dp">
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="11dp"
+                        android:src="@drawable/ic_my_location"
+                        app:tint="@color/primary" />
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
             <!-- Incident Feed List View -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_traffic_list"
@@ -160,19 +238,19 @@
 
     </LinearLayout>
 
-    <!-- Interactive Bottom Sheet for Inspected Incident -->
+    <!-- Interactive Details Card for Selected Location or Incident -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/bottom_sheet_incident"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="12dp"
         android:visibility="gone"
         app:cardBackgroundColor="@color/surface_card"
         app:cardCornerRadius="16dp"
-        app:cardElevation="10dp"
-        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        app:cardElevation="12dp"
         app:strokeColor="@color/border"
         app:strokeWidth="1dp">
 
@@ -182,6 +260,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Top Row: Icon + Title + Badge + Close Button -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -190,11 +269,11 @@
 
                 <ImageView
                     android:id="@+id/iv_sheet_icon"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:background="@drawable/bg_circle_icon"
                     android:backgroundTint="@color/error_container"
-                    android:padding="6dp"
+                    android:padding="7dp"
                     android:src="@drawable/ic_car_crash"
                     app:tint="@color/error" />
 
@@ -227,6 +306,7 @@
                     android:id="@+id/tv_sheet_badge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
                     android:background="@drawable/bg_pill_violet"
                     android:paddingStart="8dp"
                     android:paddingTop="3dp"
@@ -236,6 +316,18 @@
                     android:textColor="@color/secondary"
                     android:textSize="10sp"
                     android:textStyle="bold" />
+
+                <!-- Dismiss Button -->
+                <ImageView
+                    android:id="@+id/iv_sheet_close"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="5dp"
+                    android:src="@drawable/ic_close"
+                    app:tint="@color/text_muted" />
             </LinearLayout>
 
             <TextView
@@ -247,7 +339,9 @@
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
+            <!-- Action Buttons for Incident Mode -->
             <LinearLayout
+                android:id="@+id/layout_incident_actions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
@@ -274,6 +368,44 @@
                     android:layout_weight="1"
                     android:backgroundTint="@color/primary"
                     android:text="Plan Detour"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    app:cornerRadius="8dp"
+                    app:icon="@drawable/ic_alt_route"
+                    app:iconSize="14dp"
+                    app:iconTint="@color/white" />
+            </LinearLayout>
+
+            <!-- Action Buttons for Selected Place / Point Mode -->
+            <LinearLayout
+                android:id="@+id/layout_place_actions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_place_report_here"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="Report Hazard"
+                    android:textSize="12sp"
+                    app:cornerRadius="8dp"
+                    app:icon="@drawable/ic_add"
+                    app:iconSize="14dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_place_plan_route"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:backgroundTint="@color/primary"
+                    android:text="Plan Route Here"
                     android:textColor="@color/white"
                     android:textSize="12sp"
                     app:cornerRadius="8dp"

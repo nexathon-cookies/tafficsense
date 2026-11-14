@@ -16,7 +16,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.love.trafficsense.R;
@@ -24,6 +23,7 @@ import com.love.trafficsense.data.api.TrafficApiClient;
 import com.love.trafficsense.data.model.LiveIncident;
 import com.love.trafficsense.databinding.FragmentTrafficBinding;
 import com.love.trafficsense.utils.MapHtmlBuilder;
+import com.love.trafficsense.utils.PlacesData;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,6 +52,7 @@ public class TrafficFragment extends Fragment {
         setupHeader();
         setupToggleBar();
         setupWebView();
+        setupFloatingControls();
         setupRecyclerView();
         setupSearchFilter();
         loadIncidents();
@@ -78,9 +79,11 @@ public class TrafficFragment extends Fragment {
             if (!isChecked) return;
             if (checkedId == R.id.btn_view_map) {
                 binding.webViewMap.setVisibility(View.VISIBLE);
+                binding.layoutMapControls.setVisibility(View.VISIBLE);
                 binding.rvTrafficList.setVisibility(View.GONE);
             } else {
                 binding.webViewMap.setVisibility(View.GONE);
+                binding.layoutMapControls.setVisibility(View.GONE);
                 binding.rvTrafficList.setVisibility(View.VISIBLE);
                 binding.bottomSheetIncident.setVisibility(View.GONE);
             }
@@ -107,7 +110,7 @@ public class TrafficFragment extends Fragment {
             }
         });
 
-        // JavaScript Interface bridge to receive clicks from Leaflet markers
+        // JavaScript Interface bridge to receive clicks from Leaflet markers and map clicks
         binding.webViewMap.addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void onIncidentSelected(String incidentId) {
@@ -120,7 +123,34 @@ public class TrafficFragment extends Fragment {
                     }
                 });
             }
+
+            @JavascriptInterface
+            public void onLocationSelected(double lat, double lng) {
+                requireActivity().runOnUiThread(() -> {
+                    showPlaceDetails(lat, lng);
+                });
+            }
         }, "AndroidBridge");
+    }
+
+    private void setupFloatingControls() {
+        binding.btnMapZoomIn.setOnClickListener(v -> {
+            binding.webViewMap.evaluateJavascript("window.zoomIn && window.zoomIn();", null);
+        });
+
+        binding.btnMapZoomOut.setOnClickListener(v -> {
+            binding.webViewMap.evaluateJavascript("window.zoomOut && window.zoomOut();", null);
+        });
+
+        binding.btnMapRecenter.setOnClickListener(v -> {
+            binding.webViewMap.evaluateJavascript("window.centerMap && window.centerMap(12.8687, 74.8436);", null);
+            Toast.makeText(requireContext(), "Centered on Mangaluru", Toast.LENGTH_SHORT).show();
+        });
+
+        binding.ivSheetClose.setOnClickListener(v -> {
+            binding.bottomSheetIncident.setVisibility(View.GONE);
+            binding.webViewMap.evaluateJavascript("window.clearSelection && window.clearSelection();", null);
+        });
     }
 
     private void setupRecyclerView() {
@@ -163,15 +193,65 @@ public class TrafficFragment extends Fragment {
         adapter.setIncidents(filtered);
     }
 
+    private void showPlaceDetails(double lat, double lng) {
+        binding.bottomSheetIncident.setVisibility(View.VISIBLE);
+        binding.layoutIncidentActions.setVisibility(View.GONE);
+        binding.layoutPlaceActions.setVisibility(View.VISIBLE);
+
+        binding.ivSheetIcon.setImageResource(R.drawable.ic_location_on);
+        binding.ivSheetIcon.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.primary_container));
+        binding.ivSheetIcon.setImageTintList(ContextCompat.getColorStateList(requireContext(), R.color.primary));
+
+        String placeTitle = PlacesData.describeLocation(lat, lng);
+        binding.tvSheetTitle.setText(placeTitle);
+        binding.tvSheetLandmark.setText(String.format(Locale.US, "GPS: %.4f° N, %.4f° E · Mangaluru", lat, lng));
+        binding.tvSheetBadge.setText("📍 Map Point");
+        binding.tvSheetBadge.setBackgroundResource(R.drawable.bg_pill_violet);
+        binding.tvSheetBadge.setTextColor(ContextCompat.getColor(requireContext(), R.color.secondary));
+        binding.tvSheetNotes.setText("Tap below to file a civic hazard report at this point or calculate an optimized detour route.");
+
+        binding.btnPlaceReportHere.setOnClickListener(v -> {
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_report);
+        });
+
+        binding.btnPlacePlanRoute.setOnClickListener(v -> {
+            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_planner);
+        });
+    }
+
     private void showIncidentDetails(LiveIncident inc) {
         this.selectedIncident = inc;
         binding.bottomSheetIncident.setVisibility(View.VISIBLE);
+        binding.layoutIncidentActions.setVisibility(View.VISIBLE);
+        binding.layoutPlaceActions.setVisibility(View.GONE);
+
+        String cat = inc.category != null ? inc.category.toLowerCase() : "";
+        if (cat.contains("flood") || cat.contains("water")) {
+            binding.ivSheetIcon.setImageResource(R.drawable.ic_flood);
+            binding.ivSheetIcon.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.primary_container));
+            binding.ivSheetIcon.setImageTintList(ContextCompat.getColorStateList(requireContext(), R.color.primary));
+        } else if (cat.contains("close") || cat.contains("block")) {
+            binding.ivSheetIcon.setImageResource(R.drawable.ic_road_closed);
+            binding.ivSheetIcon.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.error_container));
+            binding.ivSheetIcon.setImageTintList(ContextCompat.getColorStateList(requireContext(), R.color.error));
+        } else if (cat.contains("traffic") || cat.contains("congestion")) {
+            binding.ivSheetIcon.setImageResource(R.drawable.ic_traffic);
+            binding.ivSheetIcon.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.secondary_container));
+            binding.ivSheetIcon.setImageTintList(ContextCompat.getColorStateList(requireContext(), R.color.secondary));
+        } else {
+            binding.ivSheetIcon.setImageResource(R.drawable.ic_car_crash);
+            binding.ivSheetIcon.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.error_container));
+            binding.ivSheetIcon.setImageTintList(ContextCompat.getColorStateList(requireContext(), R.color.error));
+        }
+
         binding.tvSheetTitle.setText(inc.landmark != null ? inc.landmark : "Traffic Incident");
         binding.tvSheetLandmark.setText("Category: " + (inc.category != null ? inc.category.toUpperCase() : "HAZARD"));
         binding.tvSheetNotes.setText(inc.notes != null && !inc.notes.isEmpty() ? inc.notes : "Reported obstacle affecting corridor passage.");
 
         String levelStr = inc.evidenceLevel != null ? inc.evidenceLevel : "L3";
         binding.tvSheetBadge.setText((levelStr.startsWith("L") ? "" : "L") + levelStr + " " + (inc.evidenceLabel != null ? inc.evidenceLabel : "Corroborated"));
+        binding.tvSheetBadge.setBackgroundResource(R.drawable.bg_pill_violet);
+        binding.tvSheetBadge.setTextColor(ContextCompat.getColor(requireContext(), R.color.secondary));
 
         // Detour navigation button
         binding.btnSheetPlanDetour.setOnClickListener(v -> {

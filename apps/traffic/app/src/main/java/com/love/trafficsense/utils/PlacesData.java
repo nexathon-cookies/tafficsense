@@ -39,4 +39,40 @@ public class PlacesData {
         list.add(new Place("Surathkal Junction", "NITK North", 13.0089, 74.7943));
         MANGALURU_PLACES = Collections.unmodifiableList(list);
     }
+
+    public static Place getNearestPlace(double lat, double lng) {
+        Place nearest = MANGALURU_PLACES.get(0);
+        double minDistance = Double.MAX_VALUE;
+        for (Place p : MANGALURU_PLACES) {
+            double dLat = (lat - p.lat) * 111000.0;
+            double dLng = (lng - p.lng) * 108200.0;
+            double dist = Math.sqrt(dLat * dLat + dLng * dLng);
+            if (dist < minDistance) {
+                minDistance = dist;
+                nearest = p;
+            }
+        }
+        return nearest;
+    }
+
+    public static String describeLocation(double lat, double lng) {
+        Place nearest = MANGALURU_PLACES.get(0);
+        double minDistance = Double.MAX_VALUE;
+        for (Place p : MANGALURU_PLACES) {
+            double dLat = (lat - p.lat) * 111000.0;
+            double dLng = (lng - p.lng) * 108200.0;
+            double dist = Math.sqrt(dLat * dLat + dLng * dLng);
+            if (dist < minDistance) {
+                minDistance = dist;
+                nearest = p;
+            }
+        }
+        if (minDistance < 300) {
+            return "At " + nearest.name;
+        } else if (minDistance < 1500) {
+            return "Near " + nearest.name + " (" + ((int) minDistance) + "m)";
+        } else {
+            return nearest.name + " Corridor (~" + String.format(java.util.Locale.US, "%.1f", minDistance / 1000.0) + " km)";
+        }
+    }
 }
