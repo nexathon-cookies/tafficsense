@@ -1,5 +1,34 @@
 # Project Progress
 
+## UI Bugs, State Feedback, Button Colors, Insets & Empty States — verified, 14 Nov 2026
+
+- **Scope & Fixes:**
+  - **Zero-Logic Architecture:**
+    - Addressed UI color issues, state feedback, button contrast, insets, and configuration changes exclusively in the presentation layer without altering API contracts or backend logic.
+  - **Button Color States & Contrast Selectors (`btn_primary_bg_selector.xml`, `btn_primary_text_selector.xml`, `btn_toggle_bg_selector.xml`, `btn_toggle_text_selector.xml`):**
+    - Created explicit state list animators/selectors for primary and toggle buttons.
+    - Disabled buttons now visually indicate loading/inactive states (`state_enabled="false"` mapped to `@color/surface_container_high` and `@color/text_muted`) instead of remaining bright teal.
+    - Toggle segmented buttons (`Map` / `List`) dynamically switch background and text colors based on `state_checked`.
+    - Applied selectors to `btn_check_route`, `btn_submit_report`, `btn_inspect_routes`, `btn_toggle_journey`, and traffic bottom sheet action buttons.
+  - **Dark Mode Color Protection (`values-night/themes.xml`):**
+    - Synchronized `values-night/themes.xml` tokens with Light theme civic tokens and set `AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)` to prevent white-on-white text collision on system dark mode devices.
+  - **IME & WindowInsets Keyboard Protection (`MainActivity.java`):**
+    - Fixed WindowInsets listener to return unconsumed insets (`return windowInsets;`) so `WindowInsetsCompat.Type.ime()` reaches child views, allowing proper scrolling when virtual keyboard opens.
+  - **Fragment State Restoration on Configuration Changes (`MainActivity.java`):**
+    - Checked `savedInstanceState != null` to re-bind retained fragments via `supportFragmentManager.findFragmentByTag()`, preventing duplicate fragments and blank screen locks on device rotation.
+    - Added context hand-off navigation helpers `navigateToReportWithLocation(context, lat, lng, name)` and `navigateToPlannerWithDestination(context, lat, lng, name)`.
+  - **Dynamic Greetings & Empty States (`HomeFragment.java`, `TrafficFragment.java`, `fragment_home.xml`, `fragment_traffic.xml`):**
+    - Dynamic greeting based on time of day (Good morning / afternoon / evening) and current authenticated role.
+    - Added dedicated empty states: `layout_home_empty_incidents` ("Corridors Clear") on Home and `layout_empty_traffic` ("No Hazards Found" with clear search action) on Traffic.
+    - Added bottom padding (`clipToPadding="false"`, `paddingBottom="100dp"`) to `rv_traffic_list` so bottom navigation bar does not obscure the last incident card.
+  - **WebView Lifecycle Teardown (`HomeFragment.java`, `TrafficFragment.java`, `PlannerFragment.java`):**
+    - Added `stopLoading()` and `removeJavascriptInterface()` in `onDestroyView()` to avoid memory leaks and background WebView rendering overhead.
+- **Verification Evidence:**
+  - Unit tests `./gradlew testDebugUnitTest`: passed without regressions.
+  - APK assembly `./gradlew assembleDebug -PapiBaseUrl="http://192.168.0.224:3000"`: built successfully (`app-debug.apk`, 9.7MB).
+  - Deployed to wireless ADB device `adb-9631902355001MP-VPnwED._adb-tls-connect._tcp` via `pm install -r`: `Success`.
+  - Launched `com.love.trafficsense/.MainActivity` (PID 25839). Verified `topResumedActivity=ActivityRecord{1dcc67d u0 com.love.trafficsense/.MainActivity}`.
+
 ## Fluid UI Transitions, Micro-Interactions, Leaflet Fly-To & Spring Animations — verified, 14 Nov 2026
 
 - **Scope & Fixes:**

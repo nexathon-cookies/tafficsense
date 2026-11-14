@@ -194,9 +194,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="46dp"
                         android:layout_marginTop="12dp"
-                        android:backgroundTint="@color/primary"
+                        app:backgroundTint="@color/btn_primary_bg_selector"
                         android:text="Start Commute Journey"
-                        android:textColor="@color/white"
+                        android:textColor="@color/btn_primary_text_selector"
                         app:cornerRadius="10dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

@@ -224,14 +224,14 @@
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="12dp"
-                        android:backgroundTint="@color/primary"
+                        app:backgroundTint="@color/btn_primary_bg_selector"
                         android:text="Check Route &amp; Hazards"
-                        android:textColor="@color/white"
+                        android:textColor="@color/btn_primary_text_selector"
                         android:textSize="13sp"
                         app:cornerRadius="10dp"
                         app:icon="@drawable/ic_directions_car"
                         app:iconSize="18dp"
-                        app:iconTint="@color/white" />
+                        app:iconTint="@color/btn_primary_text_selector" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

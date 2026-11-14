@@ -65,8 +65,10 @@ public class IncidentAdapter extends RecyclerView.Adapter<IncidentAdapter.Incide
         }
 
         public void bind(LiveIncident incident) {
-            binding.tvCategoryCaps.setText(incident.category.toUpperCase());
-            binding.tvCategoryTitle.setText(formatCategory(incident.category));
+            if (incident == null) return;
+            String category = incident.category != null ? incident.category : "HAZARD";
+            binding.tvCategoryCaps.setText(category.toUpperCase());
+            binding.tvCategoryTitle.setText(formatCategory(category));
             binding.tvFreshness.setText(incident.freshness != null ? incident.freshness : "2m ago");
             binding.tvNotes.setText(incident.notes != null && !incident.notes.isEmpty() ? incident.notes : "Reported obstacle affecting corridor passage.");
 
@@ -75,26 +77,22 @@ public class IncidentAdapter extends RecyclerView.Adapter<IncidentAdapter.Incide
             binding.tvEvidenceBadge.setText((levelStr.startsWith("L") ? "" : "L") + levelStr + " " + (incident.evidenceLabel != null ? incident.evidenceLabel : "Citizen Reported"));
 
             // Icon mapping
-            switch (incident.category.toLowerCase()) {
-                case "waterlogging":
-                case "flooding":
-                    binding.ivHazardIcon.setImageResource(R.drawable.ic_flood);
-                    binding.ivHazardIcon.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.primary));
-                    break;
-                case "construction":
-                case "road work":
-                    binding.ivHazardIcon.setImageResource(R.drawable.ic_construction);
-                    binding.ivHazardIcon.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.warning));
-                    break;
-                case "heavy_congestion":
-                case "congestion":
-                    binding.ivHazardIcon.setImageResource(R.drawable.ic_traffic);
-                    binding.ivHazardIcon.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.secondary));
-                    break;
-                default:
-                    binding.ivHazardIcon.setImageResource(R.drawable.ic_car_crash);
-                    binding.ivHazardIcon.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.error));
-                    break;
+            String catLower = category.toLowerCase();
+            if (catLower.contains("water") || catLower.contains("flood")) {
+                binding.ivHazardIcon.setImageResource(R.drawable.ic_flood);
+                binding.ivHazardIcon.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.primary));
+            } else if (catLower.contains("construction") || catLower.contains("repair")) {
+                binding.ivHazardIcon.setImageResource(R.drawable.ic_construction);
+                binding.ivHazardIcon.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.warning));
+            } else if (catLower.contains("traffic") || catLower.contains("congestion")) {
+                binding.ivHazardIcon.setImageResource(R.drawable.ic_traffic);
+                binding.ivHazardIcon.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.secondary));
+            } else if (catLower.contains("close") || catLower.contains("block")) {
+                binding.ivHazardIcon.setImageResource(R.drawable.ic_road_closed);
+                binding.ivHazardIcon.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.error));
+            } else {
+                binding.ivHazardIcon.setImageResource(R.drawable.ic_car_crash);
+                binding.ivHazardIcon.setColorFilter(ContextCompat.getColor(itemView.getContext(), R.color.error));
             }
 
             // Confirm / Deny State handling

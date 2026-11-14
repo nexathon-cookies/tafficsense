@@ -23,6 +23,7 @@ import com.love.trafficsense.ui.traffic.IncidentAdapter;
 import com.love.trafficsense.utils.MapHtmlBuilder;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -44,12 +45,32 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        setupGreeting();
         setupRecyclerView();
         setupMiniMap();
         setupInteractions();
         loadIncidents();
 
         binding.swipeRefresh.setOnRefreshListener(this::loadIncidents);
+    }
+
+    private void setupGreeting() {
+        if (binding == null) return;
+        Calendar cal = Calendar.getInstance();
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        String greeting;
+        if (hour < 12) {
+            greeting = "Good morning";
+        } else if (hour < 17) {
+            greeting = "Good afternoon";
+        } else {
+            greeting = "Good evening";
+        }
+        String role = TrafficApiClient.getInstance().getCurrentRole();
+        if (role != null && !role.isEmpty()) {
+            greeting += " (" + role + ")";
+        }
+        binding.tvHomeGreeting.setText(greeting);
     }
 
     private void setupRecyclerView() {
@@ -160,6 +181,8 @@ public class HomeFragment extends Fragment {
     private void loadIncidents() {
         List<LiveIncident> cached = TrafficApiClient.getInstance().getCachedIncidents();
         if (cached != null && !cached.isEmpty()) {
+            binding.rvHomeIncidents.setVisibility(View.VISIBLE);
+            binding.layoutHomeEmptyIncidents.setVisibility(View.GONE);
             adapter.setIncidents(cached);
             binding.rvHomeIncidents.scheduleLayoutAnimation();
             binding.tvReportsCount.setText(cached.size() + " reports");
@@ -170,11 +193,19 @@ public class HomeFragment extends Fragment {
         TrafficApiClient.getInstance().fetchActiveIncidents(new TrafficApiClient.ApiCallback<List<LiveIncident>>() {
             @Override
             public void onSuccess(List<LiveIncident> incidents) {
-                if (!isAdded()) return;
+                if (!isAdded() || binding == null) return;
                 binding.swipeRefresh.setRefreshing(false);
-                adapter.setIncidents(incidents);
-                binding.rvHomeIncidents.scheduleLayoutAnimation();
-                binding.tvReportsCount.setText(incidents.size() + " reports");
+                if (incidents == null || incidents.isEmpty()) {
+                    binding.rvHomeIncidents.setVisibility(View.GONE);
+                    binding.layoutHomeEmptyIncidents.setVisibility(View.VISIBLE);
+                    binding.tvReportsCount.setText("0 reports");
+                } else {
+                    binding.rvHomeIncidents.setVisibility(View.VISIBLE);
+                    binding.layoutHomeEmptyIncidents.setVisibility(View.GONE);
+                    adapter.setIncidents(incidents);
+                    binding.rvHomeIncidents.scheduleLayoutAnimation();
+                    binding.tvReportsCount.setText(incidents.size() + " reports");
+                }
 
                 String time = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
                 binding.tvLiveTimestamp.setText("Live · updated " + time + " · 30s auto-refresh");
@@ -185,7 +216,7 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onError(String message) {
-                if (!isAdded()) return;
+                if (!isAdded() || binding == null) return;
                 binding.swipeRefresh.setRefreshing(false);
                 Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
             }
@@ -194,6 +225,9 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        if (binding != null && binding.webviewHeroMap != null) {
+            binding.webviewHeroMap.stopLoading();
+        }
         super.onDestroyView();
         binding = null;
     }

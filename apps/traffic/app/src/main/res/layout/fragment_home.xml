@@ -91,6 +91,7 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tv_home_greeting"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Good morning, Commuter"
@@ -345,15 +346,15 @@
                             android:layout_width="match_parent"
                             android:layout_height="48dp"
                             android:layout_marginTop="12dp"
-                            android:backgroundTint="@color/primary"
+                            app:backgroundTint="@color/btn_primary_bg_selector"
                             android:text="Inspect Coastal Routes · ~18 min"
-                            android:textColor="@color/white"
+                            android:textColor="@color/btn_primary_text_selector"
                             android:textSize="13sp"
                             app:cornerRadius="10dp"
                             app:icon="@drawable/ic_directions_car"
                             app:iconGravity="textStart"
                             app:iconSize="18dp"
-                            app:iconTint="@color/white" />
+                            app:iconTint="@color/btn_primary_text_selector" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -671,6 +672,46 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:nestedScrollingEnabled="false" />
+
+                <!-- Empty State for Nearby Incidents -->
+                <LinearLayout
+                    android:id="@+id/layout_home_empty_incidents"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_pill_violet"
+                    android:backgroundTint="@color/surface_card"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="24dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_circle_icon"
+                        android:backgroundTint="@color/primary_container"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_verified"
+                        app:tint="@color/primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Corridors Clear"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="No active disruptions or hazards reported nearby. Safe driving!"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
 
             </LinearLayout>
         </LinearLayout>

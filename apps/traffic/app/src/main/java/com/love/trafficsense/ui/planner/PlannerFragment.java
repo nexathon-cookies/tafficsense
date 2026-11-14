@@ -244,13 +244,26 @@ public class PlannerFragment extends Fragment {
         });
     }
 
+    public void setDestinationPoint(double lat, double lng, String name) {
+        this.destination = new PlacesData.Place(name != null ? name : PlacesData.describeLocation(lat, lng), "Selected Point", lat, lng);
+        if (binding != null) {
+            updatePlaceLabels();
+            checkRoute();
+        }
+    }
+
     private void checkRoute() {
         binding.btnCheckRoute.setEnabled(false);
         TrafficApiClient.getInstance().fetchRoute(origin.lat, origin.lng, destination.lat, destination.lng, new TrafficApiClient.ApiCallback<List<RouteOption>>() {
             @Override
             public void onSuccess(List<RouteOption> routes) {
-                if (!isAdded() || routes == null || routes.isEmpty()) return;
+                if (!isAdded()) return;
                 binding.btnCheckRoute.setEnabled(true);
+
+                if (routes == null || routes.isEmpty()) {
+                    Toast.makeText(requireContext(), "No direct corridor route found between hubs", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
                 primaryRoute = routes.get(0);
                 binding.tvPrimaryTitle.setText(primaryRoute.name);
@@ -291,6 +304,9 @@ public class PlannerFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        if (binding != null && binding.webviewPlannerMap != null) {
+            binding.webviewPlannerMap.stopLoading();
+        }
         super.onDestroyView();
         binding = null;
     }

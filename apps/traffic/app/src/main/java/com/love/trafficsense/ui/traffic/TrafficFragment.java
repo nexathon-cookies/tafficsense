@@ -117,7 +117,9 @@ public class TrafficFragment extends Fragment {
         binding.webViewMap.addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void onIncidentSelected(String incidentId) {
-                requireActivity().runOnUiThread(() -> {
+                android.app.Activity act = getActivity();
+                if (act == null || !isAdded()) return;
+                act.runOnUiThread(() -> {
                     for (LiveIncident inc : allIncidents) {
                         if (inc.id != null && inc.id.equals(incidentId)) {
                             showIncidentDetails(inc);
@@ -129,7 +131,9 @@ public class TrafficFragment extends Fragment {
 
             @JavascriptInterface
             public void onLocationSelected(double lat, double lng) {
-                requireActivity().runOnUiThread(() -> {
+                android.app.Activity act = getActivity();
+                if (act == null || !isAdded()) return;
+                act.runOnUiThread(() -> {
                     showPlaceDetails(lat, lng);
                 });
             }
@@ -238,11 +242,15 @@ public class TrafficFragment extends Fragment {
             @Override
             public void afterTextChanged(Editable s) {}
         });
+
+        binding.btnClearSearch.setOnClickListener(v -> binding.etSearchTraffic.setText(""));
     }
 
     private void filterIncidents(String query) {
         if (query == null || query.trim().isEmpty()) {
             adapter.setIncidents(allIncidents);
+            binding.layoutEmptyTraffic.setVisibility(allIncidents.isEmpty() ? View.VISIBLE : View.GONE);
+            binding.rvTrafficList.setVisibility(allIncidents.isEmpty() ? View.GONE : View.VISIBLE);
             return;
         }
         String lower = query.toLowerCase().trim();
@@ -255,6 +263,8 @@ public class TrafficFragment extends Fragment {
             }
         }
         adapter.setIncidents(filtered);
+        binding.layoutEmptyTraffic.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+        binding.rvTrafficList.setVisibility(filtered.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     private void showPlaceDetails(double lat, double lng) {
@@ -275,11 +285,11 @@ public class TrafficFragment extends Fragment {
         binding.tvSheetNotes.setText("Tap below to file a civic hazard report at this point or calculate an optimized detour route.");
 
         binding.btnPlaceReportHere.setOnClickListener(v -> {
-            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_report);
+            com.love.trafficsense.MainActivity.navigateToReportWithLocation(requireContext(), lat, lng, placeTitle);
         });
 
         binding.btnPlacePlanRoute.setOnClickListener(v -> {
-            com.love.trafficsense.MainActivity.navigateTo(requireContext(), R.id.navigation_planner);
+            com.love.trafficsense.MainActivity.navigateToPlannerWithDestination(requireContext(), lat, lng, placeTitle);
         });
     }
 
@@ -387,6 +397,10 @@ public class TrafficFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        if (binding != null && binding.webViewMap != null) {
+            binding.webViewMap.removeJavascriptInterface("AndroidBridge");
+            binding.webViewMap.stopLoading();
+        }
         super.onDestroyView();
         binding = null;
     }

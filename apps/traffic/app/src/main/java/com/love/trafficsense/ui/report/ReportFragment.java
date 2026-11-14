@@ -183,6 +183,15 @@ public class ReportFragment extends Fragment {
         }
     }
 
+    public void prefillLocation(double lat, double lng, String landmarkName) {
+        this.currentLat = lat;
+        this.currentLng = lng;
+        if (binding != null) {
+            binding.tvReportLocationTitle.setText(landmarkName != null ? landmarkName : PlacesData.describeLocation(lat, lng));
+            binding.tvReportCoords.setText(String.format(java.util.Locale.US, "Lat: %.4f, Lng: %.4f · Pinned from Map", lat, lng));
+        }
+    }
+
     private void submitHazard() {
         String note = binding.etHazardNote.getText() != null ? binding.etHazardNote.getText().toString().trim() : "";
         if (note.isEmpty()) {
@@ -190,11 +199,13 @@ public class ReportFragment extends Fragment {
         }
 
         binding.btnSubmitReport.setEnabled(false);
+        binding.btnSubmitReport.setText("Submitting Hazard Report...");
         TrafficApiClient.getInstance().submitIncident(selectedCategory, currentLat, currentLng, note, new TrafficApiClient.ApiCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
                 if (!isAdded()) return;
                 binding.btnSubmitReport.setEnabled(true);
+                binding.btnSubmitReport.setText("Submit Anonymized Hazard");
                 binding.etHazardNote.setText("");
                 new MaterialAlertDialogBuilder(requireContext())
                         .setTitle("Hazard Reported!")
@@ -210,6 +221,7 @@ public class ReportFragment extends Fragment {
             public void onError(String message) {
                 if (!isAdded()) return;
                 binding.btnSubmitReport.setEnabled(true);
+                binding.btnSubmitReport.setText("Submit Anonymized Hazard");
                 if (message != null && message.toLowerCase().contains("rate limit")) {
                     new MaterialAlertDialogBuilder(requireContext())
                             .setTitle("Hourly Rate Limit (Anti-Spam)")

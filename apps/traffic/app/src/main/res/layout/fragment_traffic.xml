@@ -52,6 +52,11 @@
                         android:paddingEnd="12dp"
                         android:text="Map"
                         android:textSize="12sp"
+                        app:backgroundTint="@color/btn_toggle_bg_selector"
+                        android:textColor="@color/btn_toggle_text_selector"
+                        app:iconTint="@color/btn_toggle_text_selector"
+                        app:strokeColor="@color/border"
+                        app:strokeWidth="1dp"
                         app:cornerRadius="19dp"
                         app:icon="@drawable/ic_map"
                         app:iconSize="14dp" />
@@ -65,6 +70,11 @@
                         android:paddingEnd="12dp"
                         android:text="List"
                         android:textSize="12sp"
+                        app:backgroundTint="@color/btn_toggle_bg_selector"
+                        android:textColor="@color/btn_toggle_text_selector"
+                        app:iconTint="@color/btn_toggle_text_selector"
+                        app:strokeColor="@color/border"
+                        app:strokeWidth="1dp"
                         app:cornerRadius="19dp"
                         app:icon="@drawable/ic_alt_route"
                         app:iconSize="14dp" />
@@ -231,8 +241,62 @@
                 android:id="@+id/rv_traffic_list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="16dp"
+                android:clipToPadding="false"
+                android:paddingStart="16dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="100dp"
                 android:visibility="gone" />
+
+            <!-- Empty State for List Mode -->
+            <LinearLayout
+                android:id="@+id/layout_empty_traffic"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="32dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/bg_circle_icon"
+                    android:backgroundTint="@color/surface_container"
+                    android:padding="14dp"
+                    android:src="@drawable/ic_radar"
+                    app:tint="@color/primary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="No Hazards Found"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:text="All monitored Mangaluru corridors are flowing smoothly, or no incidents match your search filter."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_clear_search"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="16dp"
+                    android:text="Clear Search"
+                    android:textColor="@color/primary"
+                    android:textSize="12sp"
+                    app:backgroundTint="@color/primary_container"
+                    app:cornerRadius="20dp" />
+            </LinearLayout>
 
         </FrameLayout>
 
@@ -349,16 +413,20 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_sheet_corroborate"
-                    style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="0dp"
                     android:layout_height="42dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
                     android:text="Still there?"
+                    android:textColor="@color/on_primary_container"
                     android:textSize="12sp"
+                    app:backgroundTint="@color/primary_container"
+                    app:strokeColor="@color/primary"
+                    app:strokeWidth="1dp"
                     app:cornerRadius="8dp"
                     app:icon="@drawable/ic_thumb_up"
-                    app:iconSize="14dp" />
+                    app:iconSize="14dp"
+                    app:iconTint="@color/on_primary_container" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_sheet_plan_detour"
@@ -366,14 +434,14 @@
                     android:layout_height="42dp"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:backgroundTint="@color/primary"
+                    app:backgroundTint="@color/btn_primary_bg_selector"
                     android:text="Plan Detour"
-                    android:textColor="@color/white"
+                    android:textColor="@color/btn_primary_text_selector"
                     android:textSize="12sp"
                     app:cornerRadius="8dp"
                     app:icon="@drawable/ic_alt_route"
                     app:iconSize="14dp"
-                    app:iconTint="@color/white" />
+                    app:iconTint="@color/btn_primary_text_selector" />
             </LinearLayout>
 
             <!-- Action Buttons for Selected Place / Point Mode -->
@@ -387,16 +455,20 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_place_report_here"
-                    style="@style/Widget.Material3.Button.TonalButton"
                     android:layout_width="0dp"
                     android:layout_height="42dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
                     android:text="Report Hazard"
+                    android:textColor="@color/on_primary_container"
                     android:textSize="12sp"
+                    app:backgroundTint="@color/primary_container"
+                    app:strokeColor="@color/primary"
+                    app:strokeWidth="1dp"
                     app:cornerRadius="8dp"
                     app:icon="@drawable/ic_add"
-                    app:iconSize="14dp" />
+                    app:iconSize="14dp"
+                    app:iconTint="@color/on_primary_container" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_place_plan_route"
@@ -404,14 +476,13 @@
                     android:layout_height="42dp"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
-                    android:backgroundTint="@color/primary"
+                    app:backgroundTint="@color/btn_primary_bg_selector"
                     android:text="Plan Route Here"
-                    android:textColor="@color/white"
+                    android:textColor="@color/btn_primary_text_selector"
                     android:textSize="12sp"
                     app:cornerRadius="8dp"
                     app:icon="@drawable/ic_alt_route"
-                    app:iconSize="14dp"
-                    app:iconTint="@color/white" />
+                    app:iconTint="@color/btn_primary_text_selector" />
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
