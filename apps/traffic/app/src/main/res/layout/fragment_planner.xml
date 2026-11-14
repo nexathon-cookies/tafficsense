@@ -1,219 +1,271 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface"
-    android:fillViewport="true">
+    android:background="@color/surface">
 
+    <!-- 1. Full-Screen Interactive Route Map Canvas -->
+    <WebView
+        android:id="@+id/webview_planner_map"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 2. Top Floating Container: Header + Route Setup Card -->
     <LinearLayout
+        android:id="@+id/layout_planner_top_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_gravity="top"
         android:orientation="vertical">
 
-        <!-- Header -->
+        <!-- App Header -->
         <include
             android:id="@+id/header"
             layout="@layout/layout_app_header" />
 
-        <LinearLayout
+        <!-- Floating Route Setup Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_route_setup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="32dp">
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="14dp"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="6dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp">
 
-            <!-- Title & Eyebrow -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Plan Your Route"
-                android:textColor="@color/primary"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Compare free-flow baseline and active hazards"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
-
-            <!-- Popular Corridors Horizontal Scroll -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="POPULAR CORRIDORS"
-                android:textColor="@color/text_muted"
-                android:textSize="10sp"
-                android:textStyle="bold" />
-
-            <HorizontalScrollView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:scrollbars="none">
+                android:orientation="vertical"
+                android:padding="12dp">
 
+                <!-- Header / Minimize Row -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <!-- Corridor Preset 1 -->
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_preset_1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:text="Hampankatta → Bejai"
-                        android:textColor="@color/primary"
-                        app:chipBackgroundColor="@color/surface_card"
-                        app:chipStrokeColor="@color/border"
-                        app:chipStrokeWidth="1dp" />
-
-                    <!-- Corridor Preset 2 -->
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_preset_2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:text="Pumpwell → Central Rwy"
-                        android:textColor="@color/primary"
-                        app:chipBackgroundColor="@color/surface_card"
-                        app:chipStrokeColor="@color/border"
-                        app:chipStrokeWidth="1dp" />
-
-                    <!-- Corridor Preset 3 -->
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_preset_3"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginEnd="6dp"
-                        android:text="Ladyhill → Kadri"
-                        android:textColor="@color/primary"
-                        app:chipBackgroundColor="@color/surface_card"
-                        app:chipStrokeColor="@color/border"
-                        app:chipStrokeWidth="1dp" />
-                </LinearLayout>
-            </HorizontalScrollView>
-
-            <!-- Route Inputs Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardBackgroundColor="@color/surface_card"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="1dp"
-                app:strokeColor="@color/border"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
+                    android:id="@+id/row_top_card_header"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="14dp">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                    <!-- Origin Selector Row -->
                     <LinearLayout
-                        android:id="@+id/card_select_origin"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_pill_violet"
-                        android:backgroundTint="@color/surface_container"
-                        android:gravity="center_vertical"
-                        android:padding="12dp">
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_location_on"
-                            app:tint="@color/primary" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            android:id="@+id/tv_planner_sheet_title"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:text="Plan Your Route"
+                            android:textColor="@color/primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="ORIGIN (TAP TO SELECT)"
-                                android:textColor="@color/text_muted"
-                                android:textSize="10sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/tv_origin_name"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Hampankatta Junction (City Core)"
-                                android:textColor="@color/text_primary"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_alt_route"
-                            app:tint="@color/text_muted" />
+                        <TextView
+                            android:id="@+id/tv_planner_sheet_sub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Compare free-flow baseline and hazards"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
                     </LinearLayout>
 
-                    <!-- Destination Selector Row (With Swap Button) -->
+                    <ImageView
+                        android:id="@+id/btn_toggle_top_card"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_expand_less"
+                        app:tint="@color/text_primary" />
+                </LinearLayout>
+
+                <!-- Expandable Setup Form Content -->
+                <LinearLayout
+                    android:id="@+id/layout_top_card_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical">
+
+                    <!-- Popular Corridors Horizontal Scroll -->
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chip_preset_1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:text="Hampankatta → Bejai"
+                                android:textColor="@color/primary"
+                                android:textSize="11sp"
+                                app:chipBackgroundColor="@color/surface_card"
+                                app:chipStrokeColor="@color/border"
+                                app:chipStrokeWidth="1dp" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chip_preset_2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:text="Pumpwell → Central Rwy"
+                                android:textColor="@color/primary"
+                                android:textSize="11sp"
+                                app:chipBackgroundColor="@color/surface_card"
+                                app:chipStrokeColor="@color/border"
+                                app:chipStrokeWidth="1dp" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chip_preset_3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="6dp"
+                                android:text="Ladyhill → Kadri"
+                                android:textColor="@color/primary"
+                                android:textSize="11sp"
+                                app:chipBackgroundColor="@color/surface_card"
+                                app:chipStrokeColor="@color/border"
+                                app:chipStrokeWidth="1dp" />
+                        </LinearLayout>
+                    </HorizontalScrollView>
+
+                    <!-- Origin / Destination Inputs Card -->
                     <LinearLayout
-                        android:id="@+id/card_select_dest"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:background="@drawable/bg_pill_violet"
                         android:backgroundTint="@color/surface_container"
                         android:gravity="center_vertical"
-                        android:padding="12dp">
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_location_on"
-                            app:tint="@color/warning" />
+                        android:orientation="horizontal"
+                        android:padding="8dp">
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
                             android:layout_weight="1"
                             android:orientation="vertical">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <!-- Origin Picker -->
+                            <LinearLayout
+                                android:id="@+id/card_select_origin"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="DESTINATION (TAP TO SELECT)"
-                                android:textColor="@color/text_muted"
-                                android:textSize="10sp"
-                                android:textStyle="bold" />
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:padding="4dp">
 
-                            <TextView
-                                android:id="@+id/tv_dest_name"
-                                android:layout_width="wrap_content"
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:src="@drawable/ic_location_on"
+                                    app:tint="@color/primary" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="ORIGIN"
+                                        android:textColor="@color/text_muted"
+                                        android:textSize="9sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tv_origin_name"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="1"
+                                        android:text="Hampankatta Junction"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:layout_marginTop="4dp"
+                                android:layout_marginBottom="4dp"
+                                android:background="@color/border" />
+
+                            <!-- Destination Picker -->
+                            <LinearLayout
+                                android:id="@+id/card_select_dest"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Pumpwell Circle (South NH66)"
-                                android:textColor="@color/text_primary"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:padding="4dp">
+
+                                <ImageView
+                                    android:layout_width="16dp"
+                                    android:layout_height="16dp"
+                                    android:src="@drawable/ic_location_on"
+                                    app:tint="@color/secondary" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="DESTINATION"
+                                        android:textColor="@color/text_muted"
+                                        android:textSize="9sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tv_dest_name"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="1"
+                                        android:text="Pumpwell Circle"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
                         </LinearLayout>
 
                         <ImageView
                             android:id="@+id/btn_planner_swap"
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_marginStart="6dp"
                             android:background="@drawable/bg_circle_icon"
                             android:backgroundTint="@color/surface_card"
-                            android:padding="4dp"
+                            android:padding="6dp"
                             android:src="@drawable/ic_swap_vert"
                             app:tint="@color/primary" />
                     </LinearLayout>
@@ -222,234 +274,385 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_check_route"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="12dp"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="8dp"
                         app:backgroundTint="@color/btn_primary_bg_selector"
                         android:text="Check Route &amp; Hazards"
                         android:textColor="@color/btn_primary_text_selector"
-                        android:textSize="13sp"
+                        android:textSize="12sp"
                         app:cornerRadius="10dp"
                         app:icon="@drawable/ic_directions_car"
-                        app:iconSize="18dp"
+                        app:iconSize="16dp"
                         app:iconTint="@color/btn_primary_text_selector" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
-            <!-- Route Map Canvas Box -->
-            <FrameLayout
+    <!-- 3. Floating Map Controls (Fullscreen Toggle, Zoom, Recenter) -->
+    <LinearLayout
+        android:id="@+id/layout_planner_map_controls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="14dp"
+        android:orientation="vertical">
+
+        <!-- Fullscreen Map Mode Toggle -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/btn_planner_fullscreen"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="6dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp">
+
+            <ImageView
+                android:id="@+id/iv_fullscreen_icon"
                 android:layout_width="match_parent"
-                android:layout_height="180dp"
-                android:layout_marginTop="14dp">
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="11dp"
+                android:src="@drawable/ic_fullscreen"
+                app:tint="@color/primary" />
+        </com.google.android.material.card.MaterialCardView>
 
-                <WebView
-                    android:id="@+id/webview_planner_map"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-            </FrameLayout>
+        <!-- Zoom Controls Pill -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="6dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp">
 
-            <!-- Route Results Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="Recommended Route"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <!-- Primary Recommended Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_primary_route"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                app:cardBackgroundColor="@color/surface_card"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/primary"
-                app:strokeWidth="2dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/tv_primary_title"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Primary Corridor (NH 66)"
-                            android:textColor="@color/primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_pill_green"
-                            android:paddingStart="8dp"
-                            android:paddingTop="3dp"
-                            android:paddingEnd="8dp"
-                            android:paddingBottom="3dp"
-                            android:text="RECOMMENDED"
-                            android:textColor="@color/success"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tv_primary_telemetry"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="4.2 km · 12 min (free-flow baseline)"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
-                    <!-- Warning strip inside route -->
-                    <LinearLayout
-                        android:id="@+id/layout_route_warning"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_pill_violet"
-                        android:backgroundTint="@color/warning_container"
-                        android:gravity="center_vertical"
-                        android:padding="10dp">
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_car_crash"
-                            app:tint="@color/warning" />
-
-                        <TextView
-                            android:id="@+id/tv_route_warning"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="2-wheeler accident reported near Pumpwell"
-                            android:textColor="@color/warning"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Explicit Alternative Route Toggle Row -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/btn_planner_zoom_in"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="12dp"
+                    android:src="@drawable/ic_add"
+                    app:tint="@color/text_primary" />
+
+                <View
+                    android:layout_width="28dp"
+                    android:layout_height="1dp"
+                    android:background="@color/border" />
+
+                <ImageView
+                    android:id="@+id/btn_planner_zoom_out"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="12dp"
+                    android:src="@drawable/ic_remove"
+                    app:tint="@color/text_primary" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Recenter on Route Button -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/btn_planner_recenter"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginTop="10dp"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardBackgroundColor="@color/surface_card"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="6dp"
+            app:strokeColor="@color/border"
+            app:strokeWidth="1dp">
+
+            <ImageView
+                android:id="@+id/iv_recenter_icon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="11dp"
+                android:src="@drawable/ic_my_location"
+                app:tint="@color/primary" />
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+
+    <!-- 4. Bottom Floating Route Results Sheet -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_bottom_route"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="76dp"
+        app:cardBackgroundColor="@color/surface_card"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:strokeColor="@color/border"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- Bottom Card Header Row with Minimize Toggle -->
+            <LinearLayout
+                android:id="@+id/row_bottom_card_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <LinearLayout
+                <View
+                    android:layout_width="32dp"
+                    android:layout_height="4dp"
+                    android:background="@drawable/bg_pill_violet"
+                    android:backgroundTint="@color/border" />
+
+                <TextView
+                    android:id="@+id/tv_bottom_sheet_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:text="Recommended Route"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Show Alternative Detour"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Requires your explicit choice"
-                        android:textColor="@color/text_muted"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_alternative"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                <ImageView
+                    android:id="@+id/btn_toggle_bottom_card"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_expand_less"
+                    app:tint="@color/text_secondary" />
             </LinearLayout>
 
-            <!-- Alternative Detour Card (Visible upon toggle) -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_alternative_route"
+            <!-- Bottom Card Collapsible Content -->
+            <LinearLayout
+                android:id="@+id/layout_bottom_card_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:visibility="gone"
-                app:cardBackgroundColor="@color/surface_card"
-                app:cardCornerRadius="14dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/secondary"
-                app:strokeWidth="2dp">
+                android:layout_marginTop="8dp"
+                android:orientation="vertical">
 
-                <LinearLayout
+                <!-- Primary Recommended Route Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_primary_route"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/primary"
+                    app:strokeWidth="2dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tv_primary_title"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Primary Corridor (NH 66)"
+                                android:textColor="@color/primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_pill_green"
+                                android:paddingStart="6dp"
+                                android:paddingTop="2dp"
+                                android:paddingEnd="6dp"
+                                android:paddingBottom="2dp"
+                                android:text="RECOMMENDED"
+                                android:textColor="@color/success"
+                                android:textSize="9sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
 
                         <TextView
-                            android:id="@+id/tv_alternative_title"
-                            android:layout_width="0dp"
+                            android:id="@+id/tv_primary_telemetry"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Alternative Bypass (Kadri Hills)"
-                            android:textColor="@color/secondary"
-                            android:textSize="16sp"
+                            android:layout_marginTop="4dp"
+                            android:text="4.2 km · 12 min (free-flow baseline)"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <!-- Warning Strip inside Route -->
+                        <LinearLayout
+                            android:id="@+id/layout_route_warning"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_pill_violet"
+                            android:backgroundTint="@color/warning_container"
+                            android:gravity="center_vertical"
+                            android:padding="8dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_car_crash"
+                                app:tint="@color/warning" />
+
+                            <TextView
+                                android:id="@+id/tv_route_warning"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="Hazard reported on corridor"
+                                android:textColor="@color/warning"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Detour Toggle Switch Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Show Alternative Detour"
+                            android:textColor="@color/text_primary"
+                            android:textSize="13sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_pill_violet"
-                            android:paddingStart="8dp"
-                            android:paddingTop="3dp"
-                            android:paddingEnd="8dp"
-                            android:paddingBottom="3dp"
-                            android:text="ALTERNATIVE"
-                            android:textColor="@color/secondary"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
+                            android:text="Explicit choice detour"
+                            android:textColor="@color/text_muted"
+                            android:textSize="10sp" />
                     </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tv_alternative_telemetry"
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switch_alternative"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="5.6 km · 14 min (free-flow baseline) · Avoids Pumpwell incident"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_select_detour"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="12dp"
-                        android:text="Select This Detour"
-                        android:textColor="@color/secondary"
-                        app:cornerRadius="8dp" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
+                <!-- Alternative Detour Card (Visible upon toggle) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_alternative_route"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="1dp"
+                    app:strokeColor="@color/secondary"
+                    app:strokeWidth="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tv_alternative_title"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Alternative Bypass"
+                                android:textColor="@color/secondary"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_pill_violet"
+                                android:paddingStart="6dp"
+                                android:paddingTop="2dp"
+                                android:paddingEnd="6dp"
+                                android:paddingBottom="2dp"
+                                android:text="ALTERNATIVE"
+                                android:textColor="@color/secondary"
+                                android:textSize="9sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tv_alternative_telemetry"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="5.6 km · 14 min (free-flow baseline)"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_select_detour"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="40dp"
+                            android:layout_marginTop="8dp"
+                            android:text="Select This Detour"
+                            android:textColor="@color/secondary"
+                            android:textSize="12sp"
+                            app:cornerRadius="8dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+    </com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>

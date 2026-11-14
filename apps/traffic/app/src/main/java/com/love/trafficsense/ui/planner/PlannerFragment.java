@@ -45,6 +45,10 @@ public class PlannerFragment extends Fragment {
     private boolean isAlternativeSelected = false;
     private List<LiveIncident> activeIncidents = new ArrayList<>();
 
+    private boolean isTopCardCollapsed = false;
+    private boolean isBottomCardCollapsed = false;
+    private boolean isFullscreenMode = false;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -60,6 +64,7 @@ public class PlannerFragment extends Fragment {
         setupMap();
         setupPresetChips();
         updatePlaceLabels();
+        setupFloatingOverlaysAndControls();
 
         binding.cardSelectOrigin.setOnClickListener(v -> showPlacePicker(true));
         binding.cardSelectDest.setOnClickListener(v -> showPlacePicker(false));
@@ -200,9 +205,127 @@ public class PlannerFragment extends Fragment {
         });
     }
 
+    private void setupFloatingOverlaysAndControls() {
+        // 1. Top Card Minimize / Expand Toggle
+        binding.btnToggleTopCard.setOnClickListener(v -> toggleTopCard());
+        binding.rowTopCardHeader.setOnClickListener(v -> toggleTopCard());
+
+        // 2. Bottom Card Minimize / Expand Toggle
+        binding.btnToggleBottomCard.setOnClickListener(v -> toggleBottomCard());
+        binding.rowBottomCardHeader.setOnClickListener(v -> toggleBottomCard());
+
+        // 3. Fullscreen Map Toggle
+        binding.btnPlannerFullscreen.setOnClickListener(v -> toggleFullscreenMap());
+        binding.ivFullscreenIcon.setOnClickListener(v -> toggleFullscreenMap());
+
+        // 4. Zoom & Recenter Controls
+        binding.btnPlannerZoomIn.setOnClickListener(v -> {
+            binding.btnPlannerZoomIn.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80).withEndAction(() -> {
+                if (binding != null) binding.btnPlannerZoomIn.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start();
+            }).start();
+            binding.webviewPlannerMap.evaluateJavascript("window.zoomIn && window.zoomIn();", null);
+        });
+
+        binding.btnPlannerZoomOut.setOnClickListener(v -> {
+            binding.btnPlannerZoomOut.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80).withEndAction(() -> {
+                if (binding != null) binding.btnPlannerZoomOut.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start();
+            }).start();
+            binding.webviewPlannerMap.evaluateJavascript("window.zoomOut && window.zoomOut();", null);
+        });
+
+        binding.btnPlannerRecenter.setOnClickListener(v -> recenterMap());
+        binding.ivRecenterIcon.setOnClickListener(v -> recenterMap());
+    }
+
+    private void recenterMap() {
+        binding.btnPlannerRecenter.animate().scaleX(0.85f).scaleY(0.85f).setDuration(80).withEndAction(() -> {
+            if (binding != null) binding.btnPlannerRecenter.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start();
+        }).start();
+        renderRouteMap();
+        Toast.makeText(requireContext(), "Centered on route", Toast.LENGTH_SHORT).show();
+    }
+
+    private void toggleTopCard() {
+        isTopCardCollapsed = !isTopCardCollapsed;
+        TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition().setDuration(220));
+        if (isTopCardCollapsed) {
+            binding.layoutTopCardContent.setVisibility(View.GONE);
+            binding.tvPlannerSheetTitle.setText(origin.name + " → " + destination.name);
+            binding.tvPlannerSheetSub.setVisibility(View.GONE);
+            binding.btnToggleTopCard.setImageResource(R.drawable.ic_expand_more);
+        } else {
+            binding.layoutTopCardContent.setVisibility(View.VISIBLE);
+            binding.tvPlannerSheetTitle.setText("Plan Your Route");
+            binding.tvPlannerSheetSub.setVisibility(View.VISIBLE);
+            binding.btnToggleTopCard.setImageResource(R.drawable.ic_expand_less);
+        }
+    }
+
+    private void toggleBottomCard() {
+        isBottomCardCollapsed = !isBottomCardCollapsed;
+        TransitionManager.beginDelayedTransition((ViewGroup) binding.getRoot(), new AutoTransition().setDuration(220));
+        if (isBottomCardCollapsed) {
+            binding.layoutBottomCardContent.setVisibility(View.GONE);
+            String summary = primaryRoute != null ? (primaryRoute.name + " · " + primaryRoute.getFormattedDistance() + " (tap to expand)") : "Route details (tap to expand)";
+            binding.tvBottomSheetTitle.setText(summary);
+            binding.btnToggleBottomCard.setImageResource(R.drawable.ic_expand_less);
+        } else {
+            binding.layoutBottomCardContent.setVisibility(View.VISIBLE);
+            binding.tvBottomSheetTitle.setText("Recommended Route");
+            binding.btnToggleBottomCard.setImageResource(R.drawable.ic_expand_more);
+        }
+    }
+
+    private void toggleFullscreenMap() {
+        isFullscreenMode = !isFullscreenMode;
+        if (isFullscreenMode) {
+            float topOffset = binding.layoutPlannerTopContainer.getHeight() > 0 ? -binding.layoutPlannerTopContainer.getHeight() - 40f : -400f;
+            float bottomOffset = binding.cardBottomRoute.getHeight() > 0 ? binding.cardBottomRoute.getHeight() + 150f : 500f;
+
+            binding.layoutPlannerTopContainer.animate()
+                    .alpha(0f)
+                    .translationY(topOffset)
+                    .setDuration(240)
+                    .withEndAction(() -> {
+                        if (binding != null) binding.layoutPlannerTopContainer.setVisibility(View.GONE);
+                    }).start();
+
+            binding.cardBottomRoute.animate()
+                    .alpha(0f)
+                    .translationY(bottomOffset)
+                    .setDuration(240)
+                    .withEndAction(() -> {
+                        if (binding != null) binding.cardBottomRoute.setVisibility(View.GONE);
+                    }).start();
+
+            binding.ivFullscreenIcon.setImageResource(R.drawable.ic_fullscreen_exit);
+            Toast.makeText(requireContext(), "Full Screen Map Active · Tap ⛶ to restore cards", Toast.LENGTH_SHORT).show();
+        } else {
+            binding.layoutPlannerTopContainer.setVisibility(View.VISIBLE);
+            binding.layoutPlannerTopContainer.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setDuration(240)
+                    .start();
+
+            binding.cardBottomRoute.setVisibility(View.VISIBLE);
+            binding.cardBottomRoute.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setDuration(240)
+                    .start();
+
+            binding.ivFullscreenIcon.setImageResource(R.drawable.ic_fullscreen);
+        }
+    }
+
     private void updatePlaceLabels() {
+        if (binding == null) return;
         binding.tvOriginName.setText(origin.name);
         binding.tvDestName.setText(destination.name);
+        if (isTopCardCollapsed) {
+            binding.tvPlannerSheetTitle.setText(origin.name + " → " + destination.name);
+        }
     }
 
     private void showPlacePicker(boolean isOrigin) {
@@ -268,6 +391,12 @@ public class PlannerFragment extends Fragment {
                 primaryRoute = routes.get(0);
                 binding.tvPrimaryTitle.setText(primaryRoute.name);
                 binding.tvPrimaryTelemetry.setText(String.format("%s · %s", primaryRoute.getFormattedDistance(), primaryRoute.getFormattedDuration()));
+
+                if (isBottomCardCollapsed) {
+                    binding.tvBottomSheetTitle.setText(primaryRoute.name + " · " + primaryRoute.getFormattedDistance() + " (tap to expand)");
+                } else {
+                    binding.tvBottomSheetTitle.setText("Recommended Route");
+                }
 
                 if (primaryRoute.hasHazards && primaryRoute.warningNote != null && !primaryRoute.warningNote.isEmpty()) {
                     binding.layoutRouteWarning.setVisibility(View.VISIBLE);

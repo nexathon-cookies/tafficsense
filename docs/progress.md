@@ -1,5 +1,33 @@
 # Project Progress
 
+## Full-Screen Route Planner Map, Floating Overlays & Mode Toggle — verified, 14 Nov 2026
+
+- **Scope & Fixes:**
+  - **Zero-Logic Architecture:**
+    - Restructured Route Planner presentation layer to modern navigation app standards (Google Maps / Citymapper) without touching backend routing APIs or data contracts.
+  - **Full-Screen Interactive Map Canvas (`fragment_planner.xml`):**
+    - Replaced the fixed `180dp` height box in `NestedScrollView` with an edge-to-edge `WebView` (`webview_planner_map`, `match_parent` x `match_parent`).
+    - Panning, dragging, and pinch-to-zoom gestures now pass directly to Chromium/Leaflet without scrollview gesture interception.
+  - **Floating Top Route Setup Card (`card_route_setup`, `PlannerFragment.java`):**
+    - Origin, Destination, Corridor chips, and "Check Route" now float smoothly above the top of the map.
+    - Added an expand/minimize toggle (`btn_toggle_top_card`) with `AutoTransition(220ms)`: collapsing shrinks the card into a slim floating pill (`Hampankatta → Airport ▾`) to maximize map visibility.
+  - **Floating Map Controls Pill & One-Tap Full-Screen Mode (`fragment_planner.xml`, `PlannerFragment.java`):**
+    - Floating action pill on the right side: Zoom In (`+`), Zoom Out (`-`), and Recenter (`⌖`).
+    - Added one-tap Fullscreen Toggle button (`⛶` / `ic_fullscreen`): animates all cards and header off-screen (`translationY` + `alpha: 0`), giving the user 100% pure map exploration. Tapping `⛶` (`ic_fullscreen_exit`) gracefully slides all controls back into view.
+  - **Floating Bottom Route Results Card (`card_bottom_route`, `PlannerFragment.java`):**
+    - Sits above the bottom navigation bar (`marginBottom="76dp"`).
+    - Can be collapsed into a compact telemetry pill (`Fastest route · 17.1 km (tap to expand) ▴`), giving almost 90% screen height to the route polyline.
+  - **New Vector Drawables:**
+    - Added `ic_fullscreen.xml`, `ic_fullscreen_exit.xml`, `ic_expand_less.xml`, and `ic_expand_more.xml`.
+- **Verification Evidence:**
+  - Automated tests: `./gradlew testDebugUnitTest` passed without regressions.
+  - APK assembly: `./gradlew assembleDebug -PapiBaseUrl="http://192.168.0.224:3000"` built in 1s (`apps/traffic/app/build/outputs/apk/debug/app-debug.apk`, 9.7MB).
+  - Deployed to wireless device via `adb push` & `pm install -r`: `Success`.
+  - Live runtime validation on device (PID 31789):
+    - Verified full-screen map rendering with corridor route polylines and hazard pins.
+    - Verified top card expand/collapse toggle (`Hampankatta Junction → Mangaluru Int Airport ▾`).
+    - Verified one-tap Fullscreen Toggle: successfully hid all overlays and displayed toast `"Full Screen Map Active · Tap ⛶ to restore cards"`.
+
 ## UI Bugs, State Feedback, Button Colors, Insets & Empty States — verified, 14 Nov 2026
 
 - **Scope & Fixes:**
