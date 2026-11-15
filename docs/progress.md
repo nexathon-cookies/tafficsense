@@ -1,5 +1,51 @@
 # Project Progress
 
+## L5 Photo Evidence & Gemini Vision AI Incident Verification — verified, 15 Nov 2026
+
+- **Scope & Implementation:**
+  - **L5 Visual Corroboration Pipeline (`L5VerificationResult.java`, `TrafficApiClient.java`):**
+    - Created `L5VerificationResult.java` modeling backend `/api/verify-evidence` contract (`verified`, `confidence`, `suggestedCategory`, `summary`, `exifScrubbed`).
+    - Added `TrafficApiClient.verifyEvidence(...)` sending base64-encoded photo with mimeType and user-selected category to backend Gemini Vision classification endpoint.
+    - Updated `TrafficApiClient.submitIncident(...)` payload to include `l5_verified` (boolean) and `l5_summary` (string), promoting verified reports to Level L5 Visual Corroboration.
+  - **Modern Photo Evidence Interface (`fragment_report.xml`):**
+    - Added Section 4: `PHOTO EVIDENCE (OPTIONAL · L5 AI VISION)`.
+    - Added 3-button action row: Camera (`ic_camera`), Gallery (`ic_map`), and 1-tap "Sample Road" hazard preset (`ic_notifications`).
+    - Added thumbnail preview with rounded corners (`iv_photo_thumbnail`), status pill (`📸 L5 VERIFIED`), detected category, visual AI summary, and dismissal button (`btn_remove_photo`).
+  - **Smart Image Processing & Client Orchestration (`ReportFragment.java`):**
+    - Registered `ActivityResultContracts.GetContent` for gallery picking and `TakePicturePreview` for direct camera capture.
+    - Added `createSampleRoadHazardPhoto()` synthetic generator creating deterministic Mangaluru arterial road obstruction bitmaps for instant offline-resilient testing.
+    - Added `processBitmap(...)` scaling down large images to 1024px maximum dimension, compressing to JPEG, and encoding to Base64.
+    - Dynamically changes submit button to `➤ Submit L5 Verified Hazard`.
+    - Handled submission confirmation dialog announcing Level L5 Visual Corroboration and automatic form reset.
+- **Verification Evidence:**
+  - Automated tests: `./gradlew testDebugUnitTest` passed (25 tasks in 712ms).
+  - APK assembly: `./gradlew assembleDebug -PapiBaseUrl="http://192.168.0.224:3000"` built in 1s (`apps/traffic/app/build/outputs/apk/debug/app-debug.apk`, 9.7MB).
+  - Deployed to wireless physical device `adb-9631902355001MP-VPnwED._adb-tls-connect._tcp`.
+  - Live runtime validation on device:
+    - Attached sample road hazard photo $\rightarrow$ dispatched to `/api/verify-evidence` $\rightarrow$ verified response received: `AI Vision: ACCIDENT (MODERATE CONFIDENCE) - Vehicle incident visible on arterial lane causing obstruction.`
+    - Emerald `📸 L5 VERIFIED` badge rendered, thumbnail visible, submit button updated to `Submit L5 Verified Hazard`.
+    - Tapped submit $\rightarrow$ received success dialog: `"L5 Verified Hazard Reported! Your hazard report has been promoted to Level L5 Visual Corroboration by AI Vision. Dispatched to Traffic Authority with 📸 Photo Verified badge."`
+    - Tapped "View on Map" $\rightarrow$ navigated to Live Traffic Map, counter updated to `List (8)`, marker rendered at Pumpwell Circle with category badge.
+
+## Workspace, Saved Corridors & Smart Alert Redesign — verified, 15 Nov 2026
+
+- **Scope & Implementation:**
+  - **Segmented 3-Tab Architecture (`fragment_workspace.xml`, `WorkspaceFragment.java`):**
+    - Segment 1: `★ Saved & Alerts` — Saved Mangaluru corridors (*Hampankatta ⇄ Pumpwell*, *Lalbagh ⇄ Airport*, *Surathkal ⇄ Central Station*) with live hazard indicators and 1-tap route launcher (`navigateToPlannerWithEndpoints`).
+    - Segment 2: `🚀 Journey & Delay Proof` — Live transit stopwatch, active corridor waypoint tracker, tamper-evident Civic Delay Certificate generator (`#TS-MNG-9482-L4`), export to employer HR desk, and QR code verification preview.
+    - Segment 3: `👥 Demo Personas` — 1-click persona switching (Commuter A, Commuter B, Traffic Authority Dispatcher L6, Employer Desk) with dynamic Supabase JWT exchange.
+  - **Smart Corridor Alert Engine:**
+    - Per-corridor alert toggle switches.
+    - Push sensitivity filters: *Critical*, *Delays > 5 mins*, *All Incidents*.
+    - Route-intersection push alerts and employer delay sharing switches.
+    - Live corridor bulletins with Level L2 Verified and Level L6 Authority flags.
+  - **New Vector Drawables:**
+    - `ic_star.xml`, `ic_notifications.xml`, `ic_timer.xml`, `ic_qr_code.xml`.
+- **Verification Evidence:**
+  - Automated tests: `./gradlew testDebugUnitTest` passed.
+  - APK assembly: `./gradlew assembleDebug` built in 1s.
+  - Installed and verified on physical Android device across all 3 segmented views, live journey stopwatch, corridor launch into Planner, and persona switching.
+
 ## Rapid Civic Incident Reporter UI Redesign — verified, 14 Nov 2026
 
 - **Scope & Fixes:**

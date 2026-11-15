@@ -10,6 +10,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.love.trafficsense.BuildConfig;
 import com.love.trafficsense.data.model.DemoAccount;
+import com.love.trafficsense.data.model.L5VerificationResult;
 import com.love.trafficsense.data.model.LiveIncident;
 import com.love.trafficsense.data.model.RouteOption;
 
@@ -298,12 +299,16 @@ public class TrafficApiClient {
     }
 
     public void submitIncident(String category, double lat, double lng, String note, ApiCallback<Boolean> callback) {
+        submitIncident(category, lat, lng, note, false, null, callback);
+    }
+
+    public void submitIncident(String category, double lat, double lng, String note, boolean l5Verified, String l5Summary, ApiCallback<Boolean> callback) {
         if (currentAuthToken == null) {
             Log.i(TAG, "No auth token for submitIncident, syncing demo accounts and logging in first...");
             syncDemoAccountsAndLogin(currentAuthEmail != null ? currentAuthEmail : "commuter@demo.trafficsense.test", new ApiCallback<String>() {
                 @Override
                 public void onSuccess(String token) {
-                    executeSubmitIncident(category, lat, lng, note, true, callback);
+                    executeSubmitIncident(category, lat, lng, note, l5Verified, l5Summary, true, callback);
                 }
 
                 @Override
@@ -314,10 +319,10 @@ public class TrafficApiClient {
             });
             return;
         }
-        executeSubmitIncident(category, lat, lng, note, false, callback);
+        executeSubmitIncident(category, lat, lng, note, l5Verified, l5Summary, false, callback);
     }
 
-    private void executeSubmitIncident(String category, double lat, double lng, String note, boolean hasRetried, ApiCallback<Boolean> callback) {
+    private void executeSubmitIncident(String category, double lat, double lng, String note, boolean l5Verified, String l5Summary, boolean hasRetried, ApiCallback<Boolean> callback) {
         JsonObject payload = new JsonObject();
         payload.addProperty("category", category);
         payload.addProperty("lat", lat);
@@ -328,6 +333,13 @@ public class TrafficApiClient {
         isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         payload.addProperty("gps_fix_at", isoFormat.format(new Date()));
         payload.addProperty("note", note);
+
+        if (l5Verified) {
+            payload.addProperty("l5_verified", true);
+            if (l5Summary != null && !l5Summary.isEmpty()) {
+                payload.addProperty("l5_summary", l5Summary);
+            }
+        }
 
         RequestBody body = RequestBody.create(payload.toString(), JSON);
         Request.Builder reqBuilder = new Request.Builder()
@@ -359,7 +371,7 @@ public class TrafficApiClient {
                     syncDemoAccountsAndLogin(currentAuthEmail, new ApiCallback<String>() {
                         @Override
                         public void onSuccess(String token) {
-                            executeSubmitIncident(category, lat, lng, note, true, callback);
+                            executeSubmitIncident(category, lat, lng, note, l5Verified, l5Summary, true, callback);
                         }
 
                         @Override
@@ -374,8 +386,8 @@ public class TrafficApiClient {
                     try {
                         JsonObject obj = gson.fromJson(respBody, JsonObject.class);
                         String incId = obj != null && obj.has("incident_id") ? obj.get("incident_id").getAsString() : ("rep_" + System.currentTimeMillis());
-                        String level = obj != null && obj.has("level") ? obj.get("level").getAsString() : "L2";
-                        String reason = obj != null && obj.has("level_reason") ? obj.get("level_reason").getAsString() : "Location verified by device GPS";
+                        String level = obj != null && obj.has("level") ? obj.get("level").getAsString() : (l5Verified ? "L5" : "L2");
+                        String reason = obj != null && obj.has("level_reason") ? obj.get("level_reason").getAsString() : (l5Verified ? "Promoted to L5 Visual Corroboration" : "Location verified by device GPS");
 
                         LiveIncident newInc = new LiveIncident(
                                 incId, category, null, lat, lng, level, reason, note, 1
@@ -409,6 +421,66 @@ public class TrafficApiClient {
                 }
             }
         });
+    }
+
+    public void verifyEvidence(String base64Image, String mimeType, String userCategory, String segmentId, ApiCallback<L5VerificationResult> callback) {
+        JsonObject payload = new JsonObject();
+        payload.addProperty("imageBase64", base64Image);
+        payload.addProperty("mimeType", mimeType != null ? mimeType : "image/jpeg");
+        payload.addProperty("userSelectedCategory", mapToL5Category(userCategory));
+        payload.addProperty("segmentId", segmentId != null ? segmentId : "live-report");
+
+        RequestBody body = RequestBody.create(payload.toString(), JSON);
+        Request request = new Request.Builder()
+                .url(getBaseUrl() + "/api/verify-evidence")
+                .post(body)
+                .build();
+
+        Log.i(TAG, "POST " + getBaseUrl() + "/api/verify-evidence");
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "verifyEvidence failed: " + e.getMessage());
+                mainHandler.post(() -> callback.onError("Network error: " + e.getMessage()));
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String respBody = response.body() != null ? response.body().string() : "";
+                Log.i(TAG, "verifyEvidence response code=" + response.code() + " body=" + respBody);
+                if (response.isSuccessful()) {
+                    try {
+                        JsonObject json = gson.fromJson(respBody, JsonObject.class);
+                        if (json != null && json.has("result")) {
+                            L5VerificationResult result = gson.fromJson(json.get("result"), L5VerificationResult.class);
+                            mainHandler.post(() -> callback.onSuccess(result));
+                            return;
+                        }
+                    } catch (Exception ex) {
+                        Log.e(TAG, "Parse verifyEvidence error: " + ex.getMessage());
+                    }
+                }
+                mainHandler.post(() -> callback.onError("Verification failed. Report can still be submitted without L5 evidence."));
+            }
+        });
+    }
+
+    private String mapToL5Category(String category) {
+        if (category == null) return "unknown";
+        switch (category) {
+            case "accident":
+                return "accident";
+            case "road_repair":
+            case "road_closed":
+                return "road_repair";
+            case "heavy_traffic":
+                return "heavy_volume";
+            case "flood":
+                return "flood";
+            default:
+                return "unknown";
+        }
     }
 
     public void fetchRoute(double startLat, double startLng, double destLat, double destLng, ApiCallback<List<RouteOption>> callback) {

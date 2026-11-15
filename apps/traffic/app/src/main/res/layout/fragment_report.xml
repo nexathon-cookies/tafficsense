@@ -816,11 +816,193 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- 4. Observation Details & Quick Chips -->
+            <!-- 4. Photo Evidence (Optional · L5 AI Vision) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
-                android:text="4. DETAILS &amp; QUICK TAGS"
+                android:text="4. PHOTO EVIDENCE (OPTIONAL · L5 AI VISION)"
+                android:textColor="@color/text_muted"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Attach a photo to promote report to Level L5 Visual Corroboration"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+
+            <!-- Photo Upload & Status Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_photo_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/surface_card"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp"
+                app:strokeColor="@color/border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <!-- Buttons Row (Camera, Gallery, Sample Preset) -->
+                    <LinearLayout
+                        android:id="@+id/layout_photo_buttons"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_photo_camera"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Camera"
+                            android:textColor="@color/primary"
+                            android:textSize="11sp"
+                            app:backgroundTint="@color/primary_container"
+                            app:cornerRadius="8dp"
+                            app:icon="@drawable/ic_camera"
+                            app:iconSize="16dp"
+                            app:iconTint="@color/primary" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_photo_gallery"
+                            style="@style/Widget.Material3.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Gallery"
+                            android:textColor="@color/text_primary"
+                            android:textSize="11sp"
+                            app:cornerRadius="8dp"
+                            app:icon="@drawable/ic_explore"
+                            app:iconSize="16dp"
+                            app:strokeColor="@color/border" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_photo_preset"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1.2"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:text="Sample Road"
+                            android:textColor="@color/secondary"
+                            android:textSize="11sp"
+                            app:backgroundTint="@color/secondary_container"
+                            app:cornerRadius="8dp"
+                            app:icon="@drawable/ic_verified"
+                            app:iconSize="16dp"
+                            app:iconTint="@color/secondary" />
+                    </LinearLayout>
+
+                    <!-- Preview & AI Verification Result Area (hidden when idle) -->
+                    <LinearLayout
+                        android:id="@+id/layout_photo_preview_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.imageview.ShapeableImageView
+                                android:id="@+id/iv_photo_thumbnail"
+                                android:layout_width="72dp"
+                                android:layout_height="72dp"
+                                android:background="@color/surface_container"
+                                android:scaleType="centerCrop"
+                                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tv_photo_status_badge"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_pill_green"
+                                    android:paddingStart="8dp"
+                                    android:paddingTop="3dp"
+                                    android:paddingEnd="8dp"
+                                    android:paddingBottom="3dp"
+                                    android:text="📸 L5 VERIFIED"
+                                    android:textColor="@color/success"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tv_photo_category_detected"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="AI Vision: Accident Detected (High)"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tv_photo_summary"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="Vehicle collision visible on arterial lane."
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="11sp" />
+                            </LinearLayout>
+
+                            <ImageButton
+                                android:id="@+id/btn_remove_photo"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_close"
+                                app:tint="@color/text_muted" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Privacy Footnote -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Privacy: Sent to Gemini Vision for classification and immediately discarded. No personal EXIF data is stored."
+                        android:textColor="@color/text_muted"
+                        android:textSize="10sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 5. Observation Notes & Quick Tags -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="5. OBSERVATION NOTES &amp; QUICK TAGS"
                 android:textColor="@color/text_muted"
                 android:textSize="10sp"
                 android:textStyle="bold" />
