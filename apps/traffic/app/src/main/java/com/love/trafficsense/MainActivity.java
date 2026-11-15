@@ -55,6 +55,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public static void navigateToPlannerWithEndpoints(Context context, com.love.trafficsense.utils.PlacesData.Place origin, com.love.trafficsense.utils.PlacesData.Place dest) {
+        if (context instanceof MainActivity) {
+            MainActivity activity = (MainActivity) context;
+            if (activity.plannerFragment instanceof PlannerFragment) {
+                ((PlannerFragment) activity.plannerFragment).setRouteEndpoints(origin, dest);
+            }
+            activity.selectTab(R.id.navigation_planner);
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);

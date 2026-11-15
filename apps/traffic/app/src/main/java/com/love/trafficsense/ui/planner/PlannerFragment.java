@@ -375,6 +375,15 @@ public class PlannerFragment extends Fragment {
         }
     }
 
+    public void setRouteEndpoints(PlacesData.Place newOrigin, PlacesData.Place newDest) {
+        if (newOrigin != null) this.origin = newOrigin;
+        if (newDest != null) this.destination = newDest;
+        if (binding != null) {
+            updatePlaceLabels();
+            checkRoute();
+        }
+    }
+
     private void checkRoute() {
         binding.btnCheckRoute.setEnabled(false);
         TrafficApiClient.getInstance().fetchRoute(origin.lat, origin.lng, destination.lat, destination.lng, new TrafficApiClient.ApiCallback<List<RouteOption>>() {

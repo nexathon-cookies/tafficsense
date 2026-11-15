@@ -1558,3 +1558,27 @@ For each bounded task, record: goal/source module and exclusions; dependencies a
   - `just --list` and dry-runs (`just --dry-run kau-up`, `just --dry-run kau-lan host=192.168.1.100`, `just --dry-run traffic-up`) executed and parsed correctly.
   - `scripts/run-android.sh` created with executable permissions.
 
+## Native Android Workspace, Saved Corridors & Smart Alert System Redesign — verified, 15 Nov 2026
+
+- **Scope:** Complete redesign of the Workspace tab (`fragment_workspace.xml`, `WorkspaceFragment.java`) into a modern, tactile Commuter Hub with Saved Corridors, Smart Route Alert Engine, Active Journey Telemetry with Tamper-Evident Delay Proof Certificates, and 1-Click Demo Personas.
+- **Implementation:**
+  - **Saved Commute Corridors:**
+    - High-contrast Material cards with live corridor transit status badges (`🟢 NORMAL (12m)`, `🔴 HAZARD (+18m)`, `🟡 MODERATE (26m)`).
+    - Direct integration with Route Planner: Tapping "Plan Corridor" or "View Detour Route" invokes `MainActivity.navigateToPlannerWithEndpoints(...)` to pre-load origin and destination hubs and calculate route on the full-screen map instantly.
+    - Quick route alert toggle buttons ("Alerts ON" / "Alerts Muted") and "+ Add Corridor" preset selector dialog.
+  - **Smart Alert Engine & Preferences:**
+    - Sensitivity threshold filters: "Critical Only", "Delays > 5 mins (Standard TrafficSense boundary)", "All Bulletins".
+    - Corridor-Intersection filter toggle (restricts alerts to saved commute paths).
+    - Employer delay sharing consent toggle and High-corroboration audio chime toggle.
+    - Live Corridor Bulletins list with municipal verification badges (`L2 VERIFIED`, `L6 AUTH`).
+  - **Active Journey & Civic Delay Certificate:**
+    - Real-time commute tracking stopwatch (`00:00:04`) and corridor progress indicators.
+    - Tamper-evident Civic Delay Certificate generator (`#TS-MNG-9482-L4`) with verification seal, delay duration calculation (`+14m net delay`), L4 multi-source corroboration status, and QR verification preview dialog.
+    - "Export to Employer Desk" action transmitting verified delay receipt to HR verification portal.
+  - **1-Click Demo Personas:**
+    - Seamless switching between Commuter A, Commuter B, Traffic Authority Dispatcher (L6 municipal control room access), and Employer Verification Desk.
+- **Verification:**
+  - `./gradlew testDebugUnitTest` passed (25 tasks).
+  - Built APK `app-debug.apk` and installed to connected physical device via `adb install -r`: `Success`.
+  - Live runtime verified on device: tested tab switching, Saved Corridor route planning launch into Route Planner, active commute journey stopwatch, delay certificate export, and alert preference switches.
+
