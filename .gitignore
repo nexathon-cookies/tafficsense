@@ -39,3 +39,4 @@ apps/traffic/local.properties
 !apps/web/src/app/**
 !apps/mobile/app/**
 !apps/traffic/app/**
+*.apk
