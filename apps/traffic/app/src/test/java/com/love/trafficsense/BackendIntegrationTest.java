@@ -89,7 +89,14 @@ public class BackendIntegrationTest {
                 .build();
 
         String dynamicCommuterPassword = null;
-        try (Response demoResp = client.newCall(demoReq).execute()) {
+        Response demoResp;
+        try {
+            demoResp = client.newCall(demoReq).execute();
+        } catch (java.net.ConnectException e) {
+            org.junit.Assume.assumeNoException("Live backend not running at " + BASE_URL + ", skipping integration test", e);
+            return;
+        }
+        try {
             assertTrue("Expected demo-accounts endpoint to return 200", demoResp.isSuccessful());
             String body = demoResp.body().string();
             JsonObject json = gson.fromJson(body, JsonObject.class);
@@ -104,6 +111,8 @@ public class BackendIntegrationTest {
                     break;
                 }
             }
+        } finally {
+            demoResp.close();
         }
 
         assertNotNull("Dynamic commuter password should be found in /api/demo-accounts", dynamicCommuterPassword);
